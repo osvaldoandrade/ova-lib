@@ -1,0 +1,87 @@
+name: CMake on multiple platforms
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_ACTIONS_TOKEN }}
+        with:
+          tag_name: 0.1.${{ github.run_number }}
+          release_name: 0.1.${{ github.run_number }}
+          body: "Release of version v${{ github.run_number }}.0.0 based on the HEAD"
+          draft: false
+          prerelease: false
+
+  build-and-upload:
+    needs: create-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x64
+            build_type: Release
+          - os: ubuntu-latest
+            arch: x86
+            build_type: Release
+          - os: macos-latest
+            arch: x64
+            build_type: Release
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+          if [ "${{ matrix.arch }}" == "x86" ]; then
+            sudo dpkg --add-architecture i386
+            sudo apt-get update
+            sudo apt-get install -y gcc-multilib g++-multilib
+          fi
+
+      - name: Set architecture flag and configure CMake
+        run: |
+          if [ "${{ matrix.arch }}" == "x86" ]; then
+            C_FLAGS="-m32"
+          else
+            C_FLAGS="-m64"
+          fi
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -S ${{ github.workspace }} -DCMAKE_C_FLAGS=$C_FLAGS
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }}
+
+      - name: Test
+        working-directory: build
+        run: ctest --build-config ${{ matrix.build_type }}
+
+      - name: Package TGZ
+        run: |
+          cd build
+          cpack -G TGZ
+          mv *.tar.gz ova_lib-${{ matrix.os }}-${{ matrix.arch }}-${{ github.run_number }}.tar.gz
+
+      - name: Upload Release Asset TGZ
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_ACTIONS_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./build/ova_lib-${{ matrix.os }}-${{ matrix.arch }}-${{ github.run_number }}.tar.gz
+          asset_name: ova_lib-${{ matrix.os }}-${{ matrix.arch }}-${{ github.run_number }}.tar.gz
+          asset_content_type: application/gzip
