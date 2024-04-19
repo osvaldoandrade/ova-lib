@@ -154,6 +154,16 @@ int collections_binary_search(sorter *self, list *lst, void *item) {
     return -1;
 }
 
+/**
+ * @brief Copies the items from one list to another.
+ *
+ * This function is used to copy the items from one list to another.
+ * It iterates over the source list and inserts each item into the destination list at the same index.
+ *
+ * @param self A pointer to the sorter structure.
+ * @param src A pointer to the source list.
+ * @param dest A pointer to the destination list.
+ */
 void collections_copy(sorter *self, list *src, list *dest) {
     int size = src->size(src);
     for (int i = 0; i < size; i++) {
@@ -162,6 +172,17 @@ void collections_copy(sorter *self, list *src, list *dest) {
     }
 }
 
+/**
+ * @brief Finds the minimum and maximum elements in a list using a custom sorter.
+ *
+ * This function finds the minimum and maximum elements in a given list using a custom sorter.
+ * The minimum and maximum elements are returned through the `min` and `max` parameters, respectively.
+ *
+ * @param self A pointer to the sorter structure.
+ * @param lst A pointer to the list containing the elements.
+ * @param min A pointer to a pointer where the minimum element will be stored.
+ * @param max A pointer to a pointer where the maximum element will be stored.
+ */
 void collections_min_max(sorter *self, list *lst, void **min, void **max) {
     int size = lst->size(lst);
     if (size == 0) {
@@ -173,12 +194,9 @@ void collections_min_max(sorter *self, list *lst, void **min, void **max) {
     *min = lst->get(lst, 0);
     *max = lst->get(lst, 0);
 
-    int i = 1;
-    if (size % 2 != 0) {
-        i = 2;
-    }
+    int i = (size % 2 == 0) ? 1 : 2;
 
-    for (; i < size; i += 2) {
+    for (; i < size - 1; i += 2) {
         void *first = lst->get(lst, i);
         void *second = lst->get(lst, i + 1);
 
@@ -190,7 +208,14 @@ void collections_min_max(sorter *self, list *lst, void **min, void **max) {
             if (self->cmp(first, *min) < 0) *min = first;
         }
     }
+
+    if (size % 2 != 0) {
+        void *last = lst->get(lst, size - 1);
+        if (self->cmp(last, *max) > 0) *max = last;
+        if (self->cmp(last, *min) < 0) *min = last;
+    }
 }
+
 
 /**
  * @brief Find the maximum element in a list.
@@ -268,6 +293,7 @@ sorter *create_sorter(list *data, comparator cmp) {
     s->copy = collections_copy;
     s->min = collections_min;
     s->max = collections_max;
+    s->min_max = collections_min_max;
 
     return s;
 }

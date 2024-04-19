@@ -2,11 +2,19 @@
 #include "../include/types.h"
 #include "../include/sort.h"
 
+#include <stddef.h>  // Para usar o tipo NULL
+
 int int_compare(const void *a, const void *b) {
+    if (a == NULL || b == NULL) {
+        return 0;
+    }
+
     int arg1 = *(const int*)a;
     int arg2 = *(const int*)b;
+
     return (arg1 > arg2) - (arg1 < arg2);
 }
+
 
 void test_sorter_sort() {
     list *lst = create_list(ARRAY_LIST, 10);
@@ -127,12 +135,43 @@ void test_sorter_copy() {
     free(s);
 }
 
+void test_sorter_min_max() {
+    list *lst = create_list(ARRAY_LIST, 5);
+    int items[] = {10, 20, 30, 40, 50};
+    for (int i = 0; i < 5; i++) {
+        lst->insert(lst, &items[i], i);
+    }
+
+    sorter *s = create_sorter(lst, int_compare);
+
+    // Test min_max
+    void *min_val = NULL;
+    void *max_val = NULL;
+    s->min_max(s, lst, &min_val, &max_val);
+    int passed_min_max = (*(int *)min_val == 10) && (*(int *)max_val == 50);
+    print_test_result(passed_min_max, "Min Max operation");
+
+    // Test min
+    int *min_result = (int *)s->min(s, lst);
+    int passed_min = (*min_result == 10);
+    print_test_result(passed_min, "Min operation");
+
+    // Test max
+    int *max_result = (int *)s->max(s, lst);
+    int passed_max = (*max_result == 50);
+    print_test_result(passed_max, "Max operation");
+
+    lst->free(lst);
+    free(s);
+}
+
 void run_all_tests() {
     test_sorter_sort();
     test_sorter_shuffle();
     test_sorter_reverse();
     test_sorter_binary_search();
     test_sorter_copy();
+    test_sorter_min_max();
 }
 
 int main() {

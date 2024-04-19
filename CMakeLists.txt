@@ -42,18 +42,15 @@ add_library(ova_lib_shared SHARED
 set_target_properties(ova_lib_shared PROPERTIES OUTPUT_NAME "ova_lib")
 
 target_include_directories(ova_lib_static PUBLIC include)
+
 target_include_directories(ova_lib_shared PUBLIC include)
 
-# Copiar os cabeçalhos para o diretório de build
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION ${CMAKE_BINARY_DIR}/include/)
 
-# Localizar todos os arquivos de cabeçalho para instalação
 file(GLOB_RECURSE HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
 
-# Instalar os cabeçalhos no diretório de instalação apropriado
 install(FILES ${HEADERS} DESTINATION include)
 
-# Instalar as bibliotecas estática e compartilhada
 install(TARGETS ova_lib_static ova_lib_shared
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
@@ -85,7 +82,6 @@ set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A compact toolkit offering data structures in ANSI C, designed for simplicity and portability across POSIX platforms.")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 
-# Geração de pacotes
 set(CPACK_GENERATOR "TGZ")
 
 include(CPack)
