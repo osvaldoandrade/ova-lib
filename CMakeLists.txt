@@ -25,6 +25,7 @@ add_library(ova_lib_static STATIC
         src/stack/linked_stack.c
         src/stack/stack.c
         src/stack/array_stack.c
+        src/linear/linear.c
 )
 set_target_properties(ova_lib_static PROPERTIES OUTPUT_NAME "ova_lib")
 
@@ -44,6 +45,7 @@ add_library(ova_lib_shared SHARED
         src/stack/linked_stack.c
         src/stack/stack.c
         src/stack/array_stack.c
+        src/linear/linear.c
 )
 set_target_properties(ova_lib_shared PROPERTIES OUTPUT_NAME "ova_lib")
 
@@ -73,7 +75,7 @@ file(WRITE ${CMAKE_BINARY_DIR}/install.sh
 )
 install(PROGRAMS ${CMAKE_BINARY_DIR}/install.sh DESTINATION .)
 
-foreach(TEST IN ITEMS test_queue test_priority_queue test_binary_heap test_fibonacci_heap test_hash test_array_list test_linked_list test_sorter test_linked_stack test_array_stack)
+foreach(TEST IN ITEMS test_queue test_priority_queue test_binary_heap test_fibonacci_heap test_hash test_array_list test_linked_list test_sorter test_linked_stack test_array_stack test_linear)
     add_executable(${TEST} test/${TEST}.c test/base_test.c)
     target_link_libraries(${TEST} ova_lib_static)
     add_test(NAME ${TEST} COMMAND ${TEST})
