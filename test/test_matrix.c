@@ -1,4 +1,4 @@
-#include "../include/linear.h"
+#include "../include/matrix.h"
 #include "base_test.h"
 #include <tgmath.h>
 
