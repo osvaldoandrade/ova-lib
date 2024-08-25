@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.10)
 project(ova_lib C)
 set(CMAKE_C_STANDARD 11)
 set(LIB_VERSION 0.0.1)
