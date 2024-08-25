@@ -30,6 +30,7 @@ add_library(ova_lib_static STATIC
 
         src/solver/simplex.c
 )
+target_compile_options(ova_lib_static PRIVATE -fPIC)
 set_target_properties(ova_lib_static PROPERTIES OUTPUT_NAME "ova_lib")
 
 add_library(ova_lib_shared SHARED
