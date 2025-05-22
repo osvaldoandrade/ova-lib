@@ -44,6 +44,7 @@ list *create_linked_list() {
 
 static void linked_list_insert(list *self, void *item, int index) {
     linked_list_impl *impl = (linked_list_impl *)self->impl;
+    if (index < 0 || index > impl->size) return;
     linked_list_node *new_node = malloc(sizeof(linked_list_node));
     if (!new_node) return;
 
@@ -92,6 +93,7 @@ static void linked_list_insert(list *self, void *item, int index) {
 
 static void *linked_list_get(list *self, int index) {
     linked_list_impl *impl = (linked_list_impl *)self->impl;
+    if (index < 0 || index >= impl->size) return NULL;
     linked_list_node *current = impl->head;
     for (int i = 0; i < index && current; i++) {
         current = current->next;
@@ -101,6 +103,7 @@ static void *linked_list_get(list *self, int index) {
 
 static void linked_list_remove(list *self, int index) {
     linked_list_impl *impl = (linked_list_impl *)self->impl;
+    if (index < 0 || index >= impl->size) return;
     linked_list_node *current = impl->head;
     for (int i = 0; i < index && current; i++) {
         current = current->next;
