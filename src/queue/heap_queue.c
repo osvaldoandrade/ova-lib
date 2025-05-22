@@ -7,7 +7,8 @@ queue *create_heap_queue (int capacity, comparator compare) {
         return NULL;
     }
 
-    q->p_heap = create_heap(BINARY_HEAP, 10, compare);
+    /* respect the capacity requested by the caller */
+    q->p_heap = create_heap(BINARY_HEAP, capacity, compare);
     q->enqueue = priority_enqueue;
     q->dequeue = priority_dequeue;
     q->is_empty = priority_is_empty;
@@ -30,7 +31,14 @@ queue *create_heap_queue (int capacity, comparator compare) {
  * @param compare The comparison function used to maintain the heap property.
  */
 void priority_initialize(queue *self, comparator compare) {
+    (void)compare; /* comparator already provided when heap was created */
+    if (!self) {
+        return;
+    }
 
+    self->front = NULL;
+    self->rear = NULL;
+    self->length = 0;
 }
 
 /**
