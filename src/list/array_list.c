@@ -40,7 +40,7 @@ list *create_array_list(int initial_capacity) {
     return NULL;
 }
 
-int get_size_from_impl(void *impl) {
+static int get_size_from_impl(void *impl) {
     array_list_impl *internal = (array_list_impl *) impl;
     return internal->size;
 }

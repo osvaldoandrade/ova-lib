@@ -191,6 +191,10 @@ double matrix_determinant(matrix *self, int *error) {
     int n = self->rows;
     double det = 1.0;
     matrix *temp = create_matrix(n, n);
+    if (!temp) {
+        if (error) *error = 1;
+        return 0;
+    }
 
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
@@ -334,7 +338,12 @@ matrix *matrix_inverse(matrix *self) {
 void matrix_resize(matrix *self, int newRows, int newCols) {
   if (self == NULL) return;
 
-  // Resize rows
+  // Free rows that will be discarded if the matrix is shrinking
+  for (int i = newRows; i < self->rows; i++) {
+    free(self->data[i]);
+  }
+
+  // Resize rows pointer array
   double **newData = realloc(self->data, newRows * sizeof(double *));
   if (newData == NULL) return; // Handle realloc failure
 

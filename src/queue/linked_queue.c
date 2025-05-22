@@ -68,6 +68,8 @@ queue *create_linked_queue() {
     queue *q = malloc(sizeof(queue));
     if (!q) return NULL;
 
+    q->p_heap = NULL;
+
     q->initialize = linked_initialize;
     q->enqueue = linked_enqueue;
     q->dequeue = linked_dequeue;

@@ -9,6 +9,11 @@ queue *create_heap_queue (int capacity, comparator compare) {
 
     /* respect the capacity requested by the caller */
     q->p_heap = create_heap(BINARY_HEAP, capacity, compare);
+    if (q->p_heap == NULL) {
+        free(q);
+        return NULL;
+    }
+
     q->enqueue = priority_enqueue;
     q->dequeue = priority_dequeue;
     q->is_empty = priority_is_empty;
