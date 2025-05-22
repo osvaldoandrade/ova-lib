@@ -1,3 +1,8 @@
+/**
+ * @file types.h
+ * @brief Common types used across the library.
+ */
+
 #ifndef TYPES_H
 #define TYPES_H
 

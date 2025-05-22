@@ -1,3 +1,8 @@
+/**
+ * @file linked_list.c
+ * @brief Linked list implementation.
+ */
+
 #include "../../include/list.h"
 #include <stdlib.h>
 
@@ -19,6 +24,11 @@ static void linked_list_remove(list *self, int index);
 static void linked_list_free(list *self);
 static int linked_list_size(const list *self);
 
+/**
+ * @brief Create an empty doubly linked list.
+ *
+ * @return Pointer to the created list or NULL on failure.
+ */
 list *create_linked_list() {
     list *lst = malloc(sizeof(list));
     linked_list_impl *impl = malloc(sizeof(linked_list_impl));
@@ -42,6 +52,9 @@ list *create_linked_list() {
     return NULL;
 }
 
+/**
+ * @brief Insert an element at the specified position in the list.
+ */
 static void linked_list_insert(list *self, void *item, int index) {
     linked_list_impl *impl = (linked_list_impl *)self->impl;
     linked_list_node *new_node = malloc(sizeof(linked_list_node));
@@ -90,6 +103,9 @@ static void linked_list_insert(list *self, void *item, int index) {
     impl->size++;
 }
 
+/**
+ * @brief Retrieve the element located at @p index.
+ */
 static void *linked_list_get(list *self, int index) {
     linked_list_impl *impl = (linked_list_impl *)self->impl;
     linked_list_node *current = impl->head;
@@ -99,6 +115,9 @@ static void *linked_list_get(list *self, int index) {
     return current ? current->data : NULL;
 }
 
+/**
+ * @brief Remove the element at the given index.
+ */
 static void linked_list_remove(list *self, int index) {
     linked_list_impl *impl = (linked_list_impl *)self->impl;
     linked_list_node *current = impl->head;
@@ -121,12 +140,18 @@ static void linked_list_remove(list *self, int index) {
     }
 }
 
+/**
+ * @brief Return the number of nodes in the list.
+ */
 static int linked_list_size(const list *self) {
     if (!self || !self->impl) return 0;
     linked_list_impl *impl = (linked_list_impl *)self->impl;
     return impl->size;
 }
 
+/**
+ * @brief Free all nodes and the list structure.
+ */
 static void linked_list_free(list *self) {
     if (self->impl) {
         linked_list_impl *impl = (linked_list_impl *)self->impl;

@@ -1,3 +1,8 @@
+/**
+ * @file stack.h
+ * @brief Public API for stack implementations.
+ */
+
 #ifndef STACK_H
 #define STACK_H
 

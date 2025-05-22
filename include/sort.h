@@ -1,3 +1,8 @@
+/**
+ * @file sort.h
+ * @brief Sorting utilities for list objects.
+ */
+
 #ifndef SORT_H
 #define SORT_H
 

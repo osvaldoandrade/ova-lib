@@ -1,6 +1,20 @@
+/**
+ * @file map.c
+ * @brief Factory functions for map instances.
+ */
+
 #include "../../include/map.h"
 #include "hash_map.h"
 
+/**
+ * @brief Factory function for creating different map implementations.
+ *
+ * @param type Desired map type (HASH_MAP or HASH_TABLE).
+ * @param capacity Initial capacity of the structure.
+ * @param hash_func Optional hash function.
+ * @param compare Comparator for keys.
+ * @return Pointer to a new map or NULL on failure.
+ */
 map *create_map(map_type type, int capacity, int (*hash_func)(void *, int), comparator compare) {
     switch (type) {
         case HASH_MAP:

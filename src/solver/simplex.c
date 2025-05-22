@@ -1,6 +1,14 @@
+/**
+ * @file simplex.c
+ * @brief Simplex algorithm implementation.
+ */
+
 #include "simplex.h"
 #include <math.h>
 
+/**
+ * @brief Solve a linear programming problem using the simplex method.
+ */
 int simplex_solver(lp_problem *prob, matrix **out_tableau) {
   if (!prob || !prob->constraints || !prob->objective || !prob->bounds) {
     return INFEASIBLE;

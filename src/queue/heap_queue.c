@@ -1,6 +1,18 @@
+/**
+ * @file heap_queue.c
+ * @brief Priority queue backed by a heap.
+ */
+
 #include "heap_queue.h"
 #include <stdlib.h>
 
+/**
+ * @brief Create a priority queue backed by a heap.
+ *
+ * @param capacity Initial capacity for the underlying heap.
+ * @param compare Comparison function for ordering elements.
+ * @return Pointer to the created queue or NULL on failure.
+ */
 queue *create_heap_queue (int capacity, comparator compare) {
     queue *q = malloc(sizeof(queue));
     if (q == NULL) {

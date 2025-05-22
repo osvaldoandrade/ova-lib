@@ -1,3 +1,8 @@
+/**
+ * @file queue.h
+ * @brief Queue interface definitions.
+ */
+
 #ifndef QUEUE_H
 #define QUEUE_H
 

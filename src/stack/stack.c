@@ -1,3 +1,8 @@
+/**
+ * @file stack.c
+ * @brief Stack creation and helpers.
+ */
+
 #include "../../include/stack.h"
 #include "../../include/list.h"
 #include "linked_stack.h"
@@ -6,6 +11,9 @@
 
 void stack_free(stack *self);
 
+/**
+ * @brief Create a stack of the specified implementation type.
+ */
 stack *create_stack(StackType type) {
     stack *stk = malloc(sizeof(stack));
     if (!stk) return NULL;
@@ -28,6 +36,9 @@ stack *create_stack(StackType type) {
     return stk;
 }
 
+/**
+ * @brief Free the stack and its underlying list.
+ */
 void stack_free(stack *self) {
     list *lst = (list *) self->impl;
     lst->free(lst);

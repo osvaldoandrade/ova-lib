@@ -1,3 +1,8 @@
+/**
+ * @file solver.c
+ * @brief Solver abstractions.
+ */
+
 #include "../../include/matrix.h"
 #include "../../include/solver.h"
 //#include "branch_cut.h"
@@ -12,6 +17,9 @@ static void solver_set_bounds(lp_problem *self, double *bounds);
 static void solver_print_problem(lp_problem *self);
 static void solver_destroy(solver *s);
 
+/**
+ * @brief Allocate an LP problem structure with the given dimensions.
+ */
 lp_problem *create_problem(int numVariables, int numConstraints) {
   lp_problem *problem = malloc(sizeof(lp_problem));
   if (!problem) {
@@ -44,6 +52,9 @@ lp_problem *create_problem(int numVariables, int numConstraints) {
   return problem;
 }
 
+/**
+ * @brief Create a solver instance for the given algorithm type.
+ */
 solver *create_solver(SolverType type) {
   solver *s = malloc(sizeof(solver));
   if (!s)
@@ -66,6 +77,9 @@ solver *create_solver(SolverType type) {
   return s;
 }
 
+/**
+ * @brief Append a constraint to the linear program.
+ */
 static void solver_add_constraint(lp_problem *self, double *coefficients, double bound) {
   if (self == NULL || coefficients == NULL)
     return;
@@ -85,6 +99,9 @@ static void solver_add_constraint(lp_problem *self, double *coefficients, double
   self->bounds->data[currentRows] = bound;
 }
 
+/**
+ * @brief Define the objective function of the problem.
+ */
 static void solver_set_objective(lp_problem *self, double *coefficients, ProblemType type) {
   if (self == NULL || coefficients == NULL)
     return;
@@ -95,6 +112,9 @@ static void solver_set_objective(lp_problem *self, double *coefficients, Problem
   self->type = type;
 }
 
+/**
+ * @brief Set the bounds vector for the constraints.
+ */
 static void solver_set_bounds(lp_problem *self, double *bounds) {
   if (self == NULL || bounds == NULL)
     return;
@@ -104,6 +124,9 @@ static void solver_set_bounds(lp_problem *self, double *bounds) {
   }
 }
 
+/**
+ * @brief Print a human readable representation of the problem.
+ */
 static void solver_print_problem(lp_problem *self) {
   if (self == NULL)
     return;
@@ -124,6 +147,9 @@ static void solver_print_problem(lp_problem *self) {
   printf("\n");
 }
 
+/**
+ * @brief Destroy a solver instance.
+ */
 static void solver_destroy(solver *s) {
   if (s == NULL) {
     return;
@@ -131,6 +157,9 @@ static void solver_destroy(solver *s) {
   free(s);
 }
 
+/**
+ * @brief Check if a solution satisfies all constraints.
+ */
 static int is_feasible(lp_problem *prob, vector *solution) {
   for (int i = 0; i < prob->constraints->rows; i++) {
     double sum = 0;
@@ -143,10 +172,16 @@ static int is_feasible(lp_problem *prob, vector *solution) {
   return 1;
 }
 
+/**
+ * @brief Test if a floating point value is close to an integer.
+ */
 int is_integer(double value) {
   return fabs(value - floor(value)) < 1e-6;  // Using a small epsilon to handle floating-point precision issues
 }
 
+/**
+ * @brief Evaluate whether updating an index improves the objective value.
+ */
 int improves_objective(lp_problem *prob, vector *solution, double old_value, int index) {
   double new_obj = 0, old_obj = 0;
   for (int i = 0; i < solution->size; i++) {

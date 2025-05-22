@@ -1,3 +1,8 @@
+/**
+ * @file list.h
+ * @brief Public API for list implementations.
+ */
+
 #ifndef LIST_H
 #define LIST_H
 #include "types.h"

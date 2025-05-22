@@ -1,3 +1,8 @@
+/**
+ * @file matrix.h
+ * @brief Matrix and vector utilities.
+ */
+
 #ifndef LINEAR_H
 #define LINEAR_H
 

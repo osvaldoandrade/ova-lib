@@ -1,9 +1,23 @@
+/**
+ * @file binary_heap.c
+ * @brief Binary heap implementation.
+ */
+
 #include "binary_heap.h"
 #include <stdlib.h>
 
 static void sift_up(binary_heap *h, int index);
 static void sift_down(binary_heap *h, int index);
 
+/**
+ * @brief Initialize a binary heap structure.
+ *
+ * Allocates memory and sets up the internal array with the given capacity.
+ *
+ * @param initial_capacity Starting capacity of the heap.
+ * @param cmp Comparator used for ordering elements.
+ * @return Pointer to the initialized structure or NULL on failure.
+ */
 binary_heap *binary_heap_init(int initial_capacity, comparator cmp) {
     binary_heap *h = malloc(sizeof(binary_heap));
     if (!h) return NULL;
@@ -20,6 +34,12 @@ binary_heap *binary_heap_init(int initial_capacity, comparator cmp) {
     return h;
 }
 
+/**
+ * @brief Insert an element into the binary heap.
+ *
+ * @param self Heap wrapper used for insertion.
+ * @param item Element to insert.
+ */
 static void binary_heap_put(heap *self, void *item) {
     binary_heap *h = (binary_heap *)self->impl;
     if (h->size == h->capacity) {
@@ -31,6 +51,12 @@ static void binary_heap_put(heap *self, void *item) {
     h->size++;
 }
 
+/**
+ * @brief Remove and return the top element from the binary heap.
+ *
+ * @param self Heap wrapper whose top element will be removed.
+ * @return Pointer to the removed element or NULL if the heap is empty.
+ */
 static void *binary_heap_pop(heap *self) {
     binary_heap *h = (binary_heap *)self->impl;
     if (h->size == 0) return NULL;
@@ -42,23 +68,47 @@ static void *binary_heap_pop(heap *self) {
     return top;
 }
 
+/**
+ * @brief Get the top element of the binary heap without removing it.
+ *
+ * @param self Heap wrapper to peek into.
+ * @return Top element or NULL if the heap is empty.
+ */
 static void *binary_heap_peek(const heap *self) {
     binary_heap *h = (binary_heap *)self->impl;
     if (h->size == 0) return NULL;
     return h->data[0];
 }
 
+/**
+ * @brief Return the number of elements stored in the heap.
+ *
+ * @param self Heap wrapper to query.
+ * @return Current heap size.
+ */
 static int binary_heap_size(const heap *self) {
     binary_heap *h = (binary_heap *)self->impl;
     return h->size;
 }
 
+/**
+ * @brief Release resources held by a binary heap.
+ *
+ * @param self Heap wrapper to destroy.
+ */
 static void binary_heap_free(heap *self) {
     binary_heap *h = (binary_heap *) self->impl;
     free(h->data);
     free(h);
 }
 
+/**
+ * @brief Create a generic heap backed by a binary heap implementation.
+ *
+ * @param initial_capacity Desired capacity of the heap.
+ * @param compare_function Comparator for ordering elements.
+ * @return Pointer to a heap instance or NULL on failure.
+ */
 heap *create_binary_heap(int initial_capacity, comparator compare_function) {
     binary_heap *bh = binary_heap_init(initial_capacity, compare_function);
     if (!bh) return NULL;
@@ -78,6 +128,9 @@ heap *create_binary_heap(int initial_capacity, comparator compare_function) {
     return h;
 }
 
+/**
+ * @brief Move an element up the tree to restore heap property.
+ */
 static void sift_up(binary_heap *h, int index) {
     void *item = h->data[index];
     while (index > 0) {
@@ -89,6 +142,9 @@ static void sift_up(binary_heap *h, int index) {
     h->data[index] = item;
 }
 
+/**
+ * @brief Move an element down the tree to restore heap property.
+ */
 static void sift_down(binary_heap *h, int index) {
     int left, right, largest;
     void *temp;

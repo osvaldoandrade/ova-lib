@@ -1,3 +1,8 @@
+/**
+ * @file solver.h
+ * @brief Interfaces for linear programming solvers.
+ */
+
 #ifndef SOLVER_H
 #define SOLVER_H
 

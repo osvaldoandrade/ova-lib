@@ -1,3 +1,8 @@
+/**
+ * @file hash_map.c
+ * @brief Chained hash map implementation.
+ */
+
 #include "hash_map.h"
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +12,15 @@ void *hash_get(map *self, void *key);
 void *hash_remove(map *self, void *key);
 void hash_free(map *self);
 
+/**
+ * @brief Create a hash map using separate chaining.
+ *
+ * @param capacity Initial table capacity.
+ * @param hash_func Hash function to distribute keys.
+ * @param key_compare Comparator used to compare keys.
+ * @param thread_safe Non-zero to allocate a mutex for thread safety.
+ * @return Pointer to the created map or NULL on failure.
+ */
 map *create_hash_map(int capacity, int (*hash_func)(void *, int), comparator key_compare, int thread_safe) {
     if (capacity < INITIAL_CAPACITY) {
         capacity = INITIAL_CAPACITY;

@@ -1,3 +1,8 @@
+/**
+ * @file matrix.c
+ * @brief Matrix and vector operations.
+ */
+
 #include "../../include/matrix.h"
 
 #include <float.h>
@@ -18,6 +23,13 @@ matrix *matrix_copy(matrix *self);
 void matrix_destroy(matrix *self);
 void matrix_print(const matrix *self);
 
+/**
+ * @brief Allocate a new matrix with the given dimensions.
+ *
+ * @param rows Number of rows.
+ * @param cols Number of columns.
+ * @return Pointer to the created matrix or NULL on failure.
+ */
 matrix *create_matrix(int rows, int cols) {
     if (rows <= 0 || cols <= 0) {
         return NULL;  // Handle non-positive dimensions
@@ -64,6 +76,12 @@ matrix *create_matrix(int rows, int cols) {
     return m;
 }
 
+/**
+ * @brief Allocate a numerical vector of the given size.
+ *
+ * @param size Number of elements.
+ * @return Pointer to the new vector or NULL on failure.
+ */
 vector *create_vector(int size) {
   vector *v = malloc(sizeof(vector));
   if (v == NULL) {
@@ -84,6 +102,9 @@ vector *create_vector(int size) {
   return v;
 }
 
+/**
+ * @brief Resize a vector, preserving existing values.
+ */
 void vector_resize(vector *self, int newSize) {
   if (self == NULL) return;
 
@@ -101,6 +122,9 @@ void vector_resize(vector *self, int newSize) {
   self->size = newSize;
 }
 
+/**
+ * @brief Print vector contents to stdout.
+ */
 void vector_print(const vector *self) {
   if (self == NULL) {
     printf("Vector is NULL\n");
@@ -115,6 +139,9 @@ void vector_print(const vector *self) {
   printf("]\n");
 }
 
+/**
+ * @brief Free a vector and its data.
+ */
 void vector_destroy(vector *self) {
   if (self != NULL) {
     free(self->data); // Free the data array
@@ -122,6 +149,9 @@ void vector_destroy(vector *self) {
   }
 }
 
+/**
+ * @brief Add two matrices of equal dimensions.
+ */
 matrix *matrix_add(matrix *self, const matrix *other) {
     if (self == NULL || other == NULL || self->rows != other->rows || self->cols != other->cols) {
         return NULL;
@@ -141,6 +171,9 @@ matrix *matrix_add(matrix *self, const matrix *other) {
     return result;
 }
 
+/**
+ * @brief Subtract @p other from @p self element-wise.
+ */
 matrix *matrix_subtract(matrix *self, const matrix *other) {
     if (self == NULL || other == NULL || self->rows != other->rows || self->cols != other->cols) {
         return NULL; // Error handling for invalid input or size mismatch
@@ -160,6 +193,9 @@ matrix *matrix_subtract(matrix *self, const matrix *other) {
     return result;
 }
 
+/**
+ * @brief Multiply two matrices if dimensions are compatible.
+ */
 matrix *matrix_multiply(matrix *self, const matrix *other) {
     if (self == NULL || other == NULL || self->cols != other->rows) {
         return NULL; // Error handling for invalid input or size mismatch
@@ -182,6 +218,9 @@ matrix *matrix_multiply(matrix *self, const matrix *other) {
     return result;
 }
 
+/**
+ * @brief Compute the determinant of a square matrix.
+ */
 double matrix_determinant(matrix *self, int *error) {
     if (self == NULL || self->rows != self->cols) {
         if (error) *error = 1;  // Set error flag
@@ -234,6 +273,9 @@ double matrix_determinant(matrix *self, int *error) {
     return det;
 }
 
+/**
+ * @brief Return the transpose of the matrix.
+ */
 matrix *matrix_transpose(matrix *self) {
     if (self == NULL) {
         return NULL;  // Error handling for NULL input
@@ -255,6 +297,9 @@ matrix *matrix_transpose(matrix *self) {
     return result;
 }
 
+/**
+ * @brief Compute the inverse of a square matrix using Gaussian elimination.
+ */
 matrix *matrix_inverse(matrix *self) {
     if (self == NULL || self->rows != self->cols) {
         return NULL;  // Error handling for invalid input
@@ -331,6 +376,9 @@ matrix *matrix_inverse(matrix *self) {
     return inverse;
 }
 
+/**
+ * @brief Resize a matrix, preserving existing values where possible.
+ */
 void matrix_resize(matrix *self, int newRows, int newCols) {
   if (self == NULL) return;
 
@@ -363,6 +411,9 @@ void matrix_resize(matrix *self, int newRows, int newCols) {
   self->cols = newCols;
 }
 
+/**
+ * @brief Create a deep copy of a matrix.
+ */
 matrix *matrix_copy(matrix *self) {
   if (!self) return NULL;
 
@@ -376,6 +427,9 @@ matrix *matrix_copy(matrix *self) {
   return copy;
 }
 
+/**
+ * @brief Free all memory associated with a matrix.
+ */
 void matrix_destroy(matrix *self) {
     if (self != NULL) {
         if (self->data != NULL) {
@@ -388,6 +442,9 @@ void matrix_destroy(matrix *self) {
     }
 }
 
+/**
+ * @brief Print a matrix in a human-readable format.
+ */
 void matrix_print(const matrix *self) {
     if (self == NULL) {
         printf("Matrix is NULL\n");

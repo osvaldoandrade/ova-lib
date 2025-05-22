@@ -1,3 +1,8 @@
+/**
+ * @file heap.h
+ * @brief Public API for heap data structures.
+ */
+
 #ifndef HEAP_H
 #define HEAP_H
 

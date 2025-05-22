@@ -1,3 +1,8 @@
+/**
+ * @file map.h
+ * @brief Hash map data structure implementation.
+ */
+
 #ifndef HASH_H
 #define HASH_H
 #include "types.h"

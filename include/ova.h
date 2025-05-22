@@ -1,3 +1,8 @@
+/**
+ * @file ova.h
+ * @brief Master header including all public APIs.
+ */
+
 #ifndef OVA_LIB_H
 #define OVA_LIB_H
 

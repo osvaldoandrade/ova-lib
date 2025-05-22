@@ -1,3 +1,8 @@
+/**
+ * @file sort.c
+ * @brief Sorting utilities.
+ */
+
 #include "../../include/sort.h"
 #include <stdlib.h>
 
