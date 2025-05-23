@@ -1,5 +1,6 @@
 #include "base_test.h"
 #include "../include/list.h"
+#include <time.h>
 
 void test_array_list_insert_and_get() {
     list *lst = create_list(ARRAY_LIST, 10);
@@ -91,6 +92,14 @@ void test_access_out_of_bounds() {
     lst->free(lst);
 }
 
+void test_insert_invalid_index() {
+    list *lst = create_list(ARRAY_LIST, 2);
+    int val = 5;
+    lst->insert(lst, &val, 5); /* invalid index */
+    print_test_result(lst->size(lst) == 0, "Insert invalid index should not modify list");
+    lst->free(lst);
+}
+
 void test_list_clear() {
     list *lst = create_list(ARRAY_LIST, 5);
     if (lst == NULL) {
@@ -109,6 +118,7 @@ void test_list_clear() {
 
 void test_high_volume_linked_list_insertions() {
     const int MAX = 1000;
+    clock_t start = clock();
     list *lst = create_list(ARRAY_LIST, 10);
     if (lst == NULL) {
         print_test_result(0, "Failed to create list");
@@ -128,6 +138,9 @@ void test_high_volume_linked_list_insertions() {
 
     print_test_result(lst->size(lst) == MAX, "High volume insertion should match the count");
 
+    double elapsed_ms = ((double)(clock() - start) / CLOCKS_PER_SEC) * 1000.0;
+    print_test_result(elapsed_ms < 1000.0, "Array list high volume within time limit");
+
     lst->free(lst);
 }
 
@@ -138,6 +151,8 @@ void run_all_tests() {
     test_array_list_capacity_increase();
     test_insert_at_specific_index();
     test_access_out_of_bounds();
+    test_insert_invalid_index();
+    test_high_volume_linked_list_insertions();
     //test_list_clear();
     //test_high_volume_array_list_insertions();
 }
