@@ -1,6 +1,7 @@
 #include "base_test.h"
 #include "../include/types.h"
 #include "../include/sort.h"
+#include <time.h>
 
 #include <stddef.h>  // Para usar o tipo NULL
 
@@ -37,6 +38,15 @@ void test_sorter_sort() {
     }
     print_test_result(passed, "Sorter sort operation ensures list is sorted");
 
+    lst->free(lst);
+    free(s);
+}
+
+void test_sort_empty_list() {
+    list *lst = create_list(ARRAY_LIST, 1);
+    sorter *s = create_sorter(lst, int_compare);
+    s->sort(s, lst);
+    print_test_result(lst->size(lst) == 0, "Sort on empty list safe");
     lst->free(lst);
     free(s);
 }
@@ -108,6 +118,27 @@ void test_sorter_binary_search() {
     free(s);
 }
 
+void test_sorter_large_sort() {
+    const int MAX = 1000;
+    list *lst = create_list(ARRAY_LIST, MAX);
+    for(int i=MAX-1;i>=0;i--){
+        lst->insert(lst, &i, 0);
+    }
+    sorter *s = create_sorter(lst, int_compare);
+    clock_t start = clock();
+    s->sort(s, lst);
+    double elapsed_ms = ((double)(clock() - start) / CLOCKS_PER_SEC) * 1000.0;
+    int sorted = 1;
+    for(int i=1;i<lst->size(lst);i++){
+        int *prev = lst->get(lst,i-1);
+        int *cur = lst->get(lst,i);
+        if(*prev > *cur){sorted=0;break;}
+    }
+    print_test_result(sorted && elapsed_ms < 1500.0, "Large sort within time limit");
+    lst->free(lst);
+    free(s);
+}
+
 void test_sorter_copy() {
     list *src = create_list(ARRAY_LIST, 5);
     list *dest = create_list(ARRAY_LIST, 5);
@@ -170,6 +201,8 @@ void run_all_tests() {
     test_sorter_shuffle();
     test_sorter_reverse();
     test_sorter_binary_search();
+    test_sort_empty_list();
+    test_sorter_large_sort();
     test_sorter_copy();
     test_sorter_min_max();
 }

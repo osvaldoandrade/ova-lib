@@ -1,10 +1,17 @@
 #include "base_test.h"
 #include "../include/queue.h"
 #include <string.h>
+#include <time.h>
 
 void test_queue_empty_initially() {
     queue *q = create_queue(QUEUE_TYPE_NORMAL, 10, NULL);
     print_test_result(q->is_empty(q), "Queue should be empty after initialization");
+    q->free(q);
+}
+
+void test_queue_dequeue_empty() {
+    queue *q = create_queue(QUEUE_TYPE_NORMAL, 0, NULL);
+    print_test_result(q->dequeue(q) == NULL, "Dequeue on empty queue returns NULL");
     q->free(q);
 }
 
@@ -35,7 +42,8 @@ void test_queue_enqueue_dequeue_multiple() {
 
 void test_queue_high_volume() {
     queue *q = create_queue(QUEUE_TYPE_NORMAL, 10, NULL);
-    const int max_data = 1000;  // Use a smaller number for demo
+    const int max_data = 1000;
+    clock_t start = clock();
     int* data_array = generate_random_int_data(max_data);
 
     for (int i = 0; i < max_data; i++) {
@@ -47,6 +55,9 @@ void test_queue_high_volume() {
         assert(dequeued_data != NULL && *dequeued_data == data_array[i]);  // Ensures each dequeued item matches the enqueued item
     }
     assert(q->is_empty(q));  // Verifies the queue is empty after all dequeues
+
+    double elapsed_ms = ((double)(clock() - start) / CLOCKS_PER_SEC) * 1000.0;
+    print_test_result(elapsed_ms < 1000.0, "Queue high volume operations within time limit");
 
     free(data_array);
     q->free(q);
@@ -65,6 +76,7 @@ void test_queue_with_string_data() {
 
 void run_all_queue_tests() {
     test_queue_empty_initially();
+    test_queue_dequeue_empty();
     test_queue_enqueue_dequeue_single();
     test_queue_enqueue_dequeue_multiple();
     test_queue_high_volume();
