@@ -82,7 +82,7 @@ file(WRITE ${CMAKE_BINARY_DIR}/install.sh
 )
 install(PROGRAMS ${CMAKE_BINARY_DIR}/install.sh DESTINATION .)
 
-foreach(TEST IN ITEMS test_queue test_priority_queue test_binary_heap test_fibonacci_heap test_hash test_array_list test_linked_list test_sorter test_linked_stack test_array_stack test_matrix test_solver)
+foreach(TEST IN ITEMS test_queue test_priority_queue test_binary_heap test_fibonacci_heap test_hash test_array_list test_linked_list test_sorter test_linked_stack test_array_stack test_matrix test_matrix_extra test_solver)
     add_executable(${TEST} test/${TEST}.c test/base_test.c)
     target_link_libraries(${TEST} ova_lib_static m)
     add_test(NAME ${TEST} COMMAND ${TEST})
