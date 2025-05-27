@@ -58,6 +58,14 @@ void test_linked_list_capacity_increase() {
 
     lst->free(lst);
 }
+
+void test_insert_invalid_index() {
+    list *lst = create_list(LINKED_LIST, 2);
+    int a = 5;
+    lst->insert(lst, &a, 5); /* invalid index should not crash */
+    print_test_result(lst->size(lst) == 0, "Invalid index does not insert");
+    lst->free(lst);
+}
 void test_insert_at_specific_index() {
     list *lst = create_list(LINKED_LIST, 5);
     int initial_items[] = {10, 20, 40, 50};
@@ -106,7 +114,7 @@ void test_list_clear() {
 }
 
 void test_high_volume_linked_list_insertions() {
-    const int MAX = 1000;
+    const int MAX = 2000;
     list *lst = create_list(LINKED_LIST, 10);
     if (lst == NULL) {
         print_test_result(0, "Failed to create list");
@@ -131,6 +139,7 @@ void run_all_tests() {
     test_linked_list_insert_and_get();
     test_linked_list_remove();
     test_linked_list_capacity_increase();
+    test_insert_invalid_index();
     test_insert_at_specific_index();
     test_access_out_of_bounds();
     test_list_clear();

@@ -35,9 +35,39 @@ void test_linked_stack_empty_after_pop() {
     stk->free(stk);
 }
 
+void test_stack_top_behavior() {
+    stack *s = create_stack(LINKED_STACK);
+    print_test_result(s->is_empty(s), "Stack empty on creation");
+    int v = 1;
+    s->push(s, &v);
+    print_test_result(*(int*)s->top(s) == 1, "Stack top after push");
+    s->pop(s);
+    print_test_result(s->top(s) == NULL, "Stack top NULL after pop");
+    s->free(s);
+}
+
+void test_stack_high_volume() {
+    stack *s = create_stack(LINKED_STACK);
+    const int max_items = 5000;
+    int *items = generate_random_int_data(max_items);
+    for (int i = 0; i < max_items; i++) {
+        s->push(s, &items[i]);
+    }
+    for (int i = max_items - 1; i >= 0; i--) {
+        int *val = (int *)s->pop(s);
+        assert_not_null(val);
+        assert_int_equal(*val, items[i]);
+    }
+    print_test_result(s->is_empty(s), "Stack empty after high volume pop");
+    free(items);
+    s->free(s);
+}
+
 void run_all_tests() {
     test_linked_stack_push_pop();
     test_linked_stack_empty_after_pop();
+    test_stack_top_behavior();
+    test_stack_high_volume();
 }
 
 int main() {

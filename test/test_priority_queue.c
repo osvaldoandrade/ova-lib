@@ -20,6 +20,12 @@ void test_priority_queue_empty_initially() {
     pq->free(pq);
 }
 
+void test_priority_queue_dequeue_empty() {
+    queue *pq = create_queue(QUEUE_TYPE_PRIORITY, 10, int_compare_binary);
+    print_test_result(pq->dequeue(pq) == NULL, "Dequeue on empty priority queue returns NULL");
+    pq->free(pq);
+}
+
 void test_priority_queue_enqueue_dequeue() {
     queue *pq = create_queue(QUEUE_TYPE_PRIORITY, 10, int_compare_binary);
     int data1 = 42;
@@ -53,7 +59,7 @@ void test_priority_queue_multiple_elements() {
 
 void test_priority_queue_high_volume() {
     queue *pq = create_queue(QUEUE_TYPE_PRIORITY, 10, int_compare_binary);
-    const int max_data = 10000;
+    const int max_data = 20000;  // Increased for more exhaustive coverage
     int* data_array = generate_random_int_data(max_data);
 
     for (int i = 0; i < max_data; i++) {
@@ -77,6 +83,7 @@ void test_priority_queue_high_volume() {
 
 void run_all_priority_queue_tests() {
     test_priority_queue_empty_initially();
+    test_priority_queue_dequeue_empty();
     test_priority_queue_enqueue_dequeue();
     test_priority_queue_multiple_elements();
     test_priority_queue_high_volume();

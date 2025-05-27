@@ -50,6 +50,14 @@ void test_matrix_inverse_singular() {
     m->destroy(m);
 }
 
+void test_matrix_determinant_non_square() {
+    matrix *m = create_matrix(2,3);
+    int err = 0;
+    double det = m->determinant(m, &err);
+    print_test_result(err != 0 && det == 0, "Determinant on non-square matrix errors");
+    m->destroy(m);
+}
+
 void test_vector_resize() {
     vector *v = create_vector(2);
     v->data[0] = 1; v->data[1] = 2;
@@ -65,6 +73,7 @@ void run_all_tests() {
     test_matrix_resize();
     test_matrix_copy();
     test_matrix_inverse_singular();
+    test_matrix_determinant_non_square();
     test_vector_resize();
 }
 

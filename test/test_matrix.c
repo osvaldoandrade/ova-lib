@@ -181,6 +181,23 @@ void test_matrix_inverse() {
     expected->destroy(expected);
 }
 
+void test_matrix_large_multiply() {
+    int size = 20;
+    matrix *m1 = create_matrix(size, size);
+    matrix *m2 = create_matrix(size, size);
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            m1->data[i][j] = i + j;
+            m2->data[i][j] = i * j;
+        }
+    }
+    matrix *result = m1->multiply(m1, m2);
+    print_test_result(result != NULL && result->rows == size && result->cols == size, "Large matrix multiply");
+    m1->destroy(m1);
+    m2->destroy(m2);
+    result->destroy(result);
+}
+
 void run_all_tests() {
     test_matrix_add();
     test_matrix_subtract();
@@ -188,6 +205,7 @@ void run_all_tests() {
     test_matrix_determinant();
     test_matrix_transpose();
     test_matrix_inverse();
+    test_matrix_large_multiply();
 }
 
 int main() {

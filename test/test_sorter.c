@@ -15,6 +15,15 @@ int int_compare(const void *a, const void *b) {
     return (arg1 > arg2) - (arg1 < arg2);
 }
 
+void test_sort_empty_list() {
+    list *lst = create_list(ARRAY_LIST, 1);
+    sorter *s = create_sorter(lst, int_compare);
+    s->sort(s, lst); /* should handle empty list */
+    print_test_result(lst->size(lst) == 0, "Sort on empty list safe");
+    lst->free(lst);
+    free(s);
+}
+
 
 void test_sorter_sort() {
     list *lst = create_list(ARRAY_LIST, 10);
@@ -172,6 +181,7 @@ void run_all_tests() {
     test_sorter_binary_search();
     test_sorter_copy();
     test_sorter_min_max();
+    test_sort_empty_list();
 }
 
 int main() {
