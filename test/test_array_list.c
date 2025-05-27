@@ -91,6 +91,14 @@ void test_access_out_of_bounds() {
     lst->free(lst);
 }
 
+void test_list_insert_invalid_index() {
+    list *lst = create_list(ARRAY_LIST, 2);
+    int a = 5;
+    lst->insert(lst, &a, 5); /* invalid index should not crash */
+    print_test_result(lst->size(lst) == 0, "Invalid index does not insert");
+    lst->free(lst);
+}
+
 void test_list_clear() {
     list *lst = create_list(ARRAY_LIST, 5);
     if (lst == NULL) {
@@ -138,6 +146,7 @@ void run_all_tests() {
     test_array_list_capacity_increase();
     test_insert_at_specific_index();
     test_access_out_of_bounds();
+    test_list_insert_invalid_index();
     //test_list_clear();
     //test_high_volume_array_list_insertions();
 }

@@ -38,10 +38,17 @@ void test_heap_empty_check() {
     h->free(h);
 }
 
+void test_heap_pop_empty() {
+    heap *h = create_heap(BINARY_HEAP, 2, int_compare);
+    print_test_result(h->pop(h) == NULL, "Pop on empty heap returns NULL");
+    h->free(h);
+}
+
 void run_all_heap_tests() {
     test_heap_insert_and_extract_max();
     test_heap_peek_max();
     test_heap_empty_check();
+    test_heap_pop_empty();
 }
 
 int main() {

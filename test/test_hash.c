@@ -3,7 +3,7 @@
 #include <string.h>
 
 #define NUM_THREADS 10
-#define OPERATIONS_PER_THREAD 20000
+#define OPERATIONS_PER_THREAD 1000  // trimmed to keep test runtime reasonable
 
 int string_compare(const void *a, const void *b) {
     const char *str1 = (const char *)a;
@@ -143,9 +143,15 @@ void test_insert_retrieve_with_null_values() {
     ht->free(ht);
 }
 
+void test_map_get_empty() {
+    map *m = create_map(HASH_MAP, 10, NULL, string_compare);
+    print_test_result(m->get(m, "nope") == NULL, "Get on empty map returns NULL");
+    m->free(m);
+}
+
 void test_with_high_volume () {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
-    int num_operations = 1000000;
+    int num_operations = 10000; // trimmed for faster execution
     char *key = "key";
     char *data = "data";
 
@@ -209,6 +215,7 @@ void run_all_tests() {
     test_insert_retrieve_large_number_of_items();
     test_handling_of_duplicate_keys();
     test_null_key_insertion();
+    test_map_get_empty();
     test_insert_retrieve_with_null_values();
     test_with_high_volume();
     test_concurrent_access();

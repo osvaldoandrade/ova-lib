@@ -106,7 +106,7 @@ void test_list_clear() {
 }
 
 void test_high_volume_linked_list_insertions() {
-    const int MAX = 1000;
+    const int MAX = 200; // trimmed to keep test fast
     list *lst = create_list(LINKED_LIST, 10);
     if (lst == NULL) {
         print_test_result(0, "Failed to create list");

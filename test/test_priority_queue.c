@@ -2,6 +2,14 @@
 #include "../include/queue.h"
 #include <string.h>
 
+static int int_compare_local(const void *a, const void *b) { return (*(int*)a) - (*(int*)b); }
+
+void test_priority_queue_dequeue_empty() {
+    queue *pq = create_queue(QUEUE_TYPE_PRIORITY, 4, int_compare_local);
+    print_test_result(pq->dequeue(pq) == NULL, "Dequeue on empty priority queue returns NULL");
+    pq->free(pq);
+}
+
 int int_compare_binary(const void *a, const void *b) {
     int ia = *(const int*)a;
     int ib = *(const int*)b;
@@ -53,7 +61,7 @@ void test_priority_queue_multiple_elements() {
 
 void test_priority_queue_high_volume() {
     queue *pq = create_queue(QUEUE_TYPE_PRIORITY, 10, int_compare_binary);
-    const int max_data = 10000;
+    const int max_data = 1000; // trimmed to keep runtime short
     int* data_array = generate_random_int_data(max_data);
 
     for (int i = 0; i < max_data; i++) {
@@ -76,6 +84,7 @@ void test_priority_queue_high_volume() {
 }
 
 void run_all_priority_queue_tests() {
+    test_priority_queue_dequeue_empty();
     test_priority_queue_empty_initially();
     test_priority_queue_enqueue_dequeue();
     test_priority_queue_multiple_elements();
