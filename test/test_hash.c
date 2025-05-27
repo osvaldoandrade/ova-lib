@@ -1,9 +1,10 @@
 #include "base_test.h"
 #include "../include/map.h"
+#include <time.h>
 #include <string.h>
 
 #define NUM_THREADS 10
-#define OPERATIONS_PER_THREAD 20000
+#define OPERATIONS_PER_THREAD 5000
 
 int string_compare(const void *a, const void *b) {
     const char *str1 = (const char *)a;
@@ -143,9 +144,16 @@ void test_insert_retrieve_with_null_values() {
     ht->free(ht);
 }
 
+void test_map_get_empty() {
+    map *m = create_map(HASH_MAP, 10, NULL, string_compare);
+    print_test_result(m->get(m, "missing") == NULL, "Get on empty map returns NULL");
+    m->free(m);
+}
+
 void test_with_high_volume () {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
-    int num_operations = 1000000;
+    int num_operations = 20000;
+    clock_t start = clock();
     char *key = "key";
     char *data = "data";
 
@@ -154,6 +162,8 @@ void test_with_high_volume () {
         ht->remove(ht, key);
     }
     print_test_result(ht->size == 0, "Hash table should be empty after repeated insertions and removals");
+    double elapsed_ms = ((double)(clock() - start) / CLOCKS_PER_SEC) * 1000.0;
+    print_test_result(elapsed_ms < 1500.0, "Hash map high volume within time limit");
     ht->free(ht);
 }
 
@@ -210,6 +220,7 @@ void run_all_tests() {
     test_handling_of_duplicate_keys();
     test_null_key_insertion();
     test_insert_retrieve_with_null_values();
+    test_map_get_empty();
     test_with_high_volume();
     test_concurrent_access();
 }

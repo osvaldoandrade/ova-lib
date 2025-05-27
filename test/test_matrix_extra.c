@@ -1,5 +1,6 @@
 #include "../include/matrix.h"
 #include "base_test.h"
+#include <time.h>
 
 #define FLOAT_TOL 0.0001
 
@@ -50,6 +51,34 @@ void test_matrix_inverse_singular() {
     m->destroy(m);
 }
 
+void test_matrix_determinant_non_square() {
+    matrix *m = create_matrix(2,3);
+    int err = 0;
+    double d = m->determinant(m, &err);
+    print_test_result(err != 0 && d == 0, "determinant on non square matrix errors");
+    m->destroy(m);
+}
+
+void test_large_matrix_multiply() {
+    const int N = 100;
+    matrix *a = create_matrix(N, N);
+    matrix *b = create_matrix(N, N);
+    for(int i=0;i<N;i++){
+        for(int j=0;j<N;j++){
+            a->data[i][j] = 1;
+            b->data[i][j] = 1;
+        }
+    }
+    clock_t start = clock();
+    matrix *c = a->multiply(a, b);
+    double elapsed_ms = ((double)(clock() - start) / CLOCKS_PER_SEC) * 1000.0;
+    int pass = (c != NULL && elapsed_ms < 1500.0);
+    print_test_result(pass, "Large matrix multiply within time limit");
+    if(c) c->destroy(c);
+    a->destroy(a);
+    b->destroy(b);
+}
+
 void test_vector_resize() {
     vector *v = create_vector(2);
     v->data[0] = 1; v->data[1] = 2;
@@ -65,6 +94,8 @@ void run_all_tests() {
     test_matrix_resize();
     test_matrix_copy();
     test_matrix_inverse_singular();
+    test_matrix_determinant_non_square();
+    test_large_matrix_multiply();
     test_vector_resize();
 }
 
