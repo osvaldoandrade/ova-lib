@@ -77,10 +77,12 @@ typedef struct list {
  * The list can be of type ARRAY_LIST, LINKED_LIST, or SORTED_LIST.
  *
  * @param type The type of list to be created.
- * @param initial_capacity The initial capacity of the list.
+ * @param initial_capacity The initial capacity of the list when applicable.
+ * @param cmp Comparator used to keep elements ordered for SORTED_LIST.
+ *            It is ignored for other list types and may be NULL in those cases.
  * @return A pointer to the newly created list.
  *         If the specified list type is invalid, NULL is returned.
  */
-list *create_list(ListType type, int initial_capacity);
+list *create_list(ListType type, int initial_capacity, comparator cmp);
 
 #endif // LIST_H

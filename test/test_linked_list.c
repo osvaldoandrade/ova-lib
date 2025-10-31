@@ -3,7 +3,7 @@
 #include <time.h>
 
 void test_linked_list_insert_and_get() {
-    list *lst = create_list(LINKED_LIST, 10);
+    list *lst = create_list(LINKED_LIST, 10, NULL);
     int items_to_test[] = {10, 20, 30, 40, 50};
     int num_items = sizeof(items_to_test) / sizeof(items_to_test[0]);
 
@@ -25,7 +25,7 @@ void test_linked_list_insert_and_get() {
 }
 
 void test_linked_list_remove() {
-    list *lst = create_list(LINKED_LIST, 10);
+    list *lst = create_list(LINKED_LIST, 10, NULL);
     int items[] = {5, 15, 25, 35};
     for (int i = 0; i < 4; i++) {
         lst->insert(lst, &items[i], i);
@@ -40,7 +40,7 @@ void test_linked_list_remove() {
 }
 
 void test_linked_list_capacity_increase() {
-    list *lst = create_list(LINKED_LIST, 2);
+    list *lst = create_list(LINKED_LIST, 2, NULL);
     int items[] = {10, 20, 30};
 
     for (int i = 0; i < 3; i++) {
@@ -60,7 +60,7 @@ void test_linked_list_capacity_increase() {
     lst->free(lst);
 }
 void test_insert_at_specific_index() {
-    list *lst = create_list(LINKED_LIST, 5);
+    list *lst = create_list(LINKED_LIST, 5, NULL);
     int initial_items[] = {10, 20, 40, 50};
     int item_to_insert = 30;
     int insert_index = 2;
@@ -79,7 +79,7 @@ void test_insert_at_specific_index() {
 }
 
 void test_access_out_of_bounds() {
-    list *lst = create_list(LINKED_LIST, 3);
+    list *lst = create_list(LINKED_LIST, 3, NULL);
     int items[] = {10, 20, 30};
 
     for (int i = 0; i < 3; i++) {
@@ -92,7 +92,7 @@ void test_access_out_of_bounds() {
 }
 
 void test_invalid_index_insertion() {
-    list *lst = create_list(LINKED_LIST, 2);
+    list *lst = create_list(LINKED_LIST, 2, NULL);
     int v = 3;
     lst->insert(lst, &v, 4);
     print_test_result(lst->size(lst) == 0, "Linked list invalid index insert does nothing");
@@ -100,7 +100,7 @@ void test_invalid_index_insertion() {
 }
 
 void test_list_clear() {
-    list *lst = create_list(LINKED_LIST, 5);
+    list *lst = create_list(LINKED_LIST, 5, NULL);
     if (lst == NULL) {
         print_test_result(0, "Failed to create list");
         return;
@@ -117,7 +117,7 @@ void test_list_clear() {
 void test_high_volume_linked_list_insertions() {
     const int MAX = 1000;
     clock_t start = clock();
-    list *lst = create_list(LINKED_LIST, 10);
+    list *lst = create_list(LINKED_LIST, 10, NULL);
     if (lst == NULL) {
         print_test_result(0, "Failed to create list");
         return;
