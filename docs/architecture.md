@@ -1,32 +1,19 @@
 # Architecture
 
 ## Repository layout
-- `include/` exposes public headers for containers, matrices, sorting, queues, heaps, stacks, and the LP solver orchestration. `ova.h` aggregates the exports so downstream projects can include a single header.
-- `src/` mirrors the public API by module. Implementations hide their internal structs in translation units to keep ABI stable and allow swapping strategies without touching callers.
-- `test/` hosts the unit executables wired through CTest.
-- `CMakeLists.txt` builds both shared and static targets from the same object files and stages headers into the build tree for installation.
+The repository divides public interfaces and internal logic by mirroring module boundaries. Public headers live in `include/`, where containers, matrix helpers, sorting utilities, queues, heaps, stacks, and the linear-programming orchestration are exposed. A single umbrella header, `ova.h`, re-exports those declarations so downstream projects can adopt the library with a single include. Implementation files in `src/` shadow the public API while hiding concrete structures within translation units, which keeps the ABI stable and makes it possible to swap strategies without touching callers. Tests reside in `test/`, each compiled into a dedicated executable that CTest discovers automatically. The top-level `CMakeLists.txt` compiles both shared and static variants from a shared object library and stages headers into the build tree for installation.
 
 ## Build pipeline
-1. Configure with CMake ≥3.10. The script sets C11 mode, enables position independent code for shared builds, and surfaces options for toggling sanitizers during local debugging.
-2. `cmake --build` produces `libova_lib.so` and `libova_lib.a` plus all module-focused unit tests under `${CMAKE_BINARY_DIR}/test`.
-3. `ctest --output-on-failure` executes each module test binary; failures bubble up through CI because of the `ENABLE_TESTING` directive.
-4. `cmake --install` copies headers into `${CMAKE_INSTALL_PREFIX}/include/ova_lib` and libraries into the matching `lib` directory. The generated install script honors DESTDIR for package managers.
+Building starts by configuring the project with CMake 3.10 or newer. The configuration script enforces C11 mode, flips on position-independent code when shared libraries are requested, and exposes options that enable sanitizers for local debugging. A subsequent `cmake --build` invocation produces `libova_lib.so`, `libova_lib.a`, and module-focused unit tests under `${CMAKE_BINARY_DIR}/test`. Running `ctest --output-on-failure` executes each unit binary and propagates failures back to continuous integration because testing is wired in through `ENABLE_TESTING`. Installation relies on `cmake --install`, which copies headers into `${CMAKE_INSTALL_PREFIX}/include/ova_lib` and libraries into the matching `lib` directory while honoring `DESTDIR` so package managers can stage files into a sandbox.
 
 ## Memory ownership
-- Every abstract handle returned to users (`list`, `heap`, `queue`, `map`, `matrix`, `sorter`, `lp_problem`, `solver`) owns only its internal buffers. Payload pointers remain caller-managed to avoid double frees and to make embedding feasible.
-- Factories allocate opaque `impl` structs and assign function pointers immediately. Destructors validate internal pointers before freeing memory to remain resilient to double-destroy attempts (for example, `matrix_destroy` iterates rows before freeing the matrix wrapper).
-- Dynamic buffers grow exponentially where throughput matters: arrays double capacity, heaps double their storage, and hash maps double the bucket array when the load factor exceeds 0.75.
+Every handle returned to callers—lists, heaps, queues, maps, matrices, sorters, linear-programming problems, and solvers—owns only its internal buffers. Payload pointers stay under the caller’s control to avoid double frees and to support embedded deployments. Factory functions allocate opaque implementation structures, wire their function tables immediately, and guard against double-destroy attempts by validating internal pointers before releasing memory. Dynamic buffers grow geometrically when throughput matters: arrays and heaps double capacity during expansion, and hash maps double their bucket array when the load factor rises above 0.75.
 
 ## Error handling and invariants
-- Constructors bail out early on allocation failures, cleaning partially built structures (e.g., matrix creation unwinds row allocations on failure).
-- Many operations validate indices and bounds. Array-backed containers guard against negative indexes and size overflows before invoking `memmove`.
-- Solver routines check for NULL handles before progressing. The simplex driver returns `INFEASIBLE` when inputs are incomplete, and the LP problem helpers refuse to mutate problems whose backing matrices failed to resize.
+Constructors abort early when allocations fail and clean up partially built structures before returning. Array-backed containers validate indices and bounds before performing `memmove` so invalid accesses cannot corrupt memory. Solver routines reject NULL handles before progressing. The simplex driver reports `INFEASIBLE` whenever required inputs are missing, and the linear-programming helpers refuse to mutate problems whose backing matrices could not resize correctly.
 
 ## Thread safety model
-- All components are single-threaded by default. The hash map factory is the only API that conditionally allocates a `pthread_mutex_t`, turning on coarse-grained locking around `put`, `get`, and `remove` when `map_type` is `HASH_TABLE`.
-- Iteration APIs are intentionally absent to avoid exposing unsafe traversal semantics; clients iterate by re-hashing keys or using container-specific visitors they implement externally.
+Components are single-threaded unless stated otherwise. The hash map factory optionally allocates a `pthread_mutex_t` when the requested `map_type` is `HASH_TABLE`; the resulting lock wraps `put`, `get`, and `remove` to provide coarse-grained protection. Iteration APIs are intentionally absent because exposing internal traversal semantics would invite data races in concurrent scenarios. Clients that need iteration perform their own re-hashing or implement visitors tailored to their use case.
 
 ## Extensibility surface
-- All container types expose a uniform vtable (function pointer table) so alternative implementations can be injected without recompiling dependents. For example, `create_heap` can return either a binary heap or a Fibonacci heap while the consumer calls `put`, `pop`, `peek`, and `size` generically.
-- Solver extension points include placeholder enums for Lagrangean relaxation, branch-and-bound, and branch-and-cut. Stubs compile but return NULL until their algorithms are provided, ensuring the public API is forward-compatible.
-- Hash functions are pluggable through the `hash_func_t` typedef; users can select from the built-ins or pass a custom function when creating the map.
+Container types expose uniform vtables so alternative implementations can be injected without recompiling dependents. For example, `create_heap` can yield a binary heap today while future versions can introduce a Fibonacci heap under the same interface, leaving callers to invoke `put`, `pop`, `peek`, and `size` without modification. Solver extension points include placeholder enums for Lagrangean relaxation, branch-and-bound, and branch-and-cut. The stubs compile yet return NULL until full algorithms arrive, preserving forward compatibility. Hash functions remain pluggable through the `hash_func_t` typedef, allowing applications to pick one of the built-in strategies or supply their own routine during map creation.
