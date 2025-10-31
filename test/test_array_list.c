@@ -2,6 +2,8 @@
 #include "../include/list.h"
 #include <time.h>
 
+extern size_t array_list_active_buffer_count(void);
+
 void test_array_list_insert_and_get() {
     list *lst = create_list(ARRAY_LIST, 10, NULL);
     int items_to_test[] = {10, 20, 30, 40, 50};
@@ -116,6 +118,26 @@ void test_list_clear() {
     print_test_result(1, "List should be empty after clear");  // Simplificando a verificação para sempre passar
 }
 
+void test_array_list_releases_internal_buffer() {
+    size_t before = array_list_active_buffer_count();
+    list *lst = create_list(ARRAY_LIST, 4);
+
+    if (lst == NULL) {
+        print_test_result(0, "Failed to create list for leak test");
+        return;
+    }
+
+    int values[] = {1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        lst->insert(lst, &values[i], i);
+    }
+
+    lst->free(lst);
+
+    size_t after = array_list_active_buffer_count();
+    print_test_result(after == before, "Array List should release internal buffer on free");
+}
+
 void test_high_volume_linked_list_insertions() {
     const int MAX = 1000;
     clock_t start = clock();
@@ -153,6 +175,7 @@ void run_all_tests() {
     test_access_out_of_bounds();
     test_insert_invalid_index();
     test_high_volume_linked_list_insertions();
+    test_array_list_releases_internal_buffer();
     //test_list_clear();
     //test_high_volume_array_list_insertions();
 }
