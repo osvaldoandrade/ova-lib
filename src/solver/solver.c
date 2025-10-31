@@ -35,6 +35,11 @@ lp_problem *create_problem(int numVariables, int numConstraints) {
     return NULL;
   }
 
+  // Ensure optional fields are initialized to safe defaults
+  problem->solution = NULL;
+  problem->z_value = 0.0;
+  problem->type = PROBLEM_MAX;
+
   // Assign utility functions
   problem->addConstraint = solver_add_constraint;
   problem->setObjective = solver_set_objective;

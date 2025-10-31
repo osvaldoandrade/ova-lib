@@ -47,6 +47,35 @@ void test_simplex_solver1() {
   }
 }
 
+void test_solver_initializes_solution_vector() {
+  int numVariables = 2;
+  int numConstraints = 2;
+  lp_problem *problem = create_problem(numVariables, numConstraints);
+
+  double objective_coeffs[] = {1, 1};
+  problem->setObjective(problem, objective_coeffs, PROBLEM_MAX);
+
+  double constraint1[] = {1, 0};
+  double constraint2[] = {0, 1};
+  problem->addConstraint(problem, constraint1, 1);
+  problem->addConstraint(problem, constraint2, 1);
+
+  solver *mySolver = create_solver(SOLVER_SIMPLEX);
+  matrix *solution = NULL;
+  int result = mySolver->solve(problem, &solution);
+
+  if (result == OPTIMAL && problem->solution != NULL) {
+    printf("Solver initialized solution vector successfully. x1 = %f, x2 = %f, z = %f\n",
+           problem->solution[0], problem->solution[1], problem->z_value);
+  } else {
+    printf("Solver failed to initialize solution vector.\n");
+  }
+
+  if (solution) {
+    solution->destroy(solution);
+  }
+}
+
 void test_simplex_solver2() {
   int numVariables = 3;
   int numConstraints = 3;
@@ -79,6 +108,7 @@ void test_simplex_solver2() {
 }
 
 int main() {
+  test_solver_initializes_solution_vector();
   test_simplex_solver1();
   test_simplex_solver2();
   return 0;
