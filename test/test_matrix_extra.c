@@ -1,5 +1,6 @@
 #include "../include/matrix.h"
 #include "base_test.h"
+#include <math.h>
 #include <time.h>
 
 #define FLOAT_TOL 0.0001
@@ -23,11 +24,52 @@ void test_matrix_resize() {
     matrix *m = create_matrix(2, 2);
     m->data[0][0] = 1; m->data[0][1] = 2;
     m->data[1][0] = 3; m->data[1][1] = 4;
-    m->resize(m, 3, 3);
-    int passed = (m->rows == 3 && m->cols == 3 &&
+
+    int result = m->resize(m, 3, 3);
+    int passed = (result == 0 &&
+                  m->rows == 3 && m->cols == 3 &&
                   m->data[0][0] == 1 && m->data[1][1] == 4 &&
                   fabs(m->data[2][2]) < FLOAT_TOL);
     print_test_result(passed, "matrix_resize should preserve data and update size");
+    m->destroy(m);
+}
+
+void test_matrix_resize_shrink_and_expand() {
+    matrix *m = create_matrix(3, 3);
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            m->data[i][j] = (double)(i * 3 + j + 1);
+        }
+    }
+
+    int shrink_result = m->resize(m, 2, 2);
+    int shrink_ok = (shrink_result == 0 && m->rows == 2 && m->cols == 2 &&
+                     fabs(m->data[0][0] - 1.0) < FLOAT_TOL &&
+                     fabs(m->data[1][1] - 5.0) < FLOAT_TOL);
+
+    int expand_result = shrink_ok ? m->resize(m, 4, 4) : -1;
+    int expand_ok = (shrink_ok && expand_result == 0 &&
+                     m->rows == 4 && m->cols == 4 &&
+                     fabs(m->data[0][0] - 1.0) < FLOAT_TOL &&
+                     fabs(m->data[1][1] - 5.0) < FLOAT_TOL &&
+                     fabs(m->data[3][3]) < FLOAT_TOL);
+
+    print_test_result(shrink_ok && expand_ok,
+                      "matrix_resize should support shrinking and expanding safely");
+    m->destroy(m);
+}
+
+void test_matrix_resize_failure_keeps_state() {
+    matrix *m = create_matrix(2, 2);
+    m->data[0][0] = 7; m->data[0][1] = 8;
+    m->data[1][0] = 9; m->data[1][1] = 10;
+
+    int result = m->resize(m, 0, 3);
+    int passed = (result != 0 &&
+                  m->rows == 2 && m->cols == 2 &&
+                  fabs(m->data[0][0] - 7.0) < FLOAT_TOL &&
+                  fabs(m->data[1][1] - 10.0) < FLOAT_TOL);
+    print_test_result(passed, "matrix_resize failure should not alter matrix state");
     m->destroy(m);
 }
 
@@ -92,6 +134,8 @@ void test_vector_resize() {
 void run_all_tests() {
     test_create_matrix_invalid();
     test_matrix_resize();
+    test_matrix_resize_shrink_and_expand();
+    test_matrix_resize_failure_keeps_state();
     test_matrix_copy();
     test_matrix_inverse_singular();
     test_matrix_determinant_non_square();
