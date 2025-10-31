@@ -120,7 +120,7 @@ void test_list_clear() {
 
 void test_array_list_releases_internal_buffer() {
     size_t before = array_list_active_buffer_count();
-    list *lst = create_list(ARRAY_LIST, 4);
+    list *lst = create_list(ARRAY_LIST, 4, NULL);
 
     if (lst == NULL) {
         print_test_result(0, "Failed to create list for leak test");
