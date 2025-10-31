@@ -117,7 +117,7 @@ typedef struct matrix {
     * @param newRows The new number of rows for the matrix.
     * @param newCols The new number of columns for the matrix.
     */
-    void (*resize)(struct matrix *self, int newRows, int newCols);
+    int (*resize)(struct matrix *self, int newRows, int newCols);
 
     struct matrix* (*copy)(struct matrix *self);
 } matrix;

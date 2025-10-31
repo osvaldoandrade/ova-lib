@@ -78,7 +78,10 @@ static void solver_add_constraint(lp_problem *self, double *coefficients, double
   int currentRows = self->constraints->rows;
 
   // Resize the matrix to accommodate one more constraint
-  self->constraints->resize(self->constraints, currentRows + 1, self->constraints->cols);
+  if (self->constraints->resize(self->constraints, currentRows + 1,
+                                self->constraints->cols) != 0) {
+    return;
+  }
 
   // Set the new constraint's coefficients
   for (int i = 0; i < self->constraints->cols; i++) {

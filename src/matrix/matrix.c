@@ -13,7 +13,7 @@ matrix *matrix_multiply(matrix *self, const matrix *other);
 double matrix_determinant(matrix *self, int *error);
 matrix *matrix_transpose(matrix *self);
 matrix *matrix_inverse(matrix *self);
-void matrix_resize(matrix *self, int newRows, int newCols);
+int matrix_resize(matrix *self, int newRows, int newCols);
 matrix *matrix_copy(matrix *self);
 void matrix_destroy(matrix *self);
 void matrix_print(const matrix *self);
@@ -335,41 +335,71 @@ matrix *matrix_inverse(matrix *self) {
     return inverse;
 }
 
-void matrix_resize(matrix *self, int newRows, int newCols) {
-  if (self == NULL) return;
-
-  // Free rows that will be discarded if the matrix is shrinking
-  for (int i = newRows; i < self->rows; i++) {
-    free(self->data[i]);
+int matrix_resize(matrix *self, int newRows, int newCols) {
+  if (self == NULL || newRows <= 0 || newCols <= 0) {
+    return -1;
   }
 
-  // Resize rows pointer array
-  double **newData = realloc(self->data, newRows * sizeof(double *));
-  if (newData == NULL) return; // Handle realloc failure
+  if (self->rows == newRows && self->cols == newCols) {
+    return 0;
+  }
+
+  double **oldData = self->data;
+  int oldRows = self->rows;
+  int oldCols = self->cols;
+  int minRows = oldRows < newRows ? oldRows : newRows;
+  int copyCols = oldCols < newCols ? oldCols : newCols;
+
+  double **newData = malloc(newRows * sizeof(double *));
+  if (newData == NULL) {
+    return -1;
+  }
+
+  for (int i = 0; i < newRows; i++) {
+    newData[i] = NULL;
+  }
+
+  for (int i = 0; i < minRows; i++) {
+    double *newRow = malloc(newCols * sizeof(double));
+    if (newRow == NULL) {
+      goto resize_failure;
+    }
+
+    if (copyCols > 0) {
+      memcpy(newRow, oldData[i], copyCols * sizeof(double));
+    }
+    for (int j = copyCols; j < newCols; j++) {
+      newRow[j] = 0.0;
+    }
+
+    newData[i] = newRow;
+  }
+
+  for (int i = minRows; i < newRows; i++) {
+    double *newRow = calloc(newCols, sizeof(double));
+    if (newRow == NULL) {
+      goto resize_failure;
+    }
+    newData[i] = newRow;
+  }
+
+  for (int i = 0; i < oldRows; i++) {
+    free(oldData[i]);
+  }
+  free(oldData);
 
   self->data = newData;
-
-  // Adjust each row
-  for (int i = 0; i < newRows; i++) {
-    if (i < self->rows) {
-      // Resize existing rows
-      double *newRow = realloc(self->data[i], newCols * sizeof(double));
-      if (newRow == NULL) return; // Handle realloc failure
-      self->data[i] = newRow;
-    } else {
-      // Initialize new rows
-      self->data[i] = malloc(newCols * sizeof(double));
-      if (self->data[i] == NULL) return; // Handle malloc failure
-      // Initialize the new elements to zero
-      for (int j = 0; j < newCols; j++) {
-        self->data[i][j] = 0.0;
-      }
-    }
-  }
-
-  // Update dimensions
   self->rows = newRows;
   self->cols = newCols;
+
+  return 0;
+
+resize_failure:
+  for (int i = 0; i < newRows; i++) {
+    free(newData[i]);
+  }
+  free(newData);
+  return -1;
 }
 
 matrix *matrix_copy(matrix *self) {
