@@ -8,6 +8,8 @@ typedef struct {
     int capacity;
 } array_list_impl;
 
+static size_t active_item_buffers = 0;
+
 static void array_list_insert(list *self, void *item, int index);
 
 static void *array_list_get(list *self, int index);
@@ -25,6 +27,7 @@ list *create_array_list(int initial_capacity) {
     if (lst && impl && (impl->items = malloc(initial_capacity * sizeof(void *)))) {
         impl->capacity = initial_capacity;
         impl->size = 0;
+        active_item_buffers++;
 
         lst->impl = impl;
         lst->insert = array_list_insert;
@@ -84,9 +87,23 @@ static int array_list_size(const list *self) {
 }
 
 static void array_list_free(list *self) {
-    if (self->impl) {
-        free(self->impl);
-        self->impl = NULL;
+    if (self) {
+        array_list_impl *impl = (array_list_impl *) self->impl;
+        if (impl) {
+            if (impl->items) {
+                free(impl->items);
+                impl->items = NULL;
+                if (active_item_buffers > 0) {
+                    active_item_buffers--;
+                }
+            }
+            free(impl);
+            self->impl = NULL;
+        }
+        free(self);
     }
-    free(self);
+}
+
+size_t array_list_active_buffer_count(void) {
+    return active_item_buffers;
 }
