@@ -18,7 +18,7 @@ int int_compare(const void *a, const void *b) {
 
 
 void test_sorter_sort() {
-    list *lst = create_list(ARRAY_LIST, 10);
+    list *lst = create_list(ARRAY_LIST, 10, NULL);
     int items[] = {50, 40, 30, 20, 10};
     for (int i = 0; i < 5; i++) {
         lst->insert(lst, &items[i], i);
@@ -43,7 +43,7 @@ void test_sorter_sort() {
 }
 
 void test_sort_empty_list() {
-    list *lst = create_list(ARRAY_LIST, 1);
+    list *lst = create_list(ARRAY_LIST, 1, NULL);
     sorter *s = create_sorter(lst, int_compare);
     s->sort(s, lst);
     print_test_result(lst->size(lst) == 0, "Sort on empty list safe");
@@ -52,7 +52,7 @@ void test_sort_empty_list() {
 }
 
 void test_sorter_shuffle() {
-    list *lst = create_list(ARRAY_LIST, 10);
+    list *lst = create_list(ARRAY_LIST, 10, NULL);
     int items[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     for (int i = 0; i < 10; i++) {
         lst->insert(lst, &items[i], i);
@@ -76,7 +76,7 @@ void test_sorter_shuffle() {
 }
 
 void test_sorter_reverse() {
-    list *lst = create_list(ARRAY_LIST, 5);
+    list *lst = create_list(ARRAY_LIST, 5, NULL);
     int items[] = {10, 20, 30, 40, 50};
     for (int i = 0; i < 5; i++) {
         lst->insert(lst, &items[i], i);
@@ -101,7 +101,7 @@ void test_sorter_reverse() {
 }
 
 void test_sorter_binary_search() {
-    list *lst = create_list(ARRAY_LIST, 10);
+    list *lst = create_list(ARRAY_LIST, 10, NULL);
     int items[] = {50, 40, 30, 20, 10, 60, 70, 80, 90, 100};
     for (int i = 0; i < 10; i++) {
         lst->insert(lst, &items[i], i);
@@ -120,7 +120,7 @@ void test_sorter_binary_search() {
 
 void test_sorter_large_sort() {
     const int MAX = 1000;
-    list *lst = create_list(ARRAY_LIST, MAX);
+    list *lst = create_list(ARRAY_LIST, MAX, NULL);
     for(int i=MAX-1;i>=0;i--){
         lst->insert(lst, &i, 0);
     }
@@ -140,8 +140,8 @@ void test_sorter_large_sort() {
 }
 
 void test_sorter_copy() {
-    list *src = create_list(ARRAY_LIST, 5);
-    list *dest = create_list(ARRAY_LIST, 5);
+    list *src = create_list(ARRAY_LIST, 5, NULL);
+    list *dest = create_list(ARRAY_LIST, 5, NULL);
     int items[] = {10, 20, 30, 40, 50};
     for (int i = 0; i < 5; i++) {
         src->insert(src, &items[i], i);
@@ -167,7 +167,7 @@ void test_sorter_copy() {
 }
 
 void test_sorter_min_max() {
-    list *lst = create_list(ARRAY_LIST, 5);
+    list *lst = create_list(ARRAY_LIST, 5, NULL);
     int items[] = {10, 20, 30, 40, 50};
     for (int i = 0; i < 5; i++) {
         lst->insert(lst, &items[i], i);

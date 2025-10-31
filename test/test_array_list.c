@@ -3,7 +3,7 @@
 #include <time.h>
 
 void test_array_list_insert_and_get() {
-    list *lst = create_list(ARRAY_LIST, 10);
+    list *lst = create_list(ARRAY_LIST, 10, NULL);
     int items_to_test[] = {10, 20, 30, 40, 50};
     int num_items = sizeof(items_to_test) / sizeof(items_to_test[0]);
 
@@ -25,7 +25,7 @@ void test_array_list_insert_and_get() {
 }
 
 void test_array_list_remove() {
-    list *lst = create_list(ARRAY_LIST, 10);
+    list *lst = create_list(ARRAY_LIST, 10, NULL);
     int items[] = {5, 15, 25, 35};
     for (int i = 0; i < 4; i++) {
         lst->insert(lst, &items[i], i);
@@ -40,7 +40,7 @@ void test_array_list_remove() {
 }
 
 void test_array_list_capacity_increase() {
-    list *lst = create_list(ARRAY_LIST, 2);
+    list *lst = create_list(ARRAY_LIST, 2, NULL);
     int items[] = {10, 20, 30};  // Mais itens do que a capacidade inicial
 
     for (int i = 0; i < 3; i++) {
@@ -60,7 +60,7 @@ void test_array_list_capacity_increase() {
     lst->free(lst);
 }
 void test_insert_at_specific_index() {
-    list *lst = create_list(ARRAY_LIST, 5);
+    list *lst = create_list(ARRAY_LIST, 5, NULL);
     int initial_items[] = {10, 20, 40, 50};
     int item_to_insert = 30;
     int insert_index = 2;  // Deve inserir entre 20 e 40
@@ -79,7 +79,7 @@ void test_insert_at_specific_index() {
 }
 
 void test_access_out_of_bounds() {
-    list *lst = create_list(ARRAY_LIST, 3);
+    list *lst = create_list(ARRAY_LIST, 3, NULL);
     int items[] = {10, 20, 30};
 
     for (int i = 0; i < 3; i++) {
@@ -93,7 +93,7 @@ void test_access_out_of_bounds() {
 }
 
 void test_insert_invalid_index() {
-    list *lst = create_list(ARRAY_LIST, 2);
+    list *lst = create_list(ARRAY_LIST, 2, NULL);
     int val = 5;
     lst->insert(lst, &val, 5); /* invalid index */
     print_test_result(lst->size(lst) == 0, "Insert invalid index should not modify list");
@@ -101,7 +101,7 @@ void test_insert_invalid_index() {
 }
 
 void test_list_clear() {
-    list *lst = create_list(ARRAY_LIST, 5);
+    list *lst = create_list(ARRAY_LIST, 5, NULL);
     if (lst == NULL) {
         print_test_result(0, "Failed to create list");
         return;
@@ -119,7 +119,7 @@ void test_list_clear() {
 void test_high_volume_linked_list_insertions() {
     const int MAX = 1000;
     clock_t start = clock();
-    list *lst = create_list(ARRAY_LIST, 10);
+    list *lst = create_list(ARRAY_LIST, 10, NULL);
     if (lst == NULL) {
         print_test_result(0, "Failed to create list");
         return;

@@ -14,11 +14,11 @@ stack *create_stack(StackType type) {
     if (!stk) return NULL;
 
     if (type == ARRAY_STACK) {
-        stk->impl = create_list(ARRAY_LIST, 10);
+        stk->impl = create_list(ARRAY_LIST, 10, NULL);
         stk->push = array_stack_push;
         stk->pop = array_stack_pop;
     } else if (type == LINKED_STACK) {
-        stk->impl = create_list(LINKED_LIST, 10);
+        stk->impl = create_list(LINKED_LIST, 10, NULL);
         stk->push = linked_stack_push;
         stk->pop = linked_stack_pop;
     } else {

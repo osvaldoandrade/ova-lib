@@ -82,6 +82,33 @@ int main(void) {
 }
 ```
 
+### Sorted lists
+
+Sorted lists preserve ordering on every insertion by relying on a user supplied comparator. Elements are stored as opaque
+`void*` pointers, allowing custom data types to be stored as long as the comparator understands how to order them.
+
+```c
+#include "list.h"
+
+int int_cmp(const void *a, const void *b) {
+    const int lhs = *(const int *)a;
+    const int rhs = *(const int *)b;
+    return (lhs > rhs) - (lhs < rhs);
+}
+
+int main(void) {
+    list *sorted = create_list(SORTED_LIST, 8, int_cmp);
+    int values[] = {4, 1, 3};
+    for (int i = 0; i < 3; ++i) {
+        sorted->insert(sorted, &values[i], i); /* index is ignored */
+    }
+
+    int *smallest = (int *)sorted->get(sorted, 0); /* returns pointer to value 1 */
+    sorted->free(sorted);
+    return smallest && *smallest == 1 ? 0 : 1;
+}
+```
+
 ### Matrices
 
 Working with matrices:
