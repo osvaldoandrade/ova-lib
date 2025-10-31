@@ -41,16 +41,21 @@ static void consolidate(fibonacci_heap *h) {
     if (!start) return;
 
     fib_node *w = start;
+    int roots = 0;
     do {
-        fib_node *next = w->right;
+        roots++;
+        w = w->right;
+    } while (w != start);
 
-        if (!w || !w->data) {
-            w = next;
+    w = start;
+    while (roots-- > 0) {
+        fib_node *x = w;
+        w = w->right;
+
+        if (!x || !x->data) {
             continue;
         }
 
-        fib_node *x = w;
-        w = next;
         int d = x->degree;
 
         while (d < D && A[d]) {
@@ -73,7 +78,7 @@ static void consolidate(fibonacci_heap *h) {
         if (d < D) {
             A[d] = x;
         }
-    } while (w != start);
+    }
 
     h->min = NULL;
     for (int i = 0; i < D; i++) {
@@ -118,18 +123,23 @@ static void *fibonacci_heap_pop(heap *self) {
     fib_node *z = h->min;
     if (z) {
         if (z->child) {
-            fib_node *x = z->child;
+            fib_node *start = z->child;
+            fib_node *x = start;
             do {
                 fib_node *next = x->right;
+
                 x->left->right = x->right;
                 x->right->left = x->left;
+
                 x->left = h->min;
                 x->right = h->min->right;
+                h->min->right->left = x;
                 h->min->right = x;
-                x->right->left = x;
                 x->parent = NULL;
+
                 x = next;
-            } while (x != z->child);
+            } while (x != start);
+            z->child = NULL;
         }
         z->left->right = z->right;
         z->right->left = z->left;
