@@ -13,6 +13,17 @@ ova-lib is a lightweight collection of data structures and algorithms written in
 - **Sorting**: assorted comparison based sorting routines
 - **Solver**: utilities such as a simplex implementation
 
+## Documentation
+
+- Refer to the technical notes under `docs/` for deep dives into each subsystem:
+
+  - [Documentation home](docs/README.md)
+  - [Architecture overview](docs/architecture.md)
+  - [Container implementations, hashing strategies, and heaps](docs/containers.md)
+- [Matrix and vector operations](docs/matrix.md)
+- [Simplex solver internals](docs/solver-simplex.md)
+- [Sorting helpers and algorithms](docs/sorting.md)
+
 ## Building
 
 This project uses CMake (>=3.10). Build the project with:
