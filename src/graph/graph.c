@@ -3,17 +3,28 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+
+/* Maximum vertex capacity to prevent overflow in calculations.
+ * For adjacency matrix: cap * cap * sizeof(double) must fit in size_t.
+ * Using a conservative limit that works on both 32-bit and 64-bit systems. */
+#define GRAPH_MAX_CAPACITY 46340  /* sqrt(INT_MAX) rounded down */
 
 static int clamp_initial_capacity(int requested) {
     return requested > 0 ? requested : 8;
 }
 
 static int is_valid_vertex_id(int vertex_id) {
-    return vertex_id >= 0;
+    return vertex_id >= 0 && vertex_id < GRAPH_MAX_CAPACITY;
 }
 
 static int graph_init_storage(graph *g, int initial_capacity) {
     int cap = clamp_initial_capacity(initial_capacity);
+    
+    /* Ensure cap doesn't exceed max capacity */
+    if (cap > GRAPH_MAX_CAPACITY) {
+        cap = GRAPH_MAX_CAPACITY;
+    }
 
     g->present = calloc((size_t)cap, sizeof(bool));
     g->vertex_ptrs = calloc((size_t)cap, sizeof(int *));
@@ -39,7 +50,9 @@ static int graph_init_storage(graph *g, int initial_capacity) {
             return 0;
         }
     } else if (g->rep == GRAPH_ADJACENCY_MATRIX) {
-        g->adj_matrix = malloc((size_t)cap * (size_t)cap * sizeof(double));
+        /* Safe multiplication: cap is <= GRAPH_MAX_CAPACITY */
+        size_t matrix_size = (size_t)cap * (size_t)cap;
+        g->adj_matrix = malloc(matrix_size * sizeof(double));
         if (!g->adj_matrix) {
             free(g->present);
             free(g->vertex_ptrs);
@@ -47,7 +60,8 @@ static int graph_init_storage(graph *g, int initial_capacity) {
             g->vertex_ptrs = NULL;
             return 0;
         }
-        for (int i = 0; i < cap * cap; i++) {
+        /* Use size_t for the loop to avoid overflow */
+        for (size_t i = 0; i < matrix_size; i++) {
             g->adj_matrix[i] = GRAPH_NO_EDGE;
         }
     }
@@ -61,6 +75,7 @@ void graph_ensure_capacity(graph *g, int vertex_id) {
         return;
     }
 
+    /* vertex_id + 1 is safe since is_valid_vertex_id ensures vertex_id < GRAPH_MAX_CAPACITY */
     int required = vertex_id + 1;
     if (required <= g->vertex_capacity) {
         return;
@@ -68,8 +83,21 @@ void graph_ensure_capacity(graph *g, int vertex_id) {
 
     int old_cap = g->vertex_capacity;
     int new_cap = old_cap > 0 ? old_cap : 8;
+    
+    /* Safely double capacity until we reach required size.
+     * Check for overflow at each step. */
     while (new_cap < required) {
+        if (new_cap > GRAPH_MAX_CAPACITY / 2) {
+            /* Doubling would overflow; clamp to max */
+            new_cap = GRAPH_MAX_CAPACITY;
+            break;
+        }
         new_cap *= 2;
+    }
+    
+    /* Ensure we don't exceed max capacity */
+    if (new_cap > GRAPH_MAX_CAPACITY) {
+        new_cap = GRAPH_MAX_CAPACITY;
     }
 
     bool *new_present = calloc((size_t)new_cap, sizeof(bool));
@@ -91,13 +119,18 @@ void graph_ensure_capacity(graph *g, int vertex_id) {
             return;
         }
     } else if (g->rep == GRAPH_ADJACENCY_MATRIX) {
-        new_adj_matrix = malloc((size_t)new_cap * (size_t)new_cap * sizeof(double));
+        /* Safe multiplication: new_cap is <= GRAPH_MAX_CAPACITY = 46340,
+         * so new_cap * new_cap <= 2147395600 < INT_MAX.
+         * Cast to size_t for the actual allocation to handle large sizes. */
+        size_t matrix_size = (size_t)new_cap * (size_t)new_cap;
+        new_adj_matrix = malloc(matrix_size * sizeof(double));
         if (!new_adj_matrix) {
             free(new_present);
             free(new_vertex_ptrs);
             return;
         }
-        for (int i = 0; i < new_cap * new_cap; i++) {
+        /* Initialize with GRAPH_NO_EDGE. Use size_t for the loop limit to avoid overflow. */
+        for (size_t i = 0; i < matrix_size; i++) {
             new_adj_matrix[i] = GRAPH_NO_EDGE;
         }
     }
