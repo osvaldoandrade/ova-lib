@@ -15,8 +15,10 @@ typedef struct tree tree;
  * @brief Creates a balanced binary search tree.
  *
  * The tree stores key/value pointers provided by the caller. Keys are ordered
- * using the provided comparator. Keys are considered equal when cmp(a,b) == 0;
- * inserting an existing key updates its value.
+ * using the provided comparator. Keys are considered equal when cmp(a,b) == 0.
+ * If a key equal to an existing key is inserted, the tree updates the value
+ * associated with that key but keeps the originally stored key pointer; the new
+ * key pointer passed to tree_insert is not stored.
  *
  * @param type Balanced tree variant to use.
  * @param cmp Comparator for keys (required).
