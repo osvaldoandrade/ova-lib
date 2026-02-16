@@ -1,0 +1,523 @@
+Start testing: Feb 16 07:04 UTC
+----------------------------------------------------------
+1/16 Testing: test_queue
+1/16 Test: test_queue
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_queue"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_queue" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m Queue should be empty after initialization
+[32m[PASS][0m Dequeue on empty queue returns NULL
+[32m[PASS][0m Queue should not be empty after enqueue
+[32m[PASS][0m Dequeued data should match the enqueued data
+[32m[PASS][0m First dequeued data should match the first enqueued
+[32m[PASS][0m Second dequeued data should match the second enqueued
+[32m[PASS][0m Queue should be empty after dequeuing all elements
+[32m[PASS][0m Queue high volume operations within time limit
+[32m[PASS][0m Dequeued string data should match the enqueued string data
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_queue" end time: Feb 16 07:04 UTC
+"test_queue" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/16 Testing: test_priority_queue
+2/16 Test: test_priority_queue
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_priority_queue"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_priority_queue" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m Priority Queue should be empty after initialization
+[32m[PASS][0m Dequeue on empty priority queue returns NULL
+[32m[PASS][0m Priority Queue should not be empty after enqueue
+[32m[PASS][0m Dequeued data should match the enqueued data
+[32m[PASS][0m Highest priority element should be dequeued first (data2)
+[32m[PASS][0m Next highest priority element should be dequeued second (data1)
+[32m[PASS][0m Lowest priority element should be dequeued last (data3)
+[32m[PASS][0m Priority Queue should be empty after all elements are dequeued
+[32m[PASS][0m Priority Queue should have 1000 elements after enqueues
+[32m[PASS][0m Priority Queue should be empty after dequeuing 1000 elements
+[32m[PASS][0m Priority queue high volume within time limit
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_priority_queue" end time: Feb 16 07:04 UTC
+"test_priority_queue" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/16 Testing: test_binary_heap
+3/16 Test: test_binary_heap
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_binary_heap"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_binary_heap" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m Heap put and extract max
+[32m[PASS][0m Heap peek max
+[32m[PASS][0m Heap empty on creation
+[32m[PASS][0m Heap not empty after put
+[32m[PASS][0m Pop on empty heap returns NULL
+[32m[PASS][0m Heap high volume within time limit
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_binary_heap" end time: Feb 16 07:04 UTC
+"test_binary_heap" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/16 Testing: test_fibonacci_heap
+4/16 Test: test_fibonacci_heap
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_fibonacci_heap"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_fibonacci_heap" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m Heap put and extract max
+[32m[PASS][0m Heap peek max
+[32m[PASS][0m Heap empty on creation
+[32m[PASS][0m Heap not empty after put
+[32m[PASS][0m Pop on empty fibonacci heap returns NULL
+[32m[PASS][0m Fibonacci heap high volume within time limit
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_fibonacci_heap" end time: Feb 16 07:04 UTC
+"test_fibonacci_heap" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/16 Testing: test_hash
+5/16 Test: test_hash
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_hash"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_hash" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m Retrieve inserted data
+[32m[PASS][0m Check resizing (capacity should be greater than initial)
+[32m[PASS][0m Handle collisions correctly
+[32m[PASS][0m Retrieve non-existent item
+[32m[PASS][0m Insert and retrieve items with numeric keys
+[32m[PASS][0m Remove an item
+[32m[PASS][0m Data should be NULL after removal
+[32m[PASS][0m Correct number of items stored
+[32m[PASS][0m Should retrieve the last inserted data for a duplicate key
+[32m[PASS][0m Should be able to retrieve data inserted with a NULL key
+[32m[PASS][0m Should retrieve NULL for inserted NULL value
+[32m[PASS][0m Get on empty map returns NULL
+[32m[PASS][0m Hash table should be empty after repeated insertions and removals
+[32m[PASS][0m Hash map high volume within time limit
+[32m[PASS][0m Concurrent access test completed successfully.
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"test_hash" end time: Feb 16 07:04 UTC
+"test_hash" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/16 Testing: test_array_list
+6/16 Test: test_array_list
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_array_list"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_array_list" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m Array List put and get operations
+[32m[PASS][0m Array List remove operation
+[32m[PASS][0m Array List capacity increase
+[32m[PASS][0m Insert at specific index
+[32m[PASS][0m Access out of bounds should return NULL
+[32m[PASS][0m Insert invalid index should not modify list
+[32m[PASS][0m High volume insertion should match the count
+[32m[PASS][0m Array list high volume within time limit
+[32m[PASS][0m Array List should release internal buffer on free
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_array_list" end time: Feb 16 07:04 UTC
+"test_array_list" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/16 Testing: test_linked_list
+7/16 Test: test_linked_list
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_linked_list"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_linked_list" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m Linked List put and get operations
+[32m[PASS][0m Linked List remove operation
+[32m[PASS][0m Linked List capacity increase
+[32m[PASS][0m Insert at specific index
+[32m[PASS][0m Access out of bounds should return NULL
+[32m[PASS][0m Linked list invalid index insert does nothing
+[32m[PASS][0m List should be empty after clear
+[32m[PASS][0m High volume insertion should match the count
+[32m[PASS][0m Linked list high volume within time limit
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_linked_list" end time: Feb 16 07:04 UTC
+"test_linked_list" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/16 Testing: test_sorted_list
+8/16 Test: test_sorted_list
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_sorted_list"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_sorted_list" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m Sorted list maintains order on insert
+[32m[PASS][0m Sorted list get retrieves ordered values
+[32m[PASS][0m Sorted list remove maintains ordering
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_sorted_list" end time: Feb 16 07:04 UTC
+"test_sorted_list" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/16 Testing: test_sorter
+9/16 Test: test_sorter
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_sorter"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_sorter" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m Sorter sort operation ensures list is sorted
+[32m[PASS][0m Shuffle operation should change the order of items
+[32m[PASS][0m Reverse operation
+[32m[PASS][0m Binary search operation found the correct index
+[31m[FAIL][0m Sort on empty list safe
+[32m[PASS][0m Large sort within time limit
+[32m[PASS][0m Copy operation
+[32m[PASS][0m Min Max operation
+[32m[PASS][0m Min operation
+[32m[PASS][0m Max operation
+<end of output>
+Test time =   0.17 sec
+----------------------------------------------------------
+Test Passed.
+"test_sorter" end time: Feb 16 07:04 UTC
+"test_sorter" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/16 Testing: test_linked_stack
+10/16 Test: test_linked_stack
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_linked_stack"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_linked_stack" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m Array Stack push and pop operations
+[32m[PASS][0m Array Stack should be empty after pop
+[32m[PASS][0m Array stack top on new stack NULL
+[32m[PASS][0m Array stack top after push
+[32m[PASS][0m Array stack top NULL after pop
+[32m[PASS][0m Array stack high volume within time limit
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_linked_stack" end time: Feb 16 07:04 UTC
+"test_linked_stack" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/16 Testing: test_array_stack
+11/16 Test: test_array_stack
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_array_stack"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_array_stack" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m Linked Stack push and pop operations
+[32m[PASS][0m Linked Stack should be empty after pop
+[32m[PASS][0m Top on new stack returns NULL
+[32m[PASS][0m Top after push returns element
+[32m[PASS][0m Top after pop returns NULL
+[32m[PASS][0m Stack high volume within time limit
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_array_stack" end time: Feb 16 07:04 UTC
+"test_array_stack" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/16 Testing: test_matrix
+12/16 Test: test_matrix
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_matrix"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_matrix" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m Matrix Add
+[32m[PASS][0m Matrix Subtract
+[32m[PASS][0m Matrix Multiply
+[32m[PASS][0m Matrix Determinant
+[32m[PASS][0m Matrix Transpose
+[32m[PASS][0m Matrix Inverse
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_matrix" end time: Feb 16 07:04 UTC
+"test_matrix" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/16 Testing: test_matrix_extra
+13/16 Test: test_matrix_extra
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_matrix_extra"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_matrix_extra" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m create_matrix should fail on zero dimension
+[32m[PASS][0m matrix_resize should preserve data and update size
+[32m[PASS][0m matrix_resize should support shrinking and expanding safely
+[32m[PASS][0m matrix_resize failure should not alter matrix state
+[32m[PASS][0m matrix_copy should duplicate matrix
+[32m[PASS][0m matrix_inverse should fail for singular matrix
+[32m[PASS][0m determinant on non square matrix errors
+[32m[PASS][0m Large matrix multiply within time limit
+[32m[PASS][0m vector_resize should expand and zero new elements
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"test_matrix_extra" end time: Feb 16 07:04 UTC
+"test_matrix_extra" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/16 Testing: test_solver
+14/16 Test: test_solver
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_solver"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_solver" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+Tableau after initialization:
+    0.000     0.000     1.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000     1.000     0.000     0.000     0.000 
+    1.000     0.000     0.000     0.000     1.000     0.000     1.000 
+    0.000     1.000     0.000     0.000     0.000     1.000     1.000 
+   -1.000    -1.000     0.000     0.000     0.000     0.000     0.000 
+
+Tableau after pivoting around row 2, column 0:
+    0.000     0.000     1.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000     1.000     0.000     0.000     0.000 
+    1.000     0.000     0.000     0.000     1.000     0.000     1.000 
+    0.000     1.000     0.000     0.000     0.000     1.000     1.000 
+    0.000    -1.000     0.000     0.000     1.000     0.000     1.000 
+
+Tableau after pivoting around row 3, column 1:
+    0.000     0.000     1.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000     1.000     0.000     0.000     0.000 
+    1.000     0.000     0.000     0.000     1.000     0.000     1.000 
+    0.000     1.000     0.000     0.000     0.000     1.000     1.000 
+    0.000     0.000     0.000     0.000     1.000     1.000     2.000 
+
+Tableau at optimality:
+    0.000     0.000     1.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000     1.000     0.000     0.000     0.000 
+    1.000     0.000     0.000     0.000     1.000     0.000     1.000 
+    0.000     1.000     0.000     0.000     0.000     1.000     1.000 
+    0.000     0.000     0.000     0.000     1.000     1.000     2.000 
+
+Solver initialized solution vector successfully. x1 = 1.000000, x2 = 1.000000, z = 2.000000
+Tableau after initialization:
+    0.000     0.000     1.000     0.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000     1.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000     0.000     1.000     0.000     0.000     0.000     0.000 
+    1.000     2.000     0.000     0.000     0.000     1.000     0.000     0.000    14.000 
+   -3.000     1.000     0.000     0.000     0.000     0.000     1.000     0.000     0.000 
+    1.000    -1.000     0.000     0.000     0.000     0.000     0.000     1.000     2.000 
+   -3.000    -5.000     0.000     0.000     0.000     0.000     0.000     0.000     0.000 
+
+Tableau after pivoting around row 0, column 0:
+    1.000     0.000       inf     0.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000      -inf     1.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000      -nan     0.000     1.000     0.000     0.000     0.000     0.000 
+    0.000     2.000      -inf     0.000     0.000     1.000     0.000     0.000    14.000 
+    0.000     1.000       inf     0.000     0.000     0.000     1.000     0.000     0.000 
+    0.000    -1.000      -inf     0.000     0.000     0.000     0.000     1.000     2.000 
+    0.000    -5.000       inf     0.000     0.000     0.000     0.000     0.000     0.000 
+
+Tableau after pivoting around row 4, column 1:
+    1.000     0.000      -nan     0.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000      -nan     1.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000      -nan     0.000     1.000     0.000     0.000     0.000     0.000 
+    0.000     0.000      -inf     0.000     0.000     1.000    -2.000     0.000    14.000 
+    0.000     1.000       inf     0.000     0.000     0.000     1.000     0.000     0.000 
+    0.000     0.000      -nan     0.000     0.000     0.000     1.000     1.000     2.000 
+    0.000     0.000       inf     0.000     0.000     0.000     5.000     0.000     0.000 
+
+Tableau at optimality:
+    1.000     0.000      -nan     0.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000      -nan     1.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000      -nan     0.000     1.000     0.000     0.000     0.000     0.000 
+    0.000     0.000      -inf     0.000     0.000     1.000    -2.000     0.000    14.000 
+    0.000     1.000       inf     0.000     0.000     0.000     1.000     0.000     0.000 
+    0.000     0.000      -nan     0.000     0.000     0.000     1.000     1.000     2.000 
+    0.000     0.000       inf     0.000     0.000     0.000     5.000     0.000     0.000 
+
+Optimal solution found.
+x = 0.000000, y = 0.000000, z = 0.000000
+Test failed. Incorrect solution (x, y, z) = (0.000000, 0.000000, 0.000000)
+Tableau after initialization:
+    0.000     0.000     0.000     1.000     0.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000     0.000     1.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000     0.000     0.000     1.000     0.000     0.000     0.000     0.000 
+    1.000     1.000     1.000     0.000     0.000     0.000     1.000     0.000     0.000    30.000 
+    2.000     2.000     5.000     0.000     0.000     0.000     0.000     1.000     0.000   100.000 
+    4.000     1.000     2.000     0.000     0.000     0.000     0.000     0.000     1.000    60.000 
+   -2.000    -3.000    -4.000     0.000     0.000     0.000     0.000     0.000     0.000     0.000 
+
+Tableau after pivoting around row 0, column 0:
+    1.000     0.000     1.000       inf     0.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000    -0.000      -inf     1.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000      -nan     0.000     1.000     0.000     0.000     0.000     0.000 
+    0.000     1.000    -0.000      -inf     0.000     0.000     1.000     0.000     0.000    30.000 
+    0.000     2.000     3.000      -inf     0.000     0.000     0.000     1.000     0.000   100.000 
+    0.000     1.000    -2.001      -inf     0.000     0.000     0.000     0.000     1.000    60.000 
+    0.000    -3.000    -2.000       inf     0.000     0.000     0.000     0.000     0.000     0.000 
+
+Tableau after pivoting around row 3, column 1:
+    1.000     0.000     1.000      -nan     0.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000    -0.000      -nan     1.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000      -nan     0.000     1.000     0.000     0.000     0.000     0.000 
+    0.000     1.000    -0.000      -inf     0.000     0.000     1.000     0.000     0.000    30.000 
+    0.000     0.000     3.000      -nan     0.000     0.000    -2.000     1.000     0.000    40.000 
+    0.000     0.000    -2.001      -nan     0.000     0.000    -1.000     0.000     1.000    30.000 
+    0.000     0.000    -2.000      -nan     0.000     0.000     3.000     0.000     0.000    90.000 
+
+Tableau after pivoting around row 0, column 2:
+    1.000     0.000     1.000      -nan     0.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000      -nan     1.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000      -nan     0.000     1.000     0.000     0.000     0.000     0.000 
+    0.000     1.000     0.000      -nan     0.000     0.000     1.000     0.000     0.000    30.000 
+   -2.999     0.000     0.000      -nan     0.000     0.000    -2.000     1.000     0.000    40.000 
+    2.000     0.000     0.000      -nan     0.000     0.000    -1.000     0.000     1.000    30.000 
+    2.000     0.000     0.000      -nan     0.000     0.000     3.000     0.000     0.000    90.000 
+
+Tableau at optimality:
+    1.000     0.000     1.000      -nan     0.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000      -nan     1.000     0.000     0.000     0.000     0.000     0.000 
+    0.000     0.000     0.000      -nan     0.000     1.000     0.000     0.000     0.000     0.000 
+    0.000     1.000     0.000      -nan     0.000     0.000     1.000     0.000     0.000    30.000 
+   -2.999     0.000     0.000      -nan     0.000     0.000    -2.000     1.000     0.000    40.000 
+    2.000     0.000     0.000      -nan     0.000     0.000    -1.000     0.000     1.000    30.000 
+    2.000     0.000     0.000      -nan     0.000     0.000     3.000     0.000     0.000    90.000 
+
+Optimal solution found for alternative problem.
+x1 = 0.000000, x2 = 30.000000, x3 = 0.000000, z = 90.000000
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_solver" end time: Feb 16 07:04 UTC
+"test_solver" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/16 Testing: test_graph
+15/16 Test: test_graph
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_graph"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_graph" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m graph_add_edge implicitly adds missing vertices
+[32m[PASS][0m directed edge exists after add
+[32m[PASS][0m reverse edge should not exist in directed graph
+[32m[PASS][0m graph_add_edge implicitly adds missing vertices
+[32m[PASS][0m directed edge exists after add
+[32m[PASS][0m reverse edge should not exist in directed graph
+[32m[PASS][0m undirected add_edge creates symmetric edges
+[32m[PASS][0m edge weight is stored (0->1)
+[32m[PASS][0m graph_remove_edge removes symmetric edges
+[32m[PASS][0m graph_get_neighbors returns expected neighbor count
+[32m[PASS][0m graph_get_neighbors contains expected vertices
+[32m[PASS][0m undirected add_edge creates symmetric edges
+[32m[PASS][0m edge weight is stored (0->1)
+[32m[PASS][0m graph_remove_edge removes symmetric edges
+[32m[PASS][0m graph_get_neighbors returns expected neighbor count
+[32m[PASS][0m graph_get_neighbors contains expected vertices
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_graph" end time: Feb 16 07:04 UTC
+"test_graph" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/16 Testing: test_graph_algorithms
+16/16 Test: test_graph_algorithms
+Command: "/home/runner/work/ova-lib/ova-lib/build/bin/test_graph_algorithms"
+Directory: /home/runner/work/ova-lib/ova-lib/build
+"test_graph_algorithms" start time: Feb 16 07:04 UTC
+Output:
+----------------------------------------------------------
+[32m[PASS][0m BFS visit order
+[32m[PASS][0m DFS iterative visit order
+[32m[PASS][0m DFS recursive visit order
+[32m[PASS][0m BFS visit order
+[32m[PASS][0m DFS iterative visit order
+[32m[PASS][0m DFS recursive visit order
+[32m[PASS][0m Dijkstra returns distances
+[32m[PASS][0m Dijkstra distances are correct
+[32m[PASS][0m Bellman-Ford returns distances
+[32m[PASS][0m Bellman-Ford distance to vertex 3 is correct
+[32m[PASS][0m Floyd-Warshall returns a matrix
+[32m[PASS][0m Floyd-Warshall all-pairs distance 0->3 is correct
+[32m[PASS][0m Dijkstra returns distances
+[32m[PASS][0m Dijkstra distances are correct
+[32m[PASS][0m Bellman-Ford returns distances
+[32m[PASS][0m Bellman-Ford distance to vertex 3 is correct
+[32m[PASS][0m Floyd-Warshall returns a matrix
+[32m[PASS][0m Floyd-Warshall all-pairs distance 0->3 is correct
+[32m[PASS][0m Bellman-Ford detects reachable negative cycle
+[32m[PASS][0m Bellman-Ford detects reachable negative cycle
+[32m[PASS][0m Prim returns |V|-1 edges
+[32m[PASS][0m Prim MST total weight is correct
+[32m[PASS][0m Kruskal returns |V|-1 edges
+[32m[PASS][0m Kruskal MST total weight is correct
+[32m[PASS][0m Prim returns |V|-1 edges
+[32m[PASS][0m Prim MST total weight is correct
+[32m[PASS][0m Kruskal returns |V|-1 edges
+[32m[PASS][0m Kruskal MST total weight is correct
+[32m[PASS][0m Connected components returns expected number of components
+[32m[PASS][0m Connected components sizes match expected
+[32m[PASS][0m SCC returns expected number of components
+[32m[PASS][0m Connected components returns expected number of components
+[32m[PASS][0m Connected components sizes match expected
+[32m[PASS][0m SCC returns expected number of components
+[32m[PASS][0m DAG has no cycle
+[32m[PASS][0m Topological sort returns all vertices
+[32m[PASS][0m Topological ordering respects edges
+[32m[PASS][0m Directed cycle is detected
+[32m[PASS][0m Topological sort returns NULL on cyclic graph
+[32m[PASS][0m DAG has no cycle
+[32m[PASS][0m Topological sort returns all vertices
+[32m[PASS][0m Topological ordering respects edges
+[32m[PASS][0m Directed cycle is detected
+[32m[PASS][0m Topological sort returns NULL on cyclic graph
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"test_graph_algorithms" end time: Feb 16 07:04 UTC
+"test_graph_algorithms" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Feb 16 07:04 UTC

@@ -1,0 +1,17 @@
+test_graph 2 0.000431846
+test_graph_algorithms 2 0.000459582
+test_queue 1 0.000970711
+test_priority_queue 1 0.00115437
+test_binary_heap 1 0.000884551
+test_fibonacci_heap 1 0.00113314
+test_hash 1 0.0432356
+test_array_list 1 0.00108706
+test_linked_list 1 0.00098401
+test_sorted_list 1 0.000888619
+test_sorter 1 0.17062
+test_linked_stack 1 0.00111181
+test_array_stack 1 0.000958589
+test_matrix 1 0.000829337
+test_matrix_extra 1 0.0059434
+test_solver 1 0.00110993
+---

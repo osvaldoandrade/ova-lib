@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_hash.dir/link.d CMakeFiles/test_hash.dir/test/test_hash.c.o CMakeFiles/test_hash.dir/test/base_test.c.o -o bin/test_hash  lib/libova_lib.a -lm

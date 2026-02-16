@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_solver.dir/link.d CMakeFiles/test_solver.dir/test/test_solver.c.o CMakeFiles/test_solver.dir/test/base_test.c.o -o bin/test_solver  lib/libova_lib.a -lm

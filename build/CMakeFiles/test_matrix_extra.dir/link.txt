@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_matrix_extra.dir/link.d CMakeFiles/test_matrix_extra.dir/test/test_matrix_extra.c.o CMakeFiles/test_matrix_extra.dir/test/base_test.c.o -o bin/test_matrix_extra  lib/libova_lib.a -lm

@@ -1,7 +1,23 @@
 #include "graph_internal.h"
 
 static inline double *cell(const graph *g, int from, int to) {
-    return g ? &g->adj_matrix[from * g->vertex_capacity + to] : NULL;
+    /* Validate inputs to prevent out-of-bounds access */
+    if (!g || !g->adj_matrix) {
+        return NULL;
+    }
+    if (from < 0 || from >= g->vertex_capacity) {
+        return NULL;
+    }
+    if (to < 0 || to >= g->vertex_capacity) {
+        return NULL;
+    }
+    
+    /* Calculate index using size_t to prevent overflow.
+     * Since g->vertex_capacity is bounded by GRAPH_MAX_CAPACITY (46340),
+     * and from/to are validated to be < vertex_capacity,
+     * the multiplication is safe. */
+    size_t index = (size_t)from * (size_t)g->vertex_capacity + (size_t)to;
+    return &g->adj_matrix[index];
 }
 
 void graph_adj_matrix_add_edge(graph *g, int from, int to, double weight) {

@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_graph.dir/link.d CMakeFiles/test_graph.dir/test/test_graph.c.o CMakeFiles/test_graph.dir/test/base_test.c.o -o bin/test_graph  lib/libova_lib.a -lm

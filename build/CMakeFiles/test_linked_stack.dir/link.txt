@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_linked_stack.dir/link.d CMakeFiles/test_linked_stack.dir/test/test_linked_stack.c.o CMakeFiles/test_linked_stack.dir/test/base_test.c.o -o bin/test_linked_stack  lib/libova_lib.a -lm
