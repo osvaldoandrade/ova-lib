@@ -31,6 +31,9 @@ add_library(ova_lib_static STATIC
         src/graph/graph_algorithms.c
         src/graph/adjacency_list.c
         src/graph/adjacency_matrix.c
+        src/tree/tree.c
+        src/tree/avl_tree.c
+        src/tree/red_black_tree.c
         src/solver/solver.c
 
         src/solver/simplex.c
@@ -60,6 +63,9 @@ add_library(ova_lib_shared SHARED
         src/graph/graph_algorithms.c
         src/graph/adjacency_list.c
         src/graph/adjacency_matrix.c
+        src/tree/tree.c
+        src/tree/avl_tree.c
+        src/tree/red_black_tree.c
         src/solver/solver.c
 
         src/solver/simplex.c
@@ -92,7 +98,7 @@ file(WRITE ${CMAKE_BINARY_DIR}/install.sh
 )
 install(PROGRAMS ${CMAKE_BINARY_DIR}/install.sh DESTINATION .)
 
-foreach(TEST IN ITEMS test_queue test_priority_queue test_binary_heap test_fibonacci_heap test_hash test_array_list test_linked_list test_sorted_list test_sorter test_linked_stack test_array_stack test_matrix test_matrix_extra test_solver test_graph test_graph_algorithms)
+foreach(TEST IN ITEMS test_queue test_priority_queue test_binary_heap test_fibonacci_heap test_hash test_array_list test_linked_list test_sorted_list test_sorter test_linked_stack test_array_stack test_matrix test_matrix_extra test_solver test_graph test_graph_algorithms test_avl_tree test_red_black_tree)
     add_executable(${TEST} test/${TEST}.c test/base_test.c)
     target_link_libraries(${TEST} ova_lib_static m)
     add_test(NAME ${TEST} COMMAND ${TEST})
