@@ -1,6 +1,7 @@
 #include "../../include/set.h"
 #include "set_internal.h"
 
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -154,7 +155,12 @@ set *set_union(const set *a, const set *b) {
         return NULL;
     }
 
-    int cap = set_size(a) + set_size(b);
+    /* Compute capacity hint in size_t to avoid signed overflow. */
+    size_t size_a = (size_t)set_size(a);
+    size_t size_b = (size_t)set_size(b);
+    size_t cap_sz = size_a + size_b;
+    /* Clamp to INT_MAX if sum exceeds it. */
+    int cap = (cap_sz > (size_t)INT_MAX) ? INT_MAX : (int)cap_sz;
     set *out = create_set_with_capacity(a->type, a->cmp, a->hash, cap);
     if (!out) {
         return NULL;

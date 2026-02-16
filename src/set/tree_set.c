@@ -1,6 +1,7 @@
 #include "set_internal.h"
 
 #include "../../include/tree.h"
+#include "../tree/tree_internal.h"
 
 #include <stdlib.h>
 
@@ -67,14 +68,15 @@ static int tree_set_size(const set *s) {
     return tree_size(impl->t);
 }
 
-static list *tree_set_to_list_out = NULL;
-
-static void tree_set_collect_cb(void *key, void *value) {
-    (void)value;
-    if (!tree_set_to_list_out) {
+/* Internal in-order traversal that carries the destination list via arguments. */
+static void tree_set_collect_in_order(const tree *t, tree_node *node, list *out) {
+    if (!t || !out || tree_node_is_nil(t, node)) {
         return;
     }
-    tree_set_to_list_out->insert(tree_set_to_list_out, key, tree_set_to_list_out->size(tree_set_to_list_out));
+
+    tree_set_collect_in_order(t, node->left, out);
+    out->insert(out, node->key, out->size(out));
+    tree_set_collect_in_order(t, node->right, out);
 }
 
 static list *tree_set_to_list(const set *s) {
@@ -89,9 +91,7 @@ static list *tree_set_to_list(const set *s) {
         return NULL;
     }
 
-    tree_set_to_list_out = out;
-    tree_in_order_traverse(impl->t, tree_set_collect_cb);
-    tree_set_to_list_out = NULL;
+    tree_set_collect_in_order(impl->t, impl->t->root, out);
 
     return out;
 }
