@@ -1,1 +1,0 @@
-/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_queue.dir/link.d CMakeFiles/test_queue.dir/test/test_queue.c.o CMakeFiles/test_queue.dir/test/base_test.c.o -o bin/test_queue  lib/libova_lib.a -lm

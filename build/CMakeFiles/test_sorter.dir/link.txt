@@ -1,1 +1,0 @@
-/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_sorter.dir/link.d CMakeFiles/test_sorter.dir/test/test_sorter.c.o CMakeFiles/test_sorter.dir/test/base_test.c.o -o bin/test_sorter  lib/libova_lib.a -lm
