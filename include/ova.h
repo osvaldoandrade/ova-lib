@@ -5,6 +5,7 @@
 #include "list.h"
 #include "map.h"
 #include "queue.h"
+#include "graph.h"
 #include "sort.h"
 #include "types.h"
 

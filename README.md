@@ -19,6 +19,7 @@ Refer to the technical notes under `docs/` for deep dives into each subsystem:
 
 - [Architecture overview](docs/architecture.md)
 - [Container implementations, hashing strategies, and heaps](docs/containers.md)
+- [Graph data structure and algorithms](docs/graph.md)
 - [Matrix and vector operations](docs/matrix.md)
 - [Simplex solver internals](docs/solver-simplex.md)
 - [Sorting helpers and algorithms](docs/sorting.md)
