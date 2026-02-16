@@ -38,6 +38,7 @@ int tree_size(const tree *t);
 - `tree_min` / `tree_max`: Return the value associated with the smallest/largest key, or `NULL` when empty.
 - `tree_predecessor` / `tree_successor`: Return the value for the nearest strictly-smaller/strictly-larger key. The given key does not need to exist in the tree.
 - `tree_range_query(low, high)`: Returns a `list*` of value pointers in ascending key order for keys within the inclusive range `[low, high]`.
+  - When `low > high` according to the tree's comparator, the function returns an allocated but empty list (length 0). Callers must still free this list container.
   - The list contains pointers to values stored in the tree (no copies). Free the list container with `list->free(list)`.
 - `tree_in_order_traverse`: Visits items in ascending key order and calls `callback(key, value)` for each pair.
 
