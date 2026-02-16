@@ -7,6 +7,7 @@
 #include "queue.h"
 #include "graph.h"
 #include "sort.h"
+#include "tree.h"
 #include "types.h"
 
 #endif // OVA_LIB_H
