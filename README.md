@@ -31,7 +31,7 @@ Refer to the technical notes under `docs/` for deep dives into each subsystem:
 
 This project uses CMake (>=3.10).
 
-If your CMake supports presets, you can use:
+If your CMake supports presets (CMake 3.21+), you can use:
 
 ```bash
 cmake --preset dev
