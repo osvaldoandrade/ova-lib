@@ -124,10 +124,25 @@ list *set_to_list(const set *s) {
 }
 
 static int sets_are_compatible(const set *a, const set *b) {
+    /* Both sets must be non-NULL and have valid ops tables. */
     if (!a || !b || !a->ops || !b->ops) {
         return 0;
     }
-    if (!a->cmp || !b->cmp) {
+
+    /* Require a valid comparator on both sets, and that they are the same. */
+    if (!a->cmp || !b->cmp || a->cmp != b->cmp) {
+        return 0;
+    }
+
+    /* If either set uses hashing, require both to have the same hash function. */
+    if (a->hash || b->hash) {
+        if (!a->hash || !b->hash || a->hash != b->hash) {
+            return 0;
+        }
+    }
+
+    /* Ensure the underlying set implementation/type is the same. */
+    if (a->type != b->type) {
         return 0;
     }
     /* Set algebra assumes compatible equality semantics across sets. */
