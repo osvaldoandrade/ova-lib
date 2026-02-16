@@ -3,6 +3,7 @@
 
 #include "heap.h"
 #include "list.h"
+#include "bloom_filter.h"
 #include "map.h"
 #include "queue.h"
 #include "graph.h"

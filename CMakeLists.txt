@@ -3,6 +3,43 @@ project(ova_lib C)
 set(CMAKE_C_STANDARD 11)
 set(LIB_VERSION 0.0.1)
 
+option(OVA_ENABLE_WARNINGS "Enable strict compiler warnings when building ova_lib" ON)
+option(OVA_WERROR "Treat compiler warnings as errors" OFF)
+
+if(OVA_ENABLE_WARNINGS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    include(CheckCCompilerFlag)
+
+    function(ova_add_c_flag_if_supported flag)
+        string(REGEX REPLACE "[^A-Za-z0-9_]" "_" flag_var "${flag}")
+        set(check_var "OVA_HAVE_C_FLAG_${flag_var}")
+        check_c_compiler_flag("${flag}" "${check_var}")
+        if(${check_var})
+            add_compile_options("${flag}")
+        endif()
+    endfunction()
+
+    foreach(flag IN ITEMS
+            -Wall -Wextra -Wpedantic
+            -Wcast-align -Wcast-qual
+            -Wconversion -Wsign-conversion
+            -Wdouble-promotion
+            -Wformat=2 -Wformat-security
+            -Wnull-dereference
+            -Wshadow
+            -Wstrict-overflow=2
+            -Wswitch-default -Wswitch-enum
+            -Wundef
+            -Wuninitialized
+            -Wwrite-strings
+    )
+        ova_add_c_flag_if_supported("${flag}")
+    endforeach()
+
+    if(OVA_WERROR)
+        ova_add_c_flag_if_supported("-Werror")
+    endif()
+endif()
+
 enable_testing()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -17,6 +54,7 @@ add_library(ova_lib_static STATIC
         src/list/array_list.c
         src/list/linked_list.c
         src/list/sorted_list.c
+        src/bloom_filter/bloom_filter.c
         src/map/hash_map.c
         src/map/map.c
         src/heap/binary_heap.c
@@ -53,6 +91,7 @@ add_library(ova_lib_shared SHARED
         src/list/array_list.c
         src/list/linked_list.c
         src/list/sorted_list.c
+        src/bloom_filter/bloom_filter.c
         src/map/hash_map.c
         src/map/map.c
         src/heap/binary_heap.c
@@ -106,7 +145,7 @@ file(WRITE ${CMAKE_BINARY_DIR}/install.sh
 )
 install(PROGRAMS ${CMAKE_BINARY_DIR}/install.sh DESTINATION .)
 
-foreach(TEST IN ITEMS test_queue test_priority_queue test_binary_heap test_fibonacci_heap test_hash test_array_list test_linked_list test_sorted_list test_sorter test_linked_stack test_array_stack test_matrix test_matrix_extra test_solver test_graph test_graph_algorithms test_avl_tree test_red_black_tree test_set test_trie)
+foreach(TEST IN ITEMS test_queue test_priority_queue test_binary_heap test_fibonacci_heap test_hash test_array_list test_linked_list test_sorted_list test_sorter test_linked_stack test_array_stack test_matrix test_matrix_extra test_solver test_graph test_graph_algorithms test_avl_tree test_red_black_tree test_set test_trie test_bloom_filter)
     add_executable(${TEST} test/${TEST}.c test/base_test.c)
     target_link_libraries(${TEST} ova_lib_static m)
     add_test(NAME ${TEST} COMMAND ${TEST})
