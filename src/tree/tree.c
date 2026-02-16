@@ -259,16 +259,15 @@ list *tree_range_query(tree *t, void *low, void *high) {
         return NULL;
     }
 
+    if (t->cmp(low, high) > 0) {
+        return NULL;
+    }
+
     int cap = (t->size > 0 && t->size < 1024u * 1024u) ? (int)t->size : 4;
     list *out = create_list(ARRAY_LIST, cap, NULL);
     if (!out) {
         return NULL;
     }
-
-    if (t->cmp(low, high) > 0) {
-        return out;
-    }
-
     tree_range_query_node(t, t->root, low, high, out);
     return out;
 }
