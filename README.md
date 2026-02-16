@@ -23,6 +23,10 @@ Refer to the technical notes under `docs/` for deep dives into each subsystem:
 - [Simplex solver internals](docs/solver-simplex.md)
 - [Sorting helpers and algorithms](docs/sorting.md)
 
+**Code Review and Recommendations:**
+- [📋 Comprehensive Review: 10 New Features + 30 Improvements](docs/recommendations.md) - Detailed analysis with implementation guidance
+- [⚡ Quick Reference Summary](docs/recommendations-summary.md) - Condensed view with priority order
+
 ## Building
 
 This project uses CMake (>=3.10). Build the project with:
