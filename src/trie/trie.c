@@ -1,5 +1,6 @@
 #include "../../include/trie.h"
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -149,6 +150,9 @@ int trie_count_words(const trie *t) {
     if (!t) {
         return 0;
     }
+    if (t->word_count > INT_MAX) {
+        return INT_MAX;
+    }
     return (int)t->word_count;
 }
 
@@ -156,6 +160,9 @@ int trie_count_prefixes(const trie *t, const char *prefix) {
     trie_node *node = trie_walk(t, prefix);
     if (!node) {
         return 0;
+    }
+    if (node->subtree_words > INT_MAX) {
+        return INT_MAX;
     }
     return (int)node->subtree_words;
 }
@@ -204,14 +211,16 @@ list *trie_get_words_with_prefix(const trie *t, const char *prefix) {
     }
 
     trie_node *node = trie_walk(t, prefix);
-    int count = node ? (int)node->subtree_words : 0;
-    list *out = create_list(ARRAY_LIST, count > 0 ? count : 4, NULL);
-    if (!out) {
-        return NULL;
+    if (!node || node->subtree_words == 0) {
+        list *out = create_list(ARRAY_LIST, 4, NULL);
+        return out;
     }
 
-    if (!node || count == 0) {
-        return out;
+    size_t subtree_count = node->subtree_words;
+    int initial_capacity = (subtree_count > INT_MAX) ? INT_MAX : (int)subtree_count;
+    list *out = create_list(ARRAY_LIST, initial_capacity, NULL);
+    if (!out) {
+        return NULL;
     }
 
     size_t prefix_len = strlen(prefix);
