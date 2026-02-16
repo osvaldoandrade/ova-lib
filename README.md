@@ -13,6 +13,7 @@ ova-lib is a lightweight collection of data structures and algorithms written in
 - **Sorting**: assorted comparison based sorting routines
 - **Solver**: utilities such as a simplex implementation
 - **Trees**: AVL and Red-Black balanced binary search trees
+- **Sets**: hash and tree based sets with set algebra operations
 
 ## Documentation
 
@@ -25,6 +26,7 @@ Refer to the technical notes under `docs/` for deep dives into each subsystem:
 - [Simplex solver internals](docs/solver-simplex.md)
 - [Sorting helpers and algorithms](docs/sorting.md)
 - [Balanced trees (AVL/Red-Black)](docs/trees.md)
+- [Set implementation and operations](docs/set.md)
 
 **Code Review and Recommendations:**
 - [📋 Comprehensive Review: 10 New Features + 30 Improvements](docs/recommendations.md) - Detailed analysis with implementation guidance
