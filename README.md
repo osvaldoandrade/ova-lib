@@ -29,7 +29,23 @@ Refer to the technical notes under `docs/` for deep dives into each subsystem:
 
 ## Building
 
-This project uses CMake (>=3.10). Build the project with:
+This project uses CMake (>=3.10).
+
+If your CMake supports presets (CMake 3.21+), you can use:
+
+```bash
+cmake --preset dev
+cmake --build build/dev
+```
+
+Or for a release build:
+
+```bash
+cmake --preset release
+cmake --build build/release
+```
+
+Build the project manually with:
 
 ```bash
 git clone https://github.com/osvaldoandrade/ova-lib.git
@@ -53,6 +69,12 @@ The repository contains a suite of unit tests covering the data structures. Afte
 
 ```bash
 ctest --output-on-failure
+```
+
+If you used the presets from the repository root, point CTest at the build directory:
+
+```bash
+ctest --test-dir build/dev --output-on-failure
 ```
 
 All tests should pass and give an overview of how each component is used.
