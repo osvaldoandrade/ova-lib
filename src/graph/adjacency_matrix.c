@@ -1,7 +1,11 @@
 #include "graph_internal.h"
 
 static inline double *cell(const graph *g, int from, int to) {
-    /* Validate inputs to prevent out-of-bounds access */
+    /* Defensive bounds checking to prevent out-of-bounds access.
+     * Note: Public API functions validate vertex IDs before calling this,
+     * but we keep these checks as a security safeguard against potential
+     * future bugs or direct internal calls. The performance impact is minimal
+     * due to inlining and branch prediction. */
     if (!g || !g->adj_matrix) {
         return NULL;
     }

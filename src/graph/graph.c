@@ -75,13 +75,7 @@ void graph_ensure_capacity(graph *g, int vertex_id) {
         return;
     }
 
-    /* Check for overflow in vertex_id + 1 calculation.
-     * Since is_valid_vertex_id already ensures vertex_id < GRAPH_MAX_CAPACITY,
-     * this is safe, but we check explicitly for clarity. */
-    if (vertex_id >= GRAPH_MAX_CAPACITY - 1) {
-        return;  /* Cannot accommodate this vertex_id */
-    }
-
+    /* vertex_id + 1 is safe since is_valid_vertex_id ensures vertex_id < GRAPH_MAX_CAPACITY */
     int required = vertex_id + 1;
     if (required <= g->vertex_capacity) {
         return;
@@ -104,11 +98,6 @@ void graph_ensure_capacity(graph *g, int vertex_id) {
     /* Ensure we don't exceed max capacity */
     if (new_cap > GRAPH_MAX_CAPACITY) {
         new_cap = GRAPH_MAX_CAPACITY;
-    }
-    
-    /* Final check that new_cap can accommodate required */
-    if (new_cap < required) {
-        return;  /* Cannot grow large enough */
     }
 
     bool *new_present = calloc((size_t)new_cap, sizeof(bool));
