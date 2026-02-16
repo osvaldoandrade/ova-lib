@@ -8,6 +8,7 @@
 #include "graph.h"
 #include "sort.h"
 #include "tree.h"
+#include "trie.h"
 #include "types.h"
 
 #endif // OVA_LIB_H
