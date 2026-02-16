@@ -15,6 +15,7 @@ ova-lib is a lightweight collection of data structures and algorithms written in
 - **Trees**: AVL and Red-Black balanced binary search trees
 - **Tries**: prefix trees for efficient string lookup and autocomplete
 - **Sets**: hash and tree based sets with set algebra operations
+- **Bloom filters**: probabilistic set membership testing with tunable false positives
 
 ## Documentation
 
@@ -29,6 +30,7 @@ Refer to the technical notes under `docs/` for deep dives into each subsystem:
 - [Balanced trees (AVL/Red-Black)](docs/trees.md)
 - [Trie (prefix tree)](docs/trie.md)
 - [Set implementation and operations](docs/set.md)
+- [Bloom filter](docs/bloom_filter.md)
 
 **Code Review and Recommendations:**
 - [📋 Comprehensive Review: 10 New Features + 30 Improvements](docs/recommendations.md) - Detailed analysis with implementation guidance
