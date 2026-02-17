@@ -75,8 +75,9 @@ static int bloom_compute_params(int expected_elements,
     if (!isfinite(m)) {
         return 0;
     }
-    /* Ensure m won't overflow when cast to size_t via ceil() */
-    if (m > (double)SIZE_MAX) {
+    /* Ensure m won't overflow when cast to size_t via ceil().
+     * Use >= to account for potential floating-point precision issues. */
+    if (m >= (double)SIZE_MAX) {
         return 0;
     }
 
