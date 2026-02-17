@@ -3,7 +3,15 @@ project(ova_lib C)
 set(CMAKE_C_STANDARD 11)
 set(LIB_VERSION 0.0.1)
 
-enable_testing()
+find_program(VALGRIND_PROGRAM valgrind)
+if(VALGRIND_PROGRAM)
+    # Configure CTest memcheck to use Valgrind when available.
+    set(MEMORYCHECK_COMMAND "${VALGRIND_PROGRAM}")
+    set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1")
+    set(MEMORYCHECK_TYPE "Valgrind")
+endif()
+
+include(CTest)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -111,6 +119,18 @@ foreach(TEST IN ITEMS test_queue test_priority_queue test_binary_heap test_fibon
     target_link_libraries(${TEST} ova_lib_static m)
     add_test(NAME ${TEST} COMMAND ${TEST})
 endforeach()
+
+if(VALGRIND_PROGRAM)
+    add_custom_target(memcheck
+            COMMAND ${CMAKE_CTEST_COMMAND}
+            --force-new-ctest-process
+            --test-action memcheck
+            --output-on-failure
+            COMMAND cat "${CMAKE_BINARY_DIR}/Testing/Temporary/MemoryChecker.*.log"
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+            USES_TERMINAL
+    )
+endif()
 
 set(CPACK_PACKAGE_NAME "ova_lib")
 set(CPACK_PACKAGE_VENDOR "Osvaldo Andrade")
