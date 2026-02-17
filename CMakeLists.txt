@@ -126,7 +126,7 @@ if(VALGRIND_PROGRAM)
             --force-new-ctest-process
             --test-action memcheck
             --output-on-failure
-            COMMAND sh -c "cat \"${CMAKE_BINARY_DIR}/Testing/Temporary/MemoryChecker.\"*.log || true"
+            COMMAND sh -c "cat \"${CMAKE_BINARY_DIR}/Testing/Temporary/MemoryChecker.*.log\" || true"
             WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
             USES_TERMINAL
     )
