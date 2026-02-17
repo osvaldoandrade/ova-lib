@@ -1,0 +1,1 @@
+/home/runner/work/ova-lib/.codeql-scratch/dbs/cpp/working/autobuild/bin/cc -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_red_black_tree.dir/link.d CMakeFiles/test_red_black_tree.dir/test/test_red_black_tree.c.o CMakeFiles/test_red_black_tree.dir/test/base_test.c.o -o bin/test_red_black_tree  lib/libova_lib.a -lm

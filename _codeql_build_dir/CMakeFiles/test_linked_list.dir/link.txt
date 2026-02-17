@@ -1,0 +1,1 @@
+/home/runner/work/ova-lib/.codeql-scratch/dbs/cpp/working/autobuild/bin/cc -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_linked_list.dir/link.d CMakeFiles/test_linked_list.dir/test/test_linked_list.c.o CMakeFiles/test_linked_list.dir/test/base_test.c.o -o bin/test_linked_list  lib/libova_lib.a -lm
