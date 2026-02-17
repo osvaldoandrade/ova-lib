@@ -53,9 +53,32 @@ static void test_bloom_filter_basic_ops() {
     bloom_filter_free(bf);
 }
 
+static void test_bloom_filter_empty_keys() {
+    bloom_filter *bf = create_bloom_filter(100, 0.01);
+    if (!bf) {
+        print_test_result(0, "Bloom filter creation");
+        return;
+    }
+
+    /* Test that empty keys (len == 0) are supported */
+    bloom_filter_add(bf, NULL, 0);
+    print_test_result(bloom_filter_might_contain(bf, NULL, 0), "Bloom filter supports empty keys (NULL, 0)");
+
+    /* Empty key with non-NULL pointer should also work */
+    const char *dummy = "dummy";
+    bloom_filter_add(bf, dummy, 0);
+    print_test_result(bloom_filter_might_contain(bf, dummy, 0), "Bloom filter supports empty keys (ptr, 0)");
+
+    /* Ensure empty keys are considered the same regardless of pointer */
+    print_test_result(bloom_filter_might_contain(bf, NULL, 0), "Bloom filter treats all empty keys consistently");
+
+    bloom_filter_free(bf);
+}
+
 static void run_all_tests() {
     test_bloom_filter_create_validation();
     test_bloom_filter_basic_ops();
+    test_bloom_filter_empty_keys();
 }
 
 int main() {

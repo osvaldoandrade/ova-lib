@@ -82,6 +82,7 @@ add_library(ova_lib_static STATIC
 )
 target_compile_options(ova_lib_static PRIVATE -fPIC)
 set_target_properties(ova_lib_static PROPERTIES OUTPUT_NAME "ova_lib")
+target_link_libraries(ova_lib_static PUBLIC m)
 
 add_library(ova_lib_shared SHARED
         src/queue/queue.c
@@ -118,6 +119,7 @@ add_library(ova_lib_shared SHARED
         src/solver/simplex.c
 )
 set_target_properties(ova_lib_shared PROPERTIES OUTPUT_NAME "ova_lib")
+target_link_libraries(ova_lib_shared PUBLIC m)
 
 target_include_directories(ova_lib_static PUBLIC include)
 
