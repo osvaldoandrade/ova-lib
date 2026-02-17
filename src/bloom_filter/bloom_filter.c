@@ -71,6 +71,16 @@ static int bloom_compute_params(int expected_elements,
         k = 1.0;
     }
 
+    /* Check that m is finite and within range before casting to size_t */
+    if (!isfinite(m)) {
+        return 0;
+    }
+    /* Ensure m won't overflow when cast to size_t via ceil().
+     * Use >= to account for potential floating-point precision issues. */
+    if (m >= (double)SIZE_MAX) {
+        return 0;
+    }
+
     size_t m_bits = (size_t)ceil(m);
     size_t k_hashes = (size_t)llround(k);
     if (k_hashes == 0) {
@@ -126,7 +136,10 @@ void bloom_filter_free(bloom_filter *bf) {
 }
 
 void bloom_filter_add(bloom_filter *bf, const void *element, size_t len) {
-    if (!bf || !bf->bits || !element || len == 0 || bf->m_bits == 0 || bf->k_hashes == 0) {
+    if (!bf || !bf->bits || bf->m_bits == 0 || bf->k_hashes == 0) {
+        return;
+    }
+    if (len > 0 && !element) {
         return;
     }
 
@@ -145,7 +158,10 @@ void bloom_filter_add(bloom_filter *bf, const void *element, size_t len) {
 }
 
 bool bloom_filter_might_contain(const bloom_filter *bf, const void *element, size_t len) {
-    if (!bf || !bf->bits || !element || len == 0 || bf->m_bits == 0 || bf->k_hashes == 0) {
+    if (!bf || !bf->bits || bf->m_bits == 0 || bf->k_hashes == 0) {
+        return false;
+    }
+    if (len > 0 && !element) {
         return false;
     }
 
