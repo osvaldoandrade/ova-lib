@@ -75,6 +75,12 @@ static void test_bloom_filter_empty_keys() {
     bool result3 = bloom_filter_might_contain(bf, NULL, 0);
     print_test_result(result3, "Bloom filter treats all empty keys consistently - no false negative");
 
+    /* Verify non-empty keys still work correctly after adding empty keys */
+    const char *key1 = "test";
+    bloom_filter_add(bf, key1, strlen(key1));
+    bool has_key1 = bloom_filter_might_contain(bf, key1, strlen(key1));
+    print_test_result(has_key1, "Bloom filter works for non-empty keys after empty key insert");
+
     bloom_filter_free(bf);
 }
 
