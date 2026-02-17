@@ -60,17 +60,20 @@ static void test_bloom_filter_empty_keys() {
         return;
     }
 
-    /* Test that empty keys (len == 0) are supported */
+    /* Test that empty keys (len == 0) are supported - no false negatives */
     bloom_filter_add(bf, NULL, 0);
-    print_test_result(bloom_filter_might_contain(bf, NULL, 0), "Bloom filter supports empty keys (NULL, 0)");
+    bool result1 = bloom_filter_might_contain(bf, NULL, 0);
+    print_test_result(result1 == true, "Bloom filter supports empty keys (NULL, 0) - no false negative");
 
-    /* Empty key with non-NULL pointer should also work */
+    /* Empty key with non-NULL pointer should also work - no false negatives */
     const char *dummy = "dummy";
     bloom_filter_add(bf, dummy, 0);
-    print_test_result(bloom_filter_might_contain(bf, dummy, 0), "Bloom filter supports empty keys (ptr, 0)");
+    bool result2 = bloom_filter_might_contain(bf, dummy, 0);
+    print_test_result(result2 == true, "Bloom filter supports empty keys (ptr, 0) - no false negative");
 
-    /* Ensure empty keys are considered the same regardless of pointer */
-    print_test_result(bloom_filter_might_contain(bf, NULL, 0), "Bloom filter treats all empty keys consistently");
+    /* Ensure empty keys are considered the same regardless of pointer - no false negatives */
+    bool result3 = bloom_filter_might_contain(bf, NULL, 0);
+    print_test_result(result3 == true, "Bloom filter treats all empty keys consistently - no false negative");
 
     bloom_filter_free(bf);
 }

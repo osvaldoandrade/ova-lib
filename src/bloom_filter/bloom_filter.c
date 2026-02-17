@@ -75,9 +75,8 @@ static int bloom_compute_params(int expected_elements,
     if (!isfinite(m)) {
         return 0;
     }
-    /* Ensure m is in valid range to prevent overflow when computing bytes.
-     * We need m_bits + 7 to not overflow, so check m <= SIZE_MAX - 7 */
-    if (m > (double)SIZE_MAX - 7.0) {
+    /* Ensure m won't overflow when cast to size_t via ceil() */
+    if (m > (double)SIZE_MAX) {
         return 0;
     }
 
