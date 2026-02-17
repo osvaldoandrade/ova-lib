@@ -86,6 +86,14 @@ If you used the presets from the repository root, point CTest at the build direc
 ctest --test-dir build/dev --output-on-failure
 ```
 
+If Valgrind is available on your system, you can run the test suite under memcheck with:
+
+```bash
+make memcheck
+```
+
+The `memcheck` target is only generated when Valgrind is detected at CMake configure time.
+
 All tests should pass and give an overview of how each component is used.
 
 ## Example usage

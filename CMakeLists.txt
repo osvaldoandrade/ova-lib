@@ -3,44 +3,15 @@ project(ova_lib C)
 set(CMAKE_C_STANDARD 11)
 set(LIB_VERSION 0.0.1)
 
-option(OVA_ENABLE_WARNINGS "Enable strict compiler warnings when building ova_lib" ON)
-option(OVA_WERROR "Treat compiler warnings as errors" OFF)
-
-if(OVA_ENABLE_WARNINGS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    include(CheckCCompilerFlag)
-
-    function(ova_add_c_flag_if_supported flag)
-        string(REGEX REPLACE "[^A-Za-z0-9_]" "_" flag_var "${flag}")
-        set(check_var "OVA_HAVE_C_FLAG_${flag_var}")
-        check_c_compiler_flag("${flag}" "${check_var}")
-        if(${check_var})
-            add_compile_options("${flag}")
-        endif()
-    endfunction()
-
-    foreach(flag IN ITEMS
-            -Wall -Wextra -Wpedantic
-            -Wcast-align -Wcast-qual
-            -Wconversion -Wsign-conversion
-            -Wdouble-promotion
-            -Wformat=2 -Wformat-security
-            -Wnull-dereference
-            -Wshadow
-            -Wstrict-overflow=2
-            -Wswitch-default -Wswitch-enum
-            -Wundef
-            -Wuninitialized
-            -Wwrite-strings
-    )
-        ova_add_c_flag_if_supported("${flag}")
-    endforeach()
-
-    if(OVA_WERROR)
-        ova_add_c_flag_if_supported("-Werror")
-    endif()
+find_program(VALGRIND_PROGRAM valgrind)
+if(VALGRIND_PROGRAM)
+    # Configure CTest memcheck to use Valgrind when available.
+    set(MEMORYCHECK_COMMAND "${VALGRIND_PROGRAM}")
+    set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1")
+    set(MEMORYCHECK_TYPE "Valgrind")
 endif()
 
-enable_testing()
+include(CTest)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -150,6 +121,18 @@ foreach(TEST IN ITEMS test_queue test_priority_queue test_binary_heap test_fibon
     target_link_libraries(${TEST} ova_lib_static m)
     add_test(NAME ${TEST} COMMAND ${TEST})
 endforeach()
+
+if(VALGRIND_PROGRAM)
+    add_custom_target(memcheck
+            COMMAND ${CMAKE_CTEST_COMMAND}
+            --force-new-ctest-process
+            --test-action memcheck
+            --output-on-failure
+            COMMAND cat "${CMAKE_BINARY_DIR}/Testing/Temporary/MemoryChecker.*.log"
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+            USES_TERMINAL
+    )
+endif()
 
 set(CPACK_PACKAGE_NAME "ova_lib")
 set(CPACK_PACKAGE_VENDOR "Osvaldo Andrade")
