@@ -2,3 +2,4 @@
 build/
 cmake-build-*/
 CMakeUserPresets.json
+_codeql_build_dir/

@@ -1,1 +1,0 @@
-/tmp/codeql-scratch-126e8300d52dffb4/dbs/cpp/working/autobuild/bin/cc -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_deque.dir/link.d CMakeFiles/test_deque.dir/test/test_deque.c.o CMakeFiles/test_deque.dir/test/base_test.c.o -o bin/test_deque  lib/libova_lib.a -lm
