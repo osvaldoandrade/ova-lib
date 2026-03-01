@@ -1,6 +1,9 @@
 #include "fibonacci_heap.h"
 #include <stdlib.h>
 
+// Forward declarations
+static void *fibonacci_heap_pop(heap *self);
+
 static fib_node *fib_node_create(void *data) {
     fib_node *node = malloc(sizeof(fib_node));
     if (!node) return NULL;
@@ -31,6 +34,40 @@ static void fib_node_link(fib_node *child, fib_node *parent) {
     }
     parent->degree++;
     child->mark = 0;
+}
+
+static void cut(fibonacci_heap *h, fib_node *x, fib_node *y) {
+    // Remove x from the child list of y
+    if (x->right == x) {
+        y->child = NULL;
+    } else {
+        x->left->right = x->right;
+        x->right->left = x->left;
+        if (y->child == x) {
+            y->child = x->right;
+        }
+    }
+    y->degree--;
+    
+    // Add x to the root list
+    x->left = h->min;
+    x->right = h->min->right;
+    h->min->right->left = x;
+    h->min->right = x;
+    x->parent = NULL;
+    x->mark = 0;
+}
+
+static void cascading_cut(fibonacci_heap *h, fib_node *y) {
+    fib_node *z = y->parent;
+    if (z != NULL) {
+        if (y->mark == 0) {
+            y->mark = 1;
+        } else {
+            cut(h, y, z);
+            cascading_cut(h, z);
+        }
+    }
 }
 
 static void consolidate(fibonacci_heap *h) {
@@ -116,6 +153,69 @@ static void fibonacci_heap_put(heap *self, void *data) {
         }
         h->n++;
     }
+}
+
+static void *fibonacci_heap_put_with_handle(heap *self, void *data) {
+    fibonacci_heap *h = (fibonacci_heap *)self->impl;
+    fib_node *node = fib_node_create(data);
+    if (node) {
+        if (!h->min) {
+            h->min = node;
+        } else {
+            node->right = h->min->right;
+            node->right->left = node;
+            node->left = h->min;
+            h->min->right = node;
+            if (h->cmp(data, h->min->data) < 0) {
+                h->min = node;
+            }
+        }
+        h->n++;
+        return (void *)node;
+    }
+    return NULL;
+}
+
+static void fibonacci_heap_decrease_key(heap *self, void *node_handle, void *new_value) {
+    fibonacci_heap *h = (fibonacci_heap *)self->impl;
+    fib_node *x = (fib_node *)node_handle;
+    
+    if (!x || !new_value) return;
+    
+    // Update the value
+    x->data = new_value;
+    fib_node *y = x->parent;
+    
+    // If heap property is violated (x has higher priority than parent), cut it
+    if (y != NULL && h->cmp(x->data, y->data) < 0) {
+        cut(h, x, y);
+        cascading_cut(h, y);
+    }
+    
+    // Update min if x has higher priority than current min
+    if (h->cmp(x->data, h->min->data) < 0) {
+        h->min = x;
+    }
+}
+
+static void fibonacci_heap_delete(heap *self, void *node_handle) {
+    fibonacci_heap *h = (fibonacci_heap *)self->impl;
+    fib_node *x = (fib_node *)node_handle;
+    
+    if (!x) return;
+    
+    // Move x to root list if it's not already there
+    if (x->parent != NULL) {
+        fib_node *y = x->parent;
+        cut(h, x, y);
+        cascading_cut(h, y);
+    }
+    
+    // Make x the minimum
+    h->min = x;
+    
+    // Extract the minimum (which is x)
+    fibonacci_heap_pop(self);
 }
 
 static void *fibonacci_heap_pop(heap *self) {
@@ -207,6 +307,9 @@ heap *create_fibonacci_heap(comparator compare_function) {
 
     h->impl = fh;
     h->put = fibonacci_heap_put;
+    h->put_with_handle = fibonacci_heap_put_with_handle;
+    h->decrease_key = fibonacci_heap_decrease_key;
+    h->delete_node = fibonacci_heap_delete;
     h->pop = fibonacci_heap_pop;
     h->peek = fibonacci_heap_peek;
     h->size = fibonacci_heap_size;

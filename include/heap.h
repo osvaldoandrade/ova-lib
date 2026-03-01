@@ -23,6 +23,45 @@ typedef struct heap {
     void (*put)(struct heap *self, void *item);
 
     /**
+     * @brief Put an item into the heap and return a handle to it.
+     *
+     * This function pointer is used to insert an item into the heap and return
+     * an opaque handle that can be used with decrease_key or delete_node.
+     *
+     * @param self A pointer to the heap structure.
+     * @param item A pointer to the item to be inserted.
+     * @return An opaque handle to the inserted node, or NULL on failure.
+     */
+    void *(*put_with_handle)(struct heap *self, void *item);
+
+    /**
+     * @brief Decrease the key of a node in the heap.
+     *
+     * This function pointer is used to increase the priority of a node identified by
+     * the given handle. Despite the name "decrease_key" (from algorithm literature),
+     * this operation increases the node's priority according to the heap's comparator.
+     * 
+     * For a min-heap: the new value should be less than the current value.
+     * For a max-heap: the new value should be greater than the current value.
+     *
+     * @param self A pointer to the heap structure.
+     * @param node_handle An opaque handle to the node (returned by put_with_handle).
+     * @param new_value A pointer to the new value for the node (must increase priority).
+     */
+    void (*decrease_key)(struct heap *self, void *node_handle, void *new_value);
+
+    /**
+     * @brief Delete a node from the heap.
+     *
+     * This function pointer is used to delete a node identified by the given handle
+     * from the heap.
+     *
+     * @param self A pointer to the heap structure.
+     * @param node_handle An opaque handle to the node (returned by put_with_handle).
+     */
+    void (*delete_node)(struct heap *self, void *node_handle);
+
+    /**
      * @brief Extract the top element from the heap.
      *
      * This function pointer is used to extract the top element (such as maximum or minimum,
