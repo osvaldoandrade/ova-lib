@@ -78,7 +78,8 @@ void test_heap_decrease_key() {
         handles[i] = h->put_with_handle(h, &values[i]);
     }
     
-    // Increase priority (increase value for max-heap) of value 10 to 100
+    // Note: decrease_key increases priority. For this max-heap (where larger
+    // values have higher priority), we increase the value from 10 to 100
     static int new_val = 100;
     h->decrease_key(h, handles[3], &new_val);
     
@@ -102,7 +103,7 @@ void test_heap_decrease_key_cascading() {
     // Extract max to trigger consolidation
     h->pop(h);
     
-    // Increase priority of a non-root node to trigger cascading cut
+    // Note: decrease_key increases priority. For this max-heap, increase value to 200
     static int new_val = 200;
     h->decrease_key(h, handles[5], &new_val);
     
@@ -173,7 +174,7 @@ void test_heap_complex_operations() {
     h->pop(h);
     h->pop(h);
     
-    // Increase priority (increase values for max-heap)
+    // Note: decrease_key increases priority. For max-heap, increase values
     static int inc_vals[3] = {100, 110, 120};
     h->decrease_key(h, handles[10], &inc_vals[0]);
     h->decrease_key(h, handles[5], &inc_vals[1]);

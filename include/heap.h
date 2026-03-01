@@ -37,13 +37,16 @@ typedef struct heap {
     /**
      * @brief Decrease the key of a node in the heap.
      *
-     * This function pointer is used to decrease the value of a node identified by
-     * the given handle. The new value must be less than the current value according
-     * to the heap's comparator.
+     * This function pointer is used to increase the priority of a node identified by
+     * the given handle. Despite the name "decrease_key" (from algorithm literature),
+     * this operation increases the node's priority according to the heap's comparator.
+     * 
+     * For a min-heap: the new value should be less than the current value.
+     * For a max-heap: the new value should be greater than the current value.
      *
      * @param self A pointer to the heap structure.
      * @param node_handle An opaque handle to the node (returned by put_with_handle).
-     * @param new_value A pointer to the new value for the node.
+     * @param new_value A pointer to the new value for the node (must increase priority).
      */
     void (*decrease_key)(struct heap *self, void *node_handle, void *new_value);
 
