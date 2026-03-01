@@ -1,0 +1,1 @@
+/home/runner/work/ova-lib/.codeql-scratch/dbs/cpp/working/autobuild/bin/cc -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_fibonacci_heap.dir/link.d CMakeFiles/test_fibonacci_heap.dir/test/test_fibonacci_heap.c.o CMakeFiles/test_fibonacci_heap.dir/test/base_test.c.o -o bin/test_fibonacci_heap  lib/libova_lib.a -lm
