@@ -63,7 +63,9 @@ static int ensure_capacity(array_list_impl *impl) {
 
 static void array_list_insert(list *self, void *item, int index) {
     array_list_impl *impl = (array_list_impl *) self->impl;
-    if (!ensure_capacity(impl)) return; // Failed to expand capacity
+    if (!ensure_capacity(impl)) {
+        return; // Failed to expand capacity
+    }
     if (index < 0 || index > impl->size) return;
     memmove(&impl->items[index + 1], &impl->items[index], (impl->size - index) * sizeof(void *));
     impl->items[index] = item;

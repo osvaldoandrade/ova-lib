@@ -26,7 +26,8 @@ static void binary_heap_put(heap *self, void *item) {
         int new_capacity = h->capacity * 2;
         void **new_data = realloc(h->data, new_capacity * sizeof(void *));
         if (new_data == NULL) {
-            return; // Failed to expand capacity - silently fail
+            // Allocation failed - cannot add item, maintain existing state
+            return;
         }
         h->data = new_data;
         h->capacity = new_capacity;
