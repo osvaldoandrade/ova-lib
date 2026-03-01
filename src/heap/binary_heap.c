@@ -23,8 +23,14 @@ binary_heap *binary_heap_init(int initial_capacity, comparator cmp) {
 static void binary_heap_put(heap *self, void *item) {
     binary_heap *h = (binary_heap *)self->impl;
     if (h->size == h->capacity) {
-        h->capacity *= 2;
-        h->data = realloc(h->data, h->capacity * sizeof(void *));
+        int new_capacity = h->capacity * 2;
+        void **new_data = realloc(h->data, new_capacity * sizeof(void *));
+        if (new_data == NULL) {
+            // Allocation failed - cannot add item, maintain existing state
+            return;
+        }
+        h->data = new_data;
+        h->capacity = new_capacity;
     }
     h->data[h->size] = item;
     sift_up(h, h->size);
