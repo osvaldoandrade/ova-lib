@@ -58,17 +58,19 @@ static sorted_list_impl *get_impl(const list *self) {
     return self ? (sorted_list_impl *)self->impl : NULL;
 }
 
-static void ensure_capacity(sorted_list_impl *impl) {
+static int ensure_capacity(sorted_list_impl *impl) {
     if (impl->size < impl->capacity) {
-        return;
+        return 1; // Already has capacity
     }
 
     int new_capacity = impl->capacity * 2;
     void **new_items = realloc(impl->items, sizeof(void *) * new_capacity);
-    if (new_items) {
-        impl->items = new_items;
-        impl->capacity = new_capacity;
+    if (new_items == NULL) {
+        return 0; // Signal failure
     }
+    impl->items = new_items;
+    impl->capacity = new_capacity;
+    return 1; // Success
 }
 
 static int find_insert_position(sorted_list_impl *impl, void *item) {
@@ -93,9 +95,8 @@ static void sorted_list_insert(list *self, void *item, int index) {
         return;
     }
 
-    ensure_capacity(impl);
-    if (impl->size >= impl->capacity) {
-        return;
+    if (!ensure_capacity(impl)) {
+        return; // Failed to expand capacity
     }
 
     int insert_pos = find_insert_position(impl, item);

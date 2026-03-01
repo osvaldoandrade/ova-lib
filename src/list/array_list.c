@@ -48,20 +48,22 @@ static int get_size_from_impl(void *impl) {
     return internal->size;
 }
 
-static void ensure_capacity(array_list_impl *impl) {
+static int ensure_capacity(array_list_impl *impl) {
     if (impl->size >= impl->capacity) {
         int new_capacity = impl->capacity * 2;
         void **new_items = realloc(impl->items, new_capacity * sizeof(void *));
-        if (new_items) {
-            impl->items = new_items;
-            impl->capacity = new_capacity;
+        if (new_items == NULL) {
+            return 0; // Signal failure
         }
+        impl->items = new_items;
+        impl->capacity = new_capacity;
     }
+    return 1; // Success
 }
 
 static void array_list_insert(list *self, void *item, int index) {
     array_list_impl *impl = (array_list_impl *) self->impl;
-    ensure_capacity(impl);
+    if (!ensure_capacity(impl)) return; // Failed to expand capacity
     if (index < 0 || index > impl->size) return;
     memmove(&impl->items[index + 1], &impl->items[index], (impl->size - index) * sizeof(void *));
     impl->items[index] = item;
