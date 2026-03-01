@@ -54,3 +54,8 @@ The rotational variant combines bit rotations and XOR to balance dispersion with
 The additive approach simply sums bytes. It is the fastest option but yields the weakest distribution, suitable only for tiny key sets where collisions remain tolerable.
 
 All functions short-circuit when `key == NULL`, ensuring sentinel entries always hash to bucket zero and remain retrievable.
+
+## Deques
+A deque (double-ended queue) permits insertion and removal at both the front and back with O(1) amortized time. The implementation uses a circular buffer backed by a dynamic array that resizes when capacity is exhausted. Pushes and pops at either end operate in constant amortized time because only one boundary moves. Random access through `deque_get` remains constant time by translating a logical index into a physical position in the circular layout.
+
+When the deque fills, `deque_resize` allocates a buffer twice the current capacity, copies elements in logical order starting from index zero, and resets the front pointer. This reorganization ensures all subsequent operations reference correct positions without tracking wrap points. Peek operations return element pointers without removing them, and size queries reflect the current count. Destruction frees the buffer but never touches element pointers, as ownership remains with the caller.
