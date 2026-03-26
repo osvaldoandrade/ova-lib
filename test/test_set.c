@@ -194,11 +194,93 @@ static void test_set_algebra_tree_ordered_result() {
     set_free(b);
 }
 
+static void test_hash_set_add_bulk() {
+    set *s = create_set(SET_HASH, int_comparator, int_hash);
+    if (!s) {
+        print_test_result(0, "Hash set creation for bulk test");
+        return;
+    }
+
+    int values[] = {10, 20, 30, 40, 50};
+    void *ptrs[] = {&values[0], &values[1], &values[2], &values[3], &values[4]};
+
+    set_add_bulk(s, ptrs, 5);
+    print_test_result(set_size(s) == 5, "Hash set bulk add inserts all elements");
+
+    int ok = 1;
+    for (int i = 0; i < 5; i++) {
+        ok = ok && set_contains(s, &values[i]);
+    }
+    print_test_result(ok, "Hash set bulk add elements are all findable");
+
+    set_free(s);
+}
+
+static void test_tree_set_add_bulk() {
+    set *s = create_set(SET_TREE, int_comparator, NULL);
+    if (!s) {
+        print_test_result(0, "Tree set creation for bulk test");
+        return;
+    }
+
+    int values[] = {50, 10, 40, 20, 30};
+    void *ptrs[] = {&values[0], &values[1], &values[2], &values[3], &values[4]};
+
+    set_add_bulk(s, ptrs, 5);
+    print_test_result(set_size(s) == 5, "Tree set bulk add inserts all elements");
+
+    int expected[] = {10, 20, 30, 40, 50};
+    list *lst = set_to_list(s);
+    print_test_result(list_values_match(lst, expected, 5), "Tree set bulk add maintains order");
+    if (lst) {
+        lst->free(lst);
+    }
+
+    set_free(s);
+}
+
+static void test_set_add_bulk_with_duplicates() {
+    set *s = create_set(SET_HASH, int_comparator, int_hash);
+    if (!s) {
+        print_test_result(0, "Hash set creation for bulk duplicate test");
+        return;
+    }
+
+    int values[] = {10, 20, 10, 30, 20};
+    void *ptrs[] = {&values[0], &values[1], &values[2], &values[3], &values[4]};
+
+    set_add_bulk(s, ptrs, 5);
+    print_test_result(set_size(s) == 3, "Set bulk add skips duplicates");
+
+    set_free(s);
+}
+
+static void test_set_add_bulk_edge_cases() {
+    set *s = create_set(SET_HASH, int_comparator, int_hash);
+    int v = 1;
+    void *ptrs[] = {&v};
+
+    set_add_bulk(s, ptrs, 0);
+    print_test_result(set_size(s) == 0, "Set bulk add with count 0 does nothing");
+
+    set_add_bulk(s, NULL, 3);
+    print_test_result(set_size(s) == 0, "Set bulk add with NULL elements does nothing");
+
+    set_add_bulk(NULL, ptrs, 1);
+    print_test_result(1, "Set bulk add with NULL set does not crash");
+
+    set_free(s);
+}
+
 static void run_all_tests() {
     test_hash_set_basic_ops();
     test_set_algebra_hash();
     test_tree_set_basic_ops_and_order();
     test_set_algebra_tree_ordered_result();
+    test_hash_set_add_bulk();
+    test_tree_set_add_bulk();
+    test_set_add_bulk_with_duplicates();
+    test_set_add_bulk_edge_cases();
 }
 
 int main() {

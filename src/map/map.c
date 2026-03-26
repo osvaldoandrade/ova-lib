@@ -12,6 +12,13 @@ map *create_map(map_type type, int capacity, int (*hash_func)(void *, int), comp
     }
 }
 
+void map_put_bulk(map *m, void **keys, void **values, int count) {
+    if (!m || !keys || !values || count <= 0) return;
+    for (int i = 0; i < count; i++) {
+        m->put(m, keys[i], values[i]);
+    }
+}
+
 hash_func_t hash_functions[HASH_FUNC_COUNT] = {
         bernstein_hash,
         fnv1a_hash,

@@ -85,4 +85,16 @@ typedef struct list {
  */
 list *create_list(ListType type, int initial_capacity, comparator cmp);
 
+/**
+ * @brief Insert multiple elements into the list at the end.
+ *
+ * This function inserts all elements from the given array into the list,
+ * appending each one at the current end of the list.
+ *
+ * @param l A pointer to the list structure.
+ * @param elements An array of pointers to the elements to be inserted.
+ * @param count The number of elements to insert.
+ */
+void list_insert_bulk(list *l, void **elements, int count);
+
 #endif // LIST_H

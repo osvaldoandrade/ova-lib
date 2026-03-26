@@ -208,6 +208,60 @@ void test_concurrent_access() {
     print_test_result(1, "Concurrent access test completed successfully.");
 }
 
+void test_map_put_bulk() {
+    map *m = create_map(HASH_MAP, 10, NULL, string_compare);
+    char *keys[] = {"key1", "key2", "key3"};
+    char *vals[] = {"val1", "val2", "val3"};
+
+    map_put_bulk(m, (void **)keys, (void **)vals, 3);
+    print_test_result(m->size == 3, "Map bulk put inserts all pairs");
+
+    int ok = 1;
+    for (int i = 0; i < 3; i++) {
+        char *retrieved = (char *)m->get(m, keys[i]);
+        if (!retrieved || strcmp(retrieved, vals[i]) != 0) {
+            ok = 0;
+        }
+    }
+    print_test_result(ok, "Map bulk put values are all retrievable");
+
+    m->free(m);
+}
+
+void test_map_put_bulk_with_duplicate_keys() {
+    map *m = create_map(HASH_MAP, 10, NULL, string_compare);
+    char *keys[] = {"key1", "key2", "key1"};
+    char *vals[] = {"val1", "val2", "val3"};
+
+    map_put_bulk(m, (void **)keys, (void **)vals, 3);
+    print_test_result(m->size == 2, "Map bulk put with duplicates has correct size");
+
+    char *retrieved = (char *)m->get(m, "key1");
+    print_test_result(retrieved && strcmp(retrieved, "val3") == 0, "Map bulk put duplicate key retains last value");
+
+    m->free(m);
+}
+
+void test_map_put_bulk_edge_cases() {
+    map *m = create_map(HASH_MAP, 10, NULL, string_compare);
+    char *keys[] = {"k"};
+    char *vals[] = {"v"};
+
+    map_put_bulk(m, (void **)keys, (void **)vals, 0);
+    print_test_result(m->size == 0, "Map bulk put with count 0 does nothing");
+
+    map_put_bulk(m, NULL, (void **)vals, 3);
+    print_test_result(m->size == 0, "Map bulk put with NULL keys does nothing");
+
+    map_put_bulk(m, (void **)keys, NULL, 3);
+    print_test_result(m->size == 0, "Map bulk put with NULL values does nothing");
+
+    map_put_bulk(NULL, (void **)keys, (void **)vals, 1);
+    print_test_result(1, "Map bulk put with NULL map does not crash");
+
+    m->free(m);
+}
+
 void run_all_tests() {
     test_insert_and_retrieve_single_item();
     test_check_resizing();
@@ -223,6 +277,9 @@ void run_all_tests() {
     test_map_get_empty();
     test_with_high_volume();
     test_concurrent_access();
+    test_map_put_bulk();
+    test_map_put_bulk_with_duplicate_keys();
+    test_map_put_bulk_edge_cases();
 }
 
 int main() {

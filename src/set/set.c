@@ -268,3 +268,10 @@ bool set_is_subset(const set *a, const set *b) {
     return ok;
 }
 
+void set_add_bulk(set *s, void **elements, int count) {
+    if (!s || !elements || count <= 0) return;
+    for (int i = 0; i < count; i++) {
+        set_add(s, elements[i]);
+    }
+}
+
