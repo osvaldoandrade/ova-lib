@@ -56,5 +56,17 @@ bool set_is_subset(const set *a, const set *b);
  */
 list *set_to_list(const set *s);
 
+/**
+ * @brief Add multiple elements to the set.
+ *
+ * This function adds all elements from the given array to the set.
+ * Duplicate elements (as determined by the set's comparator) are skipped.
+ *
+ * @param s A pointer to the set structure.
+ * @param elements An array of pointers to the elements to be added.
+ * @param count The number of elements to add.
+ */
+void set_add_bulk(set *s, void **elements, int count);
+
 #endif // SET_H
 

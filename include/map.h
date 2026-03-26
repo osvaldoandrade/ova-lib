@@ -158,4 +158,17 @@ int additive_hash(void *key, int capacity);
  */
 map *create_map(map_type type, int capacity, int (*hash_func)(void *, int), comparator compare);
 
+/**
+ * @brief Insert multiple key-value pairs into the map.
+ *
+ * This function inserts all key-value pairs from the given arrays into the map.
+ * If a key already exists, its value is updated.
+ *
+ * @param m A pointer to the map structure.
+ * @param keys An array of pointers to the keys to be inserted.
+ * @param values An array of pointers to the values to be inserted.
+ * @param count The number of key-value pairs to insert.
+ */
+void map_put_bulk(map *m, void **keys, void **values, int count);
+
 #endif // HASH_H
