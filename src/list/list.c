@@ -16,3 +16,10 @@ list *create_list(ListType type, int initial_capacity, comparator cmp) {
     }
     return NULL;
 }
+
+void list_insert_bulk(list *l, void **elements, int count) {
+    if (!l || !elements || count <= 0) return;
+    for (int i = 0; i < count; i++) {
+        l->insert(l, elements[i], l->size(l));
+    }
+}

@@ -167,6 +167,42 @@ void test_high_volume_linked_list_insertions() {
 }
 
 
+void test_array_list_insert_bulk() {
+    list *lst = create_list(ARRAY_LIST, 2, NULL);
+    int items[] = {10, 20, 30, 40, 50};
+    void *ptrs[] = {&items[0], &items[1], &items[2], &items[3], &items[4]};
+
+    list_insert_bulk(lst, ptrs, 5);
+
+    int passed = lst->size(lst) == 5;
+    for (int i = 0; i < 5 && passed; i++) {
+        int *retrieved = (int *)lst->get(lst, i);
+        if (!retrieved || *retrieved != items[i]) {
+            passed = 0;
+        }
+    }
+    print_test_result(passed, "Array List bulk insert adds all elements");
+
+    lst->free(lst);
+}
+
+void test_array_list_insert_bulk_empty() {
+    list *lst = create_list(ARRAY_LIST, 4, NULL);
+    int items[] = {1};
+    void *ptrs[] = {&items[0]};
+
+    list_insert_bulk(lst, ptrs, 0);
+    print_test_result(lst->size(lst) == 0, "Array List bulk insert with count 0 does nothing");
+
+    list_insert_bulk(lst, NULL, 3);
+    print_test_result(lst->size(lst) == 0, "Array List bulk insert with NULL elements does nothing");
+
+    list_insert_bulk(NULL, ptrs, 1);
+    print_test_result(1, "Array List bulk insert with NULL list does not crash");
+
+    lst->free(lst);
+}
+
 void run_all_tests() {
     test_array_list_insert_and_get();
     test_array_list_remove();
@@ -176,6 +212,8 @@ void run_all_tests() {
     test_insert_invalid_index();
     test_high_volume_linked_list_insertions();
     test_array_list_releases_internal_buffer();
+    test_array_list_insert_bulk();
+    test_array_list_insert_bulk_empty();
     //test_list_clear();
     //test_high_volume_array_list_insertions();
 }
