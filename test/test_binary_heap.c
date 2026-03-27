@@ -1,5 +1,7 @@
 #include "base_test.h"
 #include "../include/heap.h"
+#include "../src/utils/capacity_utils.h"
+#include <limits.h>
 #include <time.h>
 
 int int_compare(const void *a, const void *b) {
@@ -60,7 +62,14 @@ void test_heap_high_volume() {
     h->free(h);
 }
 
+void test_safe_double_capacity_for_binary_heap() {
+    print_test_result(safe_double_capacity(10) == 20, "Heap safe_double_capacity(10) == 20");
+    print_test_result(safe_double_capacity(INT_MAX / 2 + 1) == INT_MAX, "Heap safe_double_capacity caps at INT_MAX");
+    print_test_result(safe_double_capacity(INT_MAX) == INT_MAX, "Heap safe_double_capacity(INT_MAX) stays INT_MAX");
+}
+
 void run_all_heap_tests() {
+    test_safe_double_capacity_for_binary_heap();
     test_heap_insert_and_extract_max();
     test_heap_peek_max();
     test_heap_empty_check();

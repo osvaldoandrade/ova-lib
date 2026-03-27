@@ -1,5 +1,7 @@
 #include "base_test.h"
 #include "../include/deque.h"
+#include "../src/utils/capacity_utils.h"
+#include <limits.h>
 #include <string.h>
 #include <time.h>
 
@@ -365,7 +367,14 @@ void test_deque_alternating_operations() {
     deque_free(d);
 }
 
+void test_safe_double_capacity_for_deque() {
+    print_test_result(safe_double_capacity(16) == 32, "Deque safe_double_capacity(16) == 32");
+    print_test_result(safe_double_capacity(INT_MAX / 2 + 1) == INT_MAX, "Deque safe_double_capacity caps at INT_MAX");
+    print_test_result(safe_double_capacity(INT_MAX) == INT_MAX, "Deque safe_double_capacity(INT_MAX) stays INT_MAX");
+}
+
 void run_all_deque_tests() {
+    test_safe_double_capacity_for_deque();
     test_deque_create();
     test_deque_create_default_capacity();
     test_deque_push_front_single();

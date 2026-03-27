@@ -1,4 +1,5 @@
 #include "hash_map.h"
+#include "../utils/capacity_utils.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -54,8 +55,11 @@ map *create_hash_map(int capacity, int (*hash_func)(void *, int), comparator key
  */
 void resize_and_rehash(map *ht) {
     int old_capacity = ht->capacity;
-    ht->capacity *= 2;
-    map_entry **new_buckets = calloc(ht->capacity, sizeof(map_entry*));
+    int new_capacity = safe_double_capacity(old_capacity);
+    if (new_capacity == old_capacity) {
+        return; // Already at maximum capacity
+    }
+    map_entry **new_buckets = calloc(new_capacity, sizeof(map_entry*));
 
     if (!new_buckets) {
         return;
@@ -65,7 +69,7 @@ void resize_and_rehash(map *ht) {
         map_entry *node = ht->buckets[i];
         while (node) {
             map_entry *next_node = node->next;
-            int new_index = ht->hash_func(node->key, ht->capacity);
+            int new_index = ht->hash_func(node->key, new_capacity);
 
             node->next = new_buckets[new_index];
             new_buckets[new_index] = node;
@@ -75,6 +79,7 @@ void resize_and_rehash(map *ht) {
 
     free(ht->buckets);
     ht->buckets = new_buckets;
+    ht->capacity = new_capacity;
 }
 
 /**
