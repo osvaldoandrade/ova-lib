@@ -1,4 +1,5 @@
 #include "binary_heap.h"
+#include "../utils/capacity_utils.h"
 #include <stdlib.h>
 
 static void sift_up(binary_heap *h, int index);
@@ -23,7 +24,11 @@ binary_heap *binary_heap_init(int initial_capacity, comparator cmp) {
 static void binary_heap_put(heap *self, void *item) {
     binary_heap *h = (binary_heap *)self->impl;
     if (h->size == h->capacity) {
-        int new_capacity = h->capacity * 2;
+        int new_capacity = safe_double_capacity(h->capacity);
+        if (new_capacity == h->capacity) {
+            // Already at maximum capacity - cannot add item
+            return;
+        }
         void **new_data = realloc(h->data, new_capacity * sizeof(void *));
         if (new_data == NULL) {
             // Allocation failed - cannot add item, maintain existing state

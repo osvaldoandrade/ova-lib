@@ -1,5 +1,7 @@
 #include "base_test.h"
 #include "../include/list.h"
+#include "../src/utils/capacity_utils.h"
+#include <limits.h>
 #include <time.h>
 
 extern size_t array_list_active_buffer_count(void);
@@ -203,7 +205,22 @@ void test_array_list_insert_bulk_empty() {
     lst->free(lst);
 }
 
+void test_safe_double_capacity_normal() {
+    print_test_result(safe_double_capacity(1) == 2, "safe_double_capacity(1) == 2");
+    print_test_result(safe_double_capacity(4) == 8, "safe_double_capacity(4) == 8");
+    print_test_result(safe_double_capacity(100) == 200, "safe_double_capacity(100) == 200");
+    print_test_result(safe_double_capacity(INT_MAX / 2) == (INT_MAX / 2) * 2, "safe_double_capacity(INT_MAX/2) doubles without overflow");
+}
+
+void test_safe_double_capacity_overflow_protection() {
+    print_test_result(safe_double_capacity(INT_MAX / 2 + 1) == INT_MAX, "safe_double_capacity(INT_MAX/2+1) returns INT_MAX");
+    print_test_result(safe_double_capacity(INT_MAX) == INT_MAX, "safe_double_capacity(INT_MAX) returns INT_MAX");
+    print_test_result(safe_double_capacity(INT_MAX - 1) == INT_MAX, "safe_double_capacity(INT_MAX-1) returns INT_MAX");
+}
+
 void run_all_tests() {
+    test_safe_double_capacity_normal();
+    test_safe_double_capacity_overflow_protection();
     test_array_list_insert_and_get();
     test_array_list_remove();
     test_array_list_capacity_increase();
