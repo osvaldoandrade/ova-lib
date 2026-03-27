@@ -1,4 +1,5 @@
 #include "../../include/list.h"
+#include "../utils/capacity_utils.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -50,7 +51,10 @@ static int get_size_from_impl(void *impl) {
 
 static int ensure_capacity(array_list_impl *impl) {
     if (impl->size >= impl->capacity) {
-        int new_capacity = impl->capacity * 2;
+        int new_capacity = safe_double_capacity(impl->capacity);
+        if (new_capacity == impl->capacity) {
+            return 0; // Already at maximum capacity
+        }
         void **new_items = realloc(impl->items, new_capacity * sizeof(void *));
         if (new_items == NULL) {
             return 0; // Signal failure

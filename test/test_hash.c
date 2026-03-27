@@ -1,5 +1,7 @@
 #include "base_test.h"
 #include "../include/map.h"
+#include "../src/utils/capacity_utils.h"
+#include <limits.h>
 #include <time.h>
 #include <string.h>
 
@@ -262,7 +264,14 @@ void test_map_put_bulk_edge_cases() {
     m->free(m);
 }
 
+void test_safe_double_capacity_for_hash_map() {
+    print_test_result(safe_double_capacity(10) == 20, "Hash map safe_double_capacity(10) == 20");
+    print_test_result(safe_double_capacity(INT_MAX / 2 + 1) == INT_MAX, "Hash map safe_double_capacity caps at INT_MAX");
+    print_test_result(safe_double_capacity(INT_MAX) == INT_MAX, "Hash map safe_double_capacity(INT_MAX) stays INT_MAX");
+}
+
 void run_all_tests() {
+    test_safe_double_capacity_for_hash_map();
     test_insert_and_retrieve_single_item();
     test_check_resizing();
     test_collision_and_chaining();

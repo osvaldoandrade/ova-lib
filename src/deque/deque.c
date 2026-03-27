@@ -1,4 +1,5 @@
 #include "../../include/deque.h"
+#include "../utils/capacity_utils.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -49,7 +50,10 @@ static int deque_resize(deque *d) {
         return -1;
     }
 
-    int new_capacity = d->capacity * 2;
+    int new_capacity = safe_double_capacity(d->capacity);
+    if (new_capacity == d->capacity) {
+        return -1; // Already at maximum capacity
+    }
     void **new_buffer = (void**)calloc(new_capacity, sizeof(void*));
     if (!new_buffer) {
         return -1;
