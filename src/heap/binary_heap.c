@@ -77,6 +77,9 @@ heap *create_binary_heap(int initial_capacity, comparator compare_function) {
 
     h->impl = bh;
     h->put = binary_heap_put;
+    h->put_with_handle = NULL;  // Not supported for binary heap
+    h->decrease_key = NULL;      // Not supported for binary heap
+    h->delete_node = NULL;       // Not supported for binary heap
     h->pop = binary_heap_pop;
     h->peek = binary_heap_peek;
     h->size = binary_heap_size;
