@@ -33,7 +33,7 @@ static int set_remove_int(set *s, int v) {
     return set_remove(s, &tmp) ? 1 : 0;
 }
 
-static int list_values_match(const list *lst, const int *expected, int expected_count) {
+static int list_values_match(list *lst, const int *expected, int expected_count) {
     if (!lst) {
         return 0;
     }
@@ -41,7 +41,7 @@ static int list_values_match(const list *lst, const int *expected, int expected_
         return 0;
     }
     for (int i = 0; i < expected_count; i++) {
-        int *p = (int *)lst->get((list *)lst, i);
+        int *p = (int *)lst->get(lst, i);
         if (!p || *p != expected[i]) {
             return 0;
         }

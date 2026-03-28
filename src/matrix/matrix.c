@@ -28,14 +28,14 @@ matrix *create_matrix(int rows, int cols) {
         return NULL;  // Handle memory allocation failure for the matrix structure
     }
 
-    m->data = malloc(rows * sizeof(double *));
+    m->data = malloc((size_t)rows * sizeof(double *));
     if (m->data == NULL) {
         free(m);  // Free the allocated structure if row allocation fails
         return NULL;
     }
 
     for (int i = 0; i < rows; i++) {
-        m->data[i] = malloc(cols * sizeof(double));
+        m->data[i] = malloc((size_t)cols * sizeof(double));
         if (m->data[i] == NULL) {
             for (int j = 0; j < i; j++) {
                 free(m->data[j]);  // Free previously allocated rows on failure
@@ -70,7 +70,7 @@ vector *create_vector(int size) {
     return NULL; // Memory allocation failed
   }
 
-  v->data = calloc(size, sizeof(double)); // Use calloc to initialize elements to 0
+  v->data = calloc((size_t)size, sizeof(double)); // Use calloc to initialize elements to 0
   if (v->data == NULL) {
     free(v); // Clean up vector allocation if data allocation fails
     return NULL;
@@ -87,7 +87,7 @@ vector *create_vector(int size) {
 void vector_resize(vector *self, int newSize) {
   if (self == NULL) return;
 
-  double *newData = realloc(self->data, newSize * sizeof(double));
+  double *newData = realloc(self->data, (size_t)newSize * sizeof(double));
   if (newData == NULL) return; // Handle realloc failure
 
   // Initialize new elements to zero if size is increased
@@ -350,7 +350,7 @@ int matrix_resize(matrix *self, int newRows, int newCols) {
   int minRows = oldRows < newRows ? oldRows : newRows;
   int copyCols = oldCols < newCols ? oldCols : newCols;
 
-  double **newData = malloc(newRows * sizeof(double *));
+  double **newData = malloc((size_t)newRows * sizeof(double *));
   if (newData == NULL) {
     return -1;
   }
@@ -360,13 +360,13 @@ int matrix_resize(matrix *self, int newRows, int newCols) {
   }
 
   for (int i = 0; i < minRows; i++) {
-    double *newRow = malloc(newCols * sizeof(double));
+    double *newRow = malloc((size_t)newCols * sizeof(double));
     if (newRow == NULL) {
       goto resize_failure;
     }
 
     if (copyCols > 0) {
-      memcpy(newRow, oldData[i], copyCols * sizeof(double));
+      memcpy(newRow, oldData[i], (size_t)copyCols * sizeof(double));
     }
     for (int j = copyCols; j < newCols; j++) {
       newRow[j] = 0.0;
@@ -376,7 +376,7 @@ int matrix_resize(matrix *self, int newRows, int newCols) {
   }
 
   for (int i = minRows; i < newRows; i++) {
-    double *newRow = calloc(newCols, sizeof(double));
+    double *newRow = calloc((size_t)newCols, sizeof(double));
     if (newRow == NULL) {
       goto resize_failure;
     }
@@ -409,7 +409,7 @@ matrix *matrix_copy(matrix *self) {
   if (!copy) return NULL;
 
   for (int i = 0; i < self->rows; i++) {
-    memcpy(copy->data[i], self->data[i], self->cols * sizeof(double));
+    memcpy(copy->data[i], self->data[i], (size_t)self->cols * sizeof(double));
   }
 
   return copy;

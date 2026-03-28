@@ -13,7 +13,7 @@ int int_compare(const void *a, const void *b) {
 void test_heap_insert_and_extract_max() {
     heap *h = create_heap(BINARY_HEAP,10, int_compare);
     int values[] = {5, 3, 10, 1, 4};
-    for (int i = 0; i < sizeof(values) / sizeof(values[0]); i++) {
+    for (int i = 0; i < (int)(sizeof(values) / sizeof(values[0])); i++) {
         h->put(h, &values[i]);
     }
     int *max = (int *)h->pop(h);
@@ -24,7 +24,7 @@ void test_heap_insert_and_extract_max() {
 void test_heap_peek_max() {
     heap *h = create_heap(BINARY_HEAP, 10, int_compare);
     int values[] = {5, 3, 10, 1, 4};
-    for (int i = 0; i < sizeof(values) / sizeof(values[0]); i++) {
+    for (int i = 0; i < (int)(sizeof(values) / sizeof(values[0])); i++) {
         h->put(h, &values[i]);
     }
     int *max = (int *)h->pop(h);

@@ -44,7 +44,7 @@ void test_queue_high_volume() {
     queue *q = create_queue(QUEUE_TYPE_NORMAL, 10, NULL);
     const int max_data = 1000;
     clock_t start = clock();
-    int* data_array = generate_random_int_data(max_data);
+    int* data_array = generate_random_int_data((size_t)max_data);
 
     for (int i = 0; i < max_data; i++) {
         q->enqueue(q, &data_array[i]);
@@ -53,6 +53,7 @@ void test_queue_high_volume() {
     for (int i = 0; i < max_data; i++) {
         int *dequeued_data = (int*)q->dequeue(q);
         assert(dequeued_data != NULL && *dequeued_data == data_array[i]);  // Ensures each dequeued item matches the enqueued item
+        (void)dequeued_data;
     }
     assert(q->is_empty(q));  // Verifies the queue is empty after all dequeues
 

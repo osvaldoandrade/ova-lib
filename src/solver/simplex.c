@@ -48,7 +48,7 @@ int simplex_solver(lp_problem *prob, matrix **out_tableau) {
 
       // Store the solution values into the lp_problem structure
       if (!prob->solution) {
-        prob->solution = malloc(sizeof(double) * cols);
+        prob->solution = malloc(sizeof(double) * (size_t)cols);
       }
       for (int i = 0; i < cols; i++) {
         prob->solution[i] = 0; // Initialize with zero

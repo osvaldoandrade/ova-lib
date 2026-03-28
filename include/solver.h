@@ -59,7 +59,7 @@ lp_problem* create_problem(int numVariables, int numConstraints);
  * @param solution The solution vector to be checked.
  * @return 1 if the solution is feasible, 0 otherwise.
  */
-static int is_feasible(lp_problem *prob, vector *solution);
+int is_feasible(lp_problem *prob, vector *solution);
 
 /**
  * Determines whether a given solution improves the objective value of a matrix programming problem.

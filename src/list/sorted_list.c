@@ -36,7 +36,7 @@ list *create_sorted_list(int initial_capacity, comparator cmp) {
     impl->capacity = clamp_initial_capacity(initial_capacity);
     impl->size = 0;
     impl->cmp = cmp;
-    impl->items = malloc(sizeof(void *) * impl->capacity);
+    impl->items = malloc(sizeof(void *) * (size_t)impl->capacity);
 
     if (!impl->items) {
         free(impl);
@@ -64,7 +64,7 @@ static int ensure_capacity(sorted_list_impl *impl) {
     }
 
     int new_capacity = impl->capacity * 2;
-    void **new_items = realloc(impl->items, sizeof(void *) * new_capacity);
+    void **new_items = realloc(impl->items, sizeof(void *) * (size_t)new_capacity);
     if (new_items == NULL) {
         return 0; // Signal failure
     }
@@ -101,7 +101,7 @@ static void sorted_list_insert(list *self, void *item, int index) {
 
     int insert_pos = find_insert_position(impl, item);
     memmove(&impl->items[insert_pos + 1], &impl->items[insert_pos],
-            (impl->size - insert_pos) * sizeof(void *));
+            (size_t)(impl->size - insert_pos) * sizeof(void *));
     impl->items[insert_pos] = item;
     impl->size++;
 }
@@ -121,7 +121,7 @@ static void sorted_list_remove(list *self, int index) {
     }
 
     memmove(&impl->items[index], &impl->items[index + 1],
-            (impl->size - index - 1) * sizeof(void *));
+            (size_t)(impl->size - index - 1) * sizeof(void *));
     impl->size--;
 }
 
