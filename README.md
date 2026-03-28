@@ -22,6 +22,7 @@ ova-lib is a lightweight collection of data structures and algorithms written in
 Refer to the technical notes under `docs/` for deep dives into each subsystem:
 
 - [Architecture overview](docs/architecture.md)
+- [Usage best practices guide](docs/best-practices.md)
 - [Container implementations, hashing strategies, and heaps](docs/containers.md)
 - [Graph data structure and algorithms](docs/graph.md)
 - [Matrix and vector operations](docs/matrix.md)
