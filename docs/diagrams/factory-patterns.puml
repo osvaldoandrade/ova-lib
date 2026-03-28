@@ -228,4 +228,130 @@ package "Solver" {
     note bottom of solver : LAGRANGEAN/BRANCH variants\nreturn NULL (stub)
 }
 
+' ── Graph factory ──────────────────────────────────────────────────────────
+package "Graph" {
+    enum graph_type {
+        GRAPH_DIRECTED
+        GRAPH_UNDIRECTED
+    }
+
+    enum graph_representation {
+        GRAPH_ADJACENCY_LIST
+        GRAPH_ADJACENCY_MATRIX
+    }
+
+    class graph <<concrete>> {
+        + graph_type type
+        + graph_representation rep
+        + int vertex_capacity
+        + int vertex_count
+        + graph_add_vertex(g, id)
+        + graph_add_edge(g, from, to, w)
+        + graph_bfs / graph_dfs : list*
+        + graph_dijkstra / bellman_ford
+        + graph_mst_prim / kruskal : list*
+        + graph_free(g)
+    }
+
+    graph_type ..> graph            : "create_graph()"
+    graph_representation ..> graph  : selects representation
+}
+
+' ── Trie factory ───────────────────────────────────────────────────────────
+package "Trie" {
+    class trie <<concrete>> {
+        + trie_node *root
+        + size_t word_count
+        + trie_insert(t, word, value)
+        + trie_search(t, word) : void*
+        + trie_delete(t, word) : bool
+        + trie_starts_with(t, prefix) : bool
+        + trie_get_words_with_prefix(t, prefix) : list*
+        + trie_count_words(t) : int
+        + trie_free(t)
+    }
+
+    note bottom of trie : "create_trie()" — no parameters
+}
+
+' ── Bloom Filter factory ───────────────────────────────────────────────────
+package "Bloom Filter" {
+    class bloom_filter <<concrete>> {
+        + uint8_t *bits
+        + size_t m_bits, k_hashes
+        + size_t items_added
+        + bloom_filter_add(bf, elem, len)
+        + bloom_filter_might_contain(bf, elem, len) : bool
+        + bloom_filter_current_fpp(bf) : double
+        + bloom_filter_clear(bf)
+        + bloom_filter_free(bf)
+    }
+
+    note bottom of bloom_filter : "create_bloom_filter(n, p)"\nn = expected elements,\np = target false-positive rate
+}
+
+' ── Sorter factory ─────────────────────────────────────────────────────────
+package "Sorter" {
+    interface sorter <<vtable>> {
+        + comparator cmp
+        + sort(self, lst)
+        + shuffle(self, lst)
+        + reverse(self, lst)
+        + binary_search(self, lst, item) : int
+        + swap(self, lst, i, j)
+        + min_max(self, lst, &min, &max)
+        + min(self, lst) : void*
+        + max(self, lst) : void*
+        + copy(self, src, dest)
+    }
+
+    note bottom of sorter : "create_sorter(list, cmp)"\nQuicksort-based implementation
+    sorter --> list : operates on
+}
+
+' ── Deque factory ──────────────────────────────────────────────────────────
+package "Deque" {
+    class deque <<concrete>> {
+        + void **buffer
+        + int capacity, size, front
+        + deque_push_front / push_back
+        + deque_pop_front / pop_back
+        + deque_peek_front / peek_back
+        + deque_get(d, index) : void*
+        + deque_size / is_empty
+        + deque_free(d)
+    }
+
+    note bottom of deque : "create_deque(capacity)"\nCircular buffer
+}
+
+' ── Matrix / Vector factory ────────────────────────────────────────────────
+package "Matrix / Vector" {
+    interface matrix <<vtable>> {
+        + double **data
+        + int rows, cols
+        + add(self, other) : matrix*
+        + subtract(self, other) : matrix*
+        + multiply(self, other) : matrix*
+        + determinant(self, &err) : double
+        + transpose(self) : matrix*
+        + inverse(self) : matrix*
+        + resize(self, rows, cols) : int
+        + copy(self) : matrix*
+        + print(self)
+        + destroy(self)
+    }
+
+    class vector <<concrete>> {
+        + double *data
+        + int size
+        + resize(self, newSize)
+        + print(self)
+        + destroy(self)
+    }
+
+    note bottom of matrix  : "create_matrix(rows, cols)"
+    note bottom of vector  : "create_vector(size)"
+}
+
 @enduml

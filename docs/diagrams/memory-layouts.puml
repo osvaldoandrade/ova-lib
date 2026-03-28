@@ -42,9 +42,10 @@ class array_list_impl <<internal>> {
 
 class linked_list_impl <<internal>> {
     + node *head
+    + node *tail
     + int   size
     ....
-    node: \{ void *data; node *next; \}
+    node: \{ void *data; node *next; node *prev; \}
 }
 
 class sorted_list_impl <<internal>> {
@@ -77,7 +78,7 @@ class heap <<struct>> {
 }
 
 class binary_heap_impl <<internal>> {
-    + void **data        [1-indexed array, data[0] unused]
+    + void **data        [0-indexed array]
     + int   size
     + int   capacity     [doubles on overflow]
     + comparator cmp
@@ -95,9 +96,9 @@ heap::impl --> binary_heap_impl : BINARY_HEAP
 heap::impl --> fib_heap_impl    : FIBONACCI_HEAP
 
 note bottom of binary_heap_impl
-  Binary heap uses a flat array.
-  Parent of node i  → i/2
-  Children of node i → 2i, 2i+1
+  Binary heap uses a flat array (0-indexed).
+  Parent of node i  → (i-1)/2
+  Children of node i → 2i+1, 2i+2
 end note
 
 note bottom of fib_heap_impl
@@ -194,5 +195,175 @@ class "matrix (matrix.h)" <<struct>> {
 lp_problem::constraints --> "matrix (matrix.h)"
 lp_problem::objective   --> "vector (types.h)"
 lp_problem::bounds      --> "vector (types.h)"
+
+' ═══════════════════════════════════════════════════════════════
+' tree — shared node struct + type-selected strategy
+' ═══════════════════════════════════════════════════════════════
+class tree <<struct>> {
+    + tree_node *root
+    + tree_node *nil   [sentinel for Red-Black]
+    + comparator cmp
+    + int         size
+}
+
+class tree_node <<struct>> {
+    + void       *key
+    + void       *value
+    + tree_node  *left
+    + tree_node  *right
+    + tree_node  *parent
+    + int         height  [AVL balance factor]
+    + rb_color    color   [RB_RED | RB_BLACK]
+}
+
+tree::root --> tree_node : root of BST
+
+note bottom of tree_node
+  Both **height** and **color** fields
+  are present in every node.
+  AVL uses height; Red-Black uses color.
+end note
+
+' ═══════════════════════════════════════════════════════════════
+' set — opaque impl + ops vtable
+' ═══════════════════════════════════════════════════════════════
+class set <<struct>> {
+    + void  *impl          [hash_set_impl or tree_set_impl]
+    ---
+    + add / contains / remove / size / to_list / free
+}
+
+class hash_set_impl <<internal>> {
+    + map *m   [delegates to hash map]
+}
+
+class tree_set_impl <<internal>> {
+    + tree *t  [delegates to tree]
+}
+
+set::impl --> hash_set_impl  : SET_HASH
+set::impl --> tree_set_impl  : SET_TREE
+hash_set_impl --> map  : wraps
+tree_set_impl --> tree : wraps
+
+' ═══════════════════════════════════════════════════════════════
+' stack — vtable + list-backed impl
+' ═══════════════════════════════════════════════════════════════
+class stack <<struct>> {
+    + void *impl          [list * — array or linked]
+    ---
+    vtable (function pointers)
+    ---
+    + void  (*push)(self, item)
+    + void* (*pop)(self)
+    + void* (*top)(self)
+    + int   (*is_empty)(self)
+    + int   (*size)(self)
+    + void  (*free)(self)
+}
+
+stack::impl --> list : delegates to list\n(ARRAY or LINKED)
+
+' ═══════════════════════════════════════════════════════════════
+' deque — circular buffer
+' ═══════════════════════════════════════════════════════════════
+class deque <<struct>> {
+    + void **buffer       [circular array of void*]
+    + int    capacity     [doubles on overflow]
+    + int    size         [current element count]
+    + int    front        [index of front element]
+}
+
+note bottom of deque
+  Circular buffer: rear is computed as
+  (front + size - 1) % capacity.
+  Resizing linearises elements.
+end note
+
+' ═══════════════════════════════════════════════════════════════
+' trie — prefix tree (256-ary)
+' ═══════════════════════════════════════════════════════════════
+class trie <<struct>> {
+    + trie_node *root
+    + size_t     word_count
+}
+
+class trie_node <<struct>> {
+    + trie_node *children[256]  [one slot per ASCII byte]
+    + bool       is_end
+    + void      *value
+    + size_t     subtree_words
+    + unsigned   child_count
+}
+
+trie::root --> trie_node : root node
+trie_node::children --> trie_node : recursive children
+
+' ═══════════════════════════════════════════════════════════════
+' bloom_filter — bit array + k hash functions
+' ═══════════════════════════════════════════════════════════════
+class bloom_filter <<struct>> {
+    + uint8_t *bits          [bit array of m_bits bits]
+    + size_t   m_bits        [array size in bits]
+    + size_t   k_hashes      [number of hash functions]
+    + size_t   expected_elements
+    + double   target_fpp
+    + size_t   items_added
+}
+
+note bottom of bloom_filter
+  m = -n*ln(p) / ln(2)^2
+  k = (m/n)*ln(2)
+  Uses seeded FNV-1a with
+  double hashing for k indices.
+end note
+
+' ═══════════════════════════════════════════════════════════════
+' graph — adjacency list or adjacency matrix
+' ═══════════════════════════════════════════════════════════════
+class graph <<struct>> {
+    + graph_type           type     [DIRECTED | UNDIRECTED]
+    + graph_representation rep      [ADJ_LIST | ADJ_MATRIX]
+    + int          vertex_capacity
+    + int          vertex_count
+    + bool        *present          [active-vertex bitmap]
+    + int        **vertex_ptrs      [sparse ID mapping]
+    + list       **adj_lists        [per-vertex edge lists]
+    + double      *adj_matrix       [row-major weight array]
+}
+
+class graph_weighted_edge <<struct>> {
+    + int    from
+    + int    to
+    + double weight
+}
+
+graph::adj_lists --> graph_weighted_edge : ADJ_LIST path
+note bottom of graph
+  ADJ_LIST: adj_lists[v] = list of edges.
+  ADJ_MATRIX: adj_matrix[v*cap+u] = weight
+  (INFINITY means no edge).
+end note
+
+' ═══════════════════════════════════════════════════════════════
+' sorter — vtable operating on lists
+' ═══════════════════════════════════════════════════════════════
+class sorter <<struct>> {
+    + comparator cmp
+    ---
+    vtable (function pointers)
+    ---
+    + void  (*sort)(self, lst)
+    + void  (*shuffle)(self, lst)
+    + void  (*reverse)(self, lst)
+    + int   (*binary_search)(self, lst, item)
+    + void  (*swap)(self, lst, i, j)
+    + void  (*min_max)(self, lst, &min, &max)
+    + void* (*min)(self, lst)
+    + void* (*max)(self, lst)
+    + void  (*copy)(self, src, dest)
+}
+
+sorter --> list : operates on
 
 @enduml
