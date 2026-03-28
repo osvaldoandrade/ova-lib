@@ -1,0 +1,198 @@
+@startuml memory-layouts
+title ova-lib — Memory Layout of Key Structures
+
+skinparam monochrome false
+skinparam classAttributeIconSize 0
+skinparam ClassBorderColor #555555
+skinparam ClassBackgroundColor #F9F9F9
+skinparam ArrowColor #444444
+skinparam NoteBackgroundColor #FFFDE7
+skinparam NoteBorderColor #F9A825
+
+' ═══════════════════════════════════════════════════════════════
+' types.h — foundation
+' ═══════════════════════════════════════════════════════════════
+class "types.h" <<(T,#AADDAA) typedef>> {
+    typedef int (*comparator)(void*, void*)
+    typedef unsigned (*hash_func_t)(void*, size_t)
+    typedef struct \{ double *data; int size; int capacity; \} vector
+    typedef bool (from <stdbool.h>)
+}
+
+' ═══════════════════════════════════════════════════════════════
+' list — vtable + opaque impl
+' ═══════════════════════════════════════════════════════════════
+class list <<struct>> {
+    + void  *impl          [8 bytes — opaque ptr]
+    ---
+    vtable (function pointers)
+    ---
+    + void  (*insert)(self, item, index)
+    + void* (*get)(self, index)
+    + void  (*remove)(self, index)
+    + int   (*size)(self)
+    + void  (*free)(self)
+}
+
+class array_list_impl <<internal>> {
+    + void **data        [heap array of void*]
+    + int   size
+    + int   capacity     [doubles on overflow]
+}
+
+class linked_list_impl <<internal>> {
+    + node *head
+    + int   size
+    ....
+    node: \{ void *data; node *next; \}
+}
+
+class sorted_list_impl <<internal>> {
+    + void **data        [sorted heap array]
+    + int   size
+    + int   capacity
+    + comparator cmp
+}
+
+list::impl --> array_list_impl  : ARRAY_LIST
+list::impl --> linked_list_impl : LINKED_LIST
+list::impl --> sorted_list_impl : SORTED_LIST
+
+' ═══════════════════════════════════════════════════════════════
+' heap — vtable + opaque impl
+' ═══════════════════════════════════════════════════════════════
+class heap <<struct>> {
+    + void  *impl          [8 bytes — opaque ptr]
+    ---
+    vtable (function pointers)
+    ---
+    + void  (*put)(self, item)
+    + void* (*put_with_handle)(self, item)
+    + void  (*decrease_key)(self, handle, val)  [NULL for binary_heap]
+    + void  (*delete_node)(self, handle)        [NULL for binary_heap]
+    + void* (*pop)(self)
+    + void* (*peek)(self)
+    + int   (*size)(self)
+    + void  (*free)(self)
+}
+
+class binary_heap_impl <<internal>> {
+    + void **data        [1-indexed array, data[0] unused]
+    + int   size
+    + int   capacity     [doubles on overflow]
+    + comparator cmp
+}
+
+class fib_heap_impl <<internal>> {
+    + fib_node *min_node  [ptr to minimum root]
+    + int       size
+    + comparator cmp
+    ....
+    fib_node: \{ void *key; int degree; bool mark;\n          fib_node *parent, *child, *left, *right; \}
+}
+
+heap::impl --> binary_heap_impl : BINARY_HEAP
+heap::impl --> fib_heap_impl    : FIBONACCI_HEAP
+
+note bottom of binary_heap_impl
+  Binary heap uses a flat array.
+  Parent of node i  → i/2
+  Children of node i → 2i, 2i+1
+end note
+
+note bottom of fib_heap_impl
+  Fibonacci heap is a forest of
+  min-heap-ordered trees linked
+  in a circular doubly-linked list.
+end note
+
+' ═══════════════════════════════════════════════════════════════
+' queue
+' ═══════════════════════════════════════════════════════════════
+class queue <<struct>> {
+    + queue_entry *front   [NULL for empty]
+    + queue_entry *rear
+    + heap        *p_heap  [non-NULL for priority queue]
+    + int          length
+    ---
+    vtable (function pointers)
+    ---
+    + void  (*initialize)(self, cmp)
+    + int   (*enqueue)(self, data)
+    + void* (*dequeue)(self)
+    + int   (*is_empty)(self)
+    + int   (*size)(self)
+    + void  (*free)(self)
+}
+
+class queue_entry <<struct>> {
+    + void        *data
+    + queue_entry *next
+}
+
+queue::front --> queue_entry : linked list of entries
+queue::p_heap --> heap       : priority queue path
+
+' ═══════════════════════════════════════════════════════════════
+' map
+' ═══════════════════════════════════════════════════════════════
+class map <<struct>> {
+    + map_entry **buckets    [array of bucket heads]
+    + int         capacity   [bucket count]
+    + int         size       [element count]
+    + hash_func   hash_func  [pluggable: bernstein/fnv1a/xor/…]
+    + comparator  key_compare
+    + pthread_mutex_t *lock  [non-NULL only for HASH_TABLE]
+    ---
+    vtable
+    ---
+    + void  (*put)(self, key, data)
+    + void* (*get)(self, key)
+    + void* (*remove)(self, key)
+    + void  (*free)(self)
+}
+
+class map_entry <<struct>> {
+    + void      *key
+    + void      *data
+    + map_entry *next   [chaining for collision]
+}
+
+map::buckets --> map_entry : bucket[i] → chain of entries
+
+' ═══════════════════════════════════════════════════════════════
+' lp_problem (solver)
+' ═══════════════════════════════════════════════════════════════
+class lp_problem <<struct>> {
+    + matrix     *constraints  [m × (n+1) augmented matrix]
+    + vector     *objective    [c coefficients]
+    + vector     *bounds       [right-hand side b]
+    + ProblemType type         [PROBLEM_MAX | PROBLEM_MIN]
+    + double     *solution     [x1…xn after solve]
+    + double      z_value      [optimal objective value]
+    ---
+    vtable
+    ---
+    + addConstraint(self, coeffs, bound)
+    + setObjective(self, coeffs, type)
+    + setBounds(self, bounds)
+    + print(self)
+}
+
+class "vector (types.h)" <<struct>> {
+    + double *data
+    + int     size
+    + int     capacity
+}
+
+class "matrix (matrix.h)" <<struct>> {
+    + double **data      [rows × cols 2-D array]
+    + int      rows
+    + int      cols
+}
+
+lp_problem::constraints --> "matrix (matrix.h)"
+lp_problem::objective   --> "vector (types.h)"
+lp_problem::bounds      --> "vector (types.h)"
+
+@enduml

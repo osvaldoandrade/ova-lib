@@ -1,5 +1,37 @@
 # Architecture
 
+## Diagrams
+
+Visual representations of the library's design live in [`docs/diagrams/`](diagrams/).
+They are split into five files, each targeting a different aspect of the architecture:
+
+| File | Tool | Coverage |
+|------|------|----------|
+| [`diagrams/factory-patterns.puml`](diagrams/factory-patterns.puml) | PlantUML | Factory functions and the vtable-backed types they produce |
+| [`diagrams/module-dependencies.dot`](diagrams/module-dependencies.dot) | Graphviz | `#include` and logical dependencies between every module |
+| [`diagrams/memory-layouts.puml`](diagrams/memory-layouts.puml) | PlantUML | In-memory field layout of the key public and internal structs |
+| [`diagrams/algorithm-flowcharts.md`](diagrams/algorithm-flowcharts.md) | Mermaid | Step-by-step control flow for heap, hash-map, sort, graph, simplex, and bloom-filter algorithms |
+| [`diagrams/composition-relationships.puml`](diagrams/composition-relationships.puml) | PlantUML | Vtable interfaces, concrete implementations, and cross-module composition |
+
+### Rendering locally
+
+**PlantUML** (requires Java):
+```sh
+plantuml docs/diagrams/factory-patterns.puml
+plantuml docs/diagrams/memory-layouts.puml
+plantuml docs/diagrams/composition-relationships.puml
+```
+
+**Graphviz**:
+```sh
+dot -Tsvg docs/diagrams/module-dependencies.dot -o docs/diagrams/module-dependencies.svg
+```
+
+**Mermaid** diagrams in `algorithm-flowcharts.md` are rendered automatically by
+GitHub and any Markdown viewer with Mermaid support.
+
+---
+
 ## Repository layout
 The repository divides public interfaces and internal logic by mirroring module boundaries. Public headers live in `include/`, where containers, matrix helpers, sorting utilities, queues, heaps, stacks, and the linear-programming orchestration are exposed. A single umbrella header, `ova.h`, re-exports those declarations so downstream projects can adopt the library with a single include. Implementation files in `src/` shadow the public API while hiding concrete structures within translation units, which keeps the ABI stable and makes it possible to swap strategies without touching callers. Tests reside in `test/`, each compiled into a dedicated executable that CTest discovers automatically. The top-level `CMakeLists.txt` compiles both shared and static variants from a shared object library and stages headers into the build tree for installation.
 
