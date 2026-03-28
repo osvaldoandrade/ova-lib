@@ -31,6 +31,7 @@ Refer to the technical notes under `docs/` for deep dives into each subsystem:
 - [Trie (prefix tree)](docs/trie.md)
 - [Set implementation and operations](docs/set.md)
 - [Bloom filter](docs/bloom_filter.md)
+- [Performance benchmarks](docs/benchmarks.md)
 
 **Code Review and Recommendations:**
 - [📋 Comprehensive Review: 10 New Features + 30 Improvements](docs/recommendations.md) - Detailed analysis with implementation guidance
