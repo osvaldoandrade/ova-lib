@@ -1,0 +1,181 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: macos-latest
+          - os: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MinGW (Windows)
+        if: runner.os == 'Windows'
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
+
+      - name: Configure CMake (Unix)
+        if: runner.os != 'Windows'
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Configure CMake (Windows)
+        if: runner.os == 'Windows'
+        run: cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Test
+        working-directory: build
+        run: ctest --build-config Release --output-on-failure
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov
+
+      - name: Configure CMake with coverage
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="--coverage"
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        working-directory: build
+        run: ctest --output-on-failure
+
+      - name: Generate coverage report
+        run: |
+          lcov --capture --directory build --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*/test/*' --output-file coverage.info
+          lcov --list coverage.info
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(lcov --summary coverage.info 2>&1 | awk -F '[:%]' '/lines/ {gsub(/ /, "", $2); print $2}')
+          echo "Line coverage: ${COVERAGE}%"
+          awk -v cov="$COVERAGE" 'BEGIN { if (cov + 0 < 70.0) { print "::error::Code coverage " cov "% is below the 70% threshold"; exit 1 } }'
+
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install analyzers
+        run: sudo apt-get update && sudo apt-get install -y cppcheck clang-tools
+
+      - name: Run cppcheck
+        run: >
+          cppcheck
+          --enable=warning,performance,portability
+          --error-exitcode=1
+          --suppress=missingIncludeSystem
+          -I include
+          src/
+
+      - name: Run scan-build
+        run: |
+          cmake -B build-scan -DCMAKE_BUILD_TYPE=Debug
+          scan-build --status-bugs cmake --build build-scan
+
+  sanitizers:
+    name: Sanitizer (${{ matrix.sanitizer }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sanitizer: AddressSanitizer
+            flags: "-fsanitize=address -fno-omit-frame-pointer"
+          - sanitizer: UndefinedBehaviorSanitizer
+            flags: "-fsanitize=undefined"
+          - sanitizer: ThreadSanitizer
+            flags: "-fsanitize=thread"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="${{ matrix.flags }}"
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        working-directory: build
+        run: ctest --output-on-failure
+
+  valgrind:
+    name: Valgrind Memcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Valgrind
+        run: sudo apt-get update && sudo apt-get install -y valgrind
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Run Valgrind memcheck
+        working-directory: build
+        run: ctest -T memcheck --output-on-failure
+
+      - name: Show memcheck logs
+        if: always()
+        working-directory: build
+        run: find Testing/Temporary -name 'MemoryChecker.*.log' -exec cat {} + 2>/dev/null || true
+
+  docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Doxygen
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz
+
+      - name: Generate documentation
+        run: |
+          cat > /tmp/Doxyfile <<EOF
+          PROJECT_NAME           = "ova_lib"
+          PROJECT_NUMBER         = "0.0.1"
+          OUTPUT_DIRECTORY       = build/docs
+          INPUT                  = include/ src/
+          FILE_PATTERNS          = *.h *.c
+          RECURSIVE              = YES
+          EXTRACT_ALL            = YES
+          GENERATE_HTML          = YES
+          GENERATE_LATEX         = NO
+          QUIET                  = YES
+          WARN_IF_UNDOCUMENTED   = NO
+          EOF
+          doxygen /tmp/Doxyfile
+
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: build/docs/html/
