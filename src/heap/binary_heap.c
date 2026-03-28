@@ -9,7 +9,7 @@ binary_heap *binary_heap_init(int initial_capacity, comparator cmp) {
     binary_heap *h = malloc(sizeof(binary_heap));
     if (!h) return NULL;
 
-    h->data = malloc(initial_capacity * sizeof(void *));
+    h->data = malloc((size_t)initial_capacity * sizeof(void *));
     if (!h->data) {
         free(h);
         return NULL;
@@ -29,7 +29,7 @@ static void binary_heap_put(heap *self, void *item) {
             // Already at maximum capacity - cannot add item
             return;
         }
-        void **new_data = realloc(h->data, new_capacity * sizeof(void *));
+        void **new_data = realloc(h->data, (size_t)new_capacity * sizeof(void *));
         if (new_data == NULL) {
             // Allocation failed - cannot add item, maintain existing state
             return;

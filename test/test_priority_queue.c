@@ -62,7 +62,7 @@ void test_priority_queue_high_volume() {
     queue *pq = create_queue(QUEUE_TYPE_PRIORITY, 10, int_compare_binary);
     const int max_data = 1000;
     clock_t start = clock();
-    int* data_array = generate_random_int_data(max_data);
+    int* data_array = generate_random_int_data((size_t)max_data);
 
     for (int i = 0; i < max_data; i++) {
         pq->enqueue(pq, &data_array[i]);
@@ -75,6 +75,7 @@ void test_priority_queue_high_volume() {
     for (int i = 0; i < max_data; i++) {
         int *dequeued_data = (int*)pq->dequeue(pq);
         assert(dequeued_data != NULL); // Ensuring that we actually dequeue data
+        (void)dequeued_data;
     }
     sprintf(message, "Priority Queue should be empty after dequeuing %d elements", max_data);
     print_test_result(pq->is_empty(pq), message);

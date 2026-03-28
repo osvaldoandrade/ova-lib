@@ -25,7 +25,7 @@ list *create_array_list(int initial_capacity) {
     list *lst = malloc(sizeof(list));
     array_list_impl *impl = malloc(sizeof(array_list_impl));
 
-    if (lst && impl && (impl->items = malloc(initial_capacity * sizeof(void *)))) {
+    if (lst && impl && (impl->items = malloc((size_t)initial_capacity * sizeof(void *)))) {
         impl->capacity = initial_capacity;
         impl->size = 0;
         active_item_buffers++;
@@ -55,7 +55,7 @@ static int ensure_capacity(array_list_impl *impl) {
         if (new_capacity == impl->capacity) {
             return 0; // Already at maximum capacity
         }
-        void **new_items = realloc(impl->items, new_capacity * sizeof(void *));
+        void **new_items = realloc(impl->items, (size_t)new_capacity * sizeof(void *));
         if (new_items == NULL) {
             return 0; // Signal failure
         }
@@ -71,7 +71,7 @@ static void array_list_insert(list *self, void *item, int index) {
         return; // Failed to expand capacity
     }
     if (index < 0 || index > impl->size) return;
-    memmove(&impl->items[index + 1], &impl->items[index], (impl->size - index) * sizeof(void *));
+    memmove(&impl->items[index + 1], &impl->items[index], (size_t)(impl->size - index) * sizeof(void *));
     impl->items[index] = item;
     impl->size++;
 }
@@ -85,7 +85,7 @@ static void *array_list_get(list *self, int index) {
 static void array_list_remove(list *self, int index) {
     array_list_impl *impl = (array_list_impl *) self->impl;
     if (index < 0 || index >= impl->size) return;
-    memmove(&impl->items[index], &impl->items[index + 1], (impl->size - index - 1) * sizeof(void *));
+    memmove(&impl->items[index], &impl->items[index + 1], (size_t)(impl->size - index - 1) * sizeof(void *));
     impl->size--;
 }
 

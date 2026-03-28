@@ -58,7 +58,7 @@ int* generate_random_int_data(size_t count) {
 char* generate_random_string_data() {
     char* str = malloc(6); // Fixed size for simplicity
     for (int i = 0; i < 5; i++) {
-        str[i] = 'a' + (rand() % 26); // Generates a random character between 'a' and 'z'
+        str[i] = (char)('a' + (rand() % 26)); // Generates a random character between 'a' and 'z'
     }
     str[5] = '\0'; // Null-terminate the string
     return str;
@@ -72,6 +72,8 @@ char* generate_random_string_data() {
  */
 void assert_int_equal(int expected, int actual) {
     assert(expected == actual);
+    (void)expected;
+    (void)actual;
 }
 
 /**
@@ -81,6 +83,7 @@ void assert_int_equal(int expected, int actual) {
  */
 void assert_not_null(void *ptr) {
     assert(ptr != NULL);
+    (void)ptr;
 }
 
 /**
@@ -91,6 +94,8 @@ void assert_not_null(void *ptr) {
  */
 void assert_string_equal(const char *expected, const char *actual) {
     assert(strcmp(expected, actual) == 0);
+    (void)expected;
+    (void)actual;
 }
 
 /**
@@ -103,6 +108,7 @@ void assert_string_equal(const char *expected, const char *actual) {
  */
 void assert_true(int condition) {
     assert(condition != 0);
+    (void)condition;
 }
 
 /**
@@ -115,4 +121,5 @@ void assert_true(int condition) {
  */
 void assert_false(int condition) {
     assert(condition == 0);
+    (void)condition;
 }

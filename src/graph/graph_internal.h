@@ -4,7 +4,7 @@
 #include "../../include/graph.h"
 #include <math.h>
 
-#define GRAPH_NO_EDGE (INFINITY)
+#define GRAPH_NO_EDGE ((double)INFINITY)
 
 typedef struct graph_edge {
     int to;

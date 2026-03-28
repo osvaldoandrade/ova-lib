@@ -27,7 +27,7 @@ deque* create_deque(int capacity) {
         capacity = DEFAULT_CAPACITY;
     }
 
-    d->buffer = (void**)calloc(capacity, sizeof(void*));
+    d->buffer = (void**)calloc((size_t)capacity, sizeof(void*));
     if (!d->buffer) {
         free(d);
         return NULL;
@@ -54,7 +54,7 @@ static int deque_resize(deque *d) {
     if (new_capacity == d->capacity) {
         return -1; // Already at maximum capacity
     }
-    void **new_buffer = (void**)calloc(new_capacity, sizeof(void*));
+    void **new_buffer = (void**)calloc((size_t)new_capacity, sizeof(void*));
     if (!new_buffer) {
         return -1;
     }
