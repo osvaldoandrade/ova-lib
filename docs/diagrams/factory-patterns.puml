@@ -1,0 +1,231 @@
+@startuml factory-patterns
+title ova-lib — Factory Pattern Relationships
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam ArrowColor #444444
+skinparam ClassBorderColor #666666
+skinparam ClassBackgroundColor #FAFAFA
+
+' ── List factory ────────────────────────────────────────────────────────────
+package "List" {
+    enum ListType {
+        ARRAY_LIST
+        LINKED_LIST
+        SORTED_LIST
+    }
+
+    interface list <<vtable>> {
+        + void *impl
+        + insert(self, item, index)
+        + get(self, index) : void*
+        + remove(self, index)
+        + size(self) : int
+        + free(self)
+    }
+
+    class array_list_impl <<concrete>>
+    class linked_list_impl <<concrete>>
+    class sorted_list_impl <<concrete>>
+
+    ListType ..> list : "create_list()"
+    list *-- array_list_impl  : ARRAY_LIST
+    list *-- linked_list_impl : LINKED_LIST
+    list *-- sorted_list_impl : SORTED_LIST
+}
+
+' ── Heap factory ────────────────────────────────────────────────────────────
+package "Heap" {
+    enum HeapType {
+        BINARY_HEAP
+        FIBONACCI_HEAP
+    }
+
+    interface heap <<vtable>> {
+        + void *impl
+        + put(self, item)
+        + put_with_handle(self, item) : void*
+        + decrease_key(self, handle, value)
+        + delete_node(self, handle)
+        + pop(self) : void*
+        + peek(self) : void*
+        + size(self) : int
+        + free(self)
+    }
+
+    class binary_heap_impl <<concrete>> {
+        decrease_key = NULL
+        delete_node  = NULL
+    }
+    class fibonacci_heap_impl <<concrete>>
+
+    HeapType ..> heap : "create_heap()"
+    heap *-- binary_heap_impl   : BINARY_HEAP
+    heap *-- fibonacci_heap_impl : FIBONACCI_HEAP
+}
+
+' ── Queue factory ───────────────────────────────────────────────────────────
+package "Queue" {
+    enum queue_type {
+        QUEUE_TYPE_NORMAL
+        QUEUE_TYPE_PRIORITY
+    }
+
+    class queue <<concrete>> {
+        + queue_entry *front
+        + queue_entry *rear
+        + heap *p_heap
+        + int length
+        + initialize(self, cmp)
+        + enqueue(self, data) : int
+        + dequeue(self) : void*
+        + is_empty(self) : int
+        + size(self) : int
+        + free(self)
+    }
+
+    class linked_queue_impl <<concrete>>
+    class heap_queue_impl <<concrete>>
+
+    queue_type ..> queue : "create_queue()"
+    queue *-- linked_queue_impl : QUEUE_TYPE_NORMAL
+    queue *-- heap_queue_impl   : QUEUE_TYPE_PRIORITY
+    heap_queue_impl --> heap    : uses
+}
+
+' ── Stack factory ───────────────────────────────────────────────────────────
+package "Stack" {
+    enum StackType {
+        ARRAY_STACK
+        LINKED_STACK
+    }
+
+    interface stack <<vtable>> {
+        + void *impl
+        + push(self, item)
+        + pop(self) : void*
+        + top(self) : void*
+        + is_empty(self) : int
+        + size(self) : int
+        + free(self)
+    }
+
+    class array_stack_impl <<concrete>>
+    class linked_stack_impl <<concrete>>
+
+    StackType ..> stack : "create_stack()"
+    stack *-- array_stack_impl  : ARRAY_STACK
+    stack *-- linked_stack_impl : LINKED_STACK
+}
+
+' ── Map factory ─────────────────────────────────────────────────────────────
+package "Map" {
+    enum map_type {
+        HASH_MAP
+        HASH_TABLE
+    }
+
+    class map <<concrete>> {
+        + map_entry **buckets
+        + int capacity
+        + int size
+        + hash_func(key, cap) : int
+        + comparator key_compare
+        + pthread_mutex_t *lock
+        + put(self, key, data)
+        + get(self, key) : void*
+        + remove(self, key) : void*
+        + free(self)
+    }
+
+    map_type ..> map : "create_map()"
+    note right of map : HASH_TABLE adds\npthread_mutex_t lock
+}
+
+' ── Set factory ─────────────────────────────────────────────────────────────
+package "Set" {
+    enum set_type {
+        SET_HASH
+        SET_TREE
+    }
+
+    interface set <<vtable>> {
+        + add(s, element) : bool
+        + contains(s, element) : bool
+        + remove(s, element) : bool
+        + size(s) : int
+        + set_union / intersection / difference
+        + set_to_list(s) : list*
+    }
+
+    class hash_set_impl <<concrete>>
+    class tree_set_impl <<concrete>>
+
+    set_type ..> set : "create_set()"
+    set *-- hash_set_impl : SET_HASH
+    set *-- tree_set_impl : SET_TREE
+}
+
+' ── Tree factory ────────────────────────────────────────────────────────────
+package "Tree" {
+    enum tree_type {
+        TREE_AVL
+        TREE_RED_BLACK
+    }
+
+    interface tree <<vtable>> {
+        + insert(t, key, value)
+        + search(t, key) : void*
+        + delete(t, key)
+        + min(t) : void*
+        + max(t) : void*
+        + predecessor(t, key) : void*
+        + successor(t, key) : void*
+        + range_query(t, low, high) : list*
+        + in_order_traverse(t, cb)
+        + size(t) : int
+        + free(t)
+    }
+
+    class avl_tree_impl <<concrete>>
+    class red_black_tree_impl <<concrete>>
+
+    tree_type ..> tree : "create_tree()"
+    tree *-- avl_tree_impl       : TREE_AVL
+    tree *-- red_black_tree_impl : TREE_RED_BLACK
+}
+
+' ── Solver factory ──────────────────────────────────────────────────────────
+package "Solver" {
+    enum SolverType {
+        SOLVER_SIMPLEX
+        SOLVER_LAGRANGEAN_SIMPLEX
+        SOLVER_BRANCH_AND_BOUND
+        SOLVER_BRANCH_AND_CUT
+    }
+
+    class solver <<concrete>> {
+        + SolverType type
+        + solve(problem, out_tableau) : int
+        + destroy(self)
+    }
+
+    class lp_problem <<concrete>> {
+        + matrix *constraints
+        + vector *objective
+        + vector *bounds
+        + ProblemType type
+        + double *solution
+        + double z_value
+        + addConstraint(self, coeffs, bound)
+        + setObjective(self, coeffs, type)
+        + setBounds(self, bounds)
+        + print(self)
+    }
+
+    SolverType ..> solver    : "create_solver()"
+    solver      --> lp_problem : solves
+    note bottom of solver : LAGRANGEAN/BRANCH variants\nreturn NULL (stub)
+}
+
+@enduml
