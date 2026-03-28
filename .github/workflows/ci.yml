@@ -87,11 +87,16 @@ jobs:
       - name: Run cppcheck
         run: >
           cppcheck
-          --enable=warning,performance,portability
+          --enable=all
           --error-exitcode=1
           --suppress=missingIncludeSystem
           -I include
           src/
+
+      - name: Run clang-tidy
+        run: |
+          cmake -B build-tidy -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          find src -name '*.c' | xargs -r clang-tidy --quiet -p build-tidy
 
       - name: Run scan-build
         run: |
