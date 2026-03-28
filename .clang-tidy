@@ -1,0 +1,29 @@
+---
+Checks: >
+  -*,
+  bugprone-assignment-in-if-condition,
+  bugprone-implicit-widening-of-multiplication-result,
+  bugprone-macro-parentheses,
+  bugprone-misleading-indentation,
+  bugprone-misplaced-operator-in-strlen-in-alloc,
+  bugprone-not-null-terminated-result,
+  bugprone-sizeof-expression,
+  bugprone-suspicious-memory-comparison,
+  bugprone-too-small-loop-variable,
+  bugprone-undefined-memory-manipulation,
+  cert-err33-c,
+  cert-err34-c,
+  misc-redundant-expression,
+  performance-no-int-to-ptr,
+  readability-misleading-indentation,
+  readability-misplaced-array-index
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: '^include/.*\.h$'
+
+CheckOptions:
+  - key: bugprone-sizeof-expression.WarnOnSizeOfIntegerExpression
+    value: 'true'
+  - key: bugprone-not-null-terminated-result.WantToUseSafeFunctions
+    value: 'false'
