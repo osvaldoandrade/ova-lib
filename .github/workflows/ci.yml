@@ -68,13 +68,9 @@ jobs:
 
       - name: Check coverage threshold
         run: |
-          COVERAGE=$(lcov --summary coverage.info 2>&1 | grep 'lines' | sed 's/.*://' | sed 's/%.*//' | tr -d ' ')
+          COVERAGE=$(lcov --summary coverage.info 2>&1 | awk -F '[:%]' '/lines/ {gsub(/ /, "", $2); print $2}')
           echo "Line coverage: ${COVERAGE}%"
-          RESULT=$(echo "$COVERAGE < 70.0" | bc -l)
-          if [ "$RESULT" -eq 1 ]; then
-            echo "::error::Code coverage ${COVERAGE}% is below the 70% threshold"
-            exit 1
-          fi
+          awk -v cov="$COVERAGE" 'BEGIN { if (cov + 0 < 70.0) { print "::error::Code coverage " cov "% is below the 70% threshold"; exit 1 } }'
 
   static-analysis:
     name: Static Analysis
