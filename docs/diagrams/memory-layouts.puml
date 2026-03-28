@@ -97,7 +97,7 @@ heap::impl --> fib_heap_impl    : FIBONACCI_HEAP
 
 note bottom of binary_heap_impl
   Binary heap uses a flat array (0-indexed).
-  Parent of node i  → (i−1)/2
+  Parent of node i  → (i-1)/2
   Children of node i → 2i+1, 2i+2
 end note
 
@@ -276,7 +276,7 @@ class deque <<struct>> {
 
 note bottom of deque
   Circular buffer: rear is computed as
-  (front + size − 1) % capacity.
+  (front + size - 1) % capacity.
   Resizing linearises elements.
 end note
 
@@ -312,8 +312,8 @@ class bloom_filter <<struct>> {
 }
 
 note bottom of bloom_filter
-  m = −n·ln(p) / ln(2)²
-  k = (m/n)·ln(2)
+  m = -n*ln(p) / ln(2)^2
+  k = (m/n)*ln(2)
   Uses seeded FNV-1a with
   double hashing for k indices.
 end note
