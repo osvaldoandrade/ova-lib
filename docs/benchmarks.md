@@ -91,7 +91,7 @@ Results reflect amortized per-operation cost. Heap and deque timings include dyn
 |---|---|
 | Quicksort (average) | O(n log n) |
 | Quicksort (worst, sorted input) | O(n²) |
-| Binary search | O(log n) on array list, O(n log n) on linked list |
+| Binary search | O(log n) on array list; O(n log n) on linked list (each of O(log n) probes traverses O(n) nodes) |
 | Fisher-Yates shuffle | O(n) |
 | Min/Max (pair scan) | O(n), 3n/2 comparisons |
 
@@ -192,7 +192,7 @@ Fibonacci heap inserts are O(1) amortized and match binary heap performance. Pop
 | 50,000 | 0.003 |
 | 100,000 | 0.003 |
 
-The decrease\_key operation runs in amortized O(1) time through cascading cuts. The consistent ~3 ns per operation confirms the theoretical bound and demonstrates the key advantage of Fibonacci heaps for algorithms like Dijkstra's shortest path.
+The decrease_key operation runs in amortized O(1) time through cascading cuts. The consistent ~3 ns per operation confirms the theoretical bound and demonstrates the key advantage of Fibonacci heaps for algorithms like Dijkstra's shortest path.
 
 #### Binary Heap vs Fibonacci Heap — Key Comparison
 
@@ -390,16 +390,16 @@ Dijkstra's algorithm shows near-linear scaling on sparse graphs (E ≈ 2V), cons
 
 | Data Structure | Per-element Overhead | Notes |
 |---|---:|---|
-| Array List | 8 bytes | Contiguous `void*` array; up to 2× capacity waste from geometric growth |
+| Array List | 8 bytes | Contiguous `void*` array; geometric growth may allocate up to 2× required capacity |
 | Linked List | 24 bytes | `data` + `next` + `prev` pointers per node |
 | Sorted List | 8 bytes | Same layout as array list, maintained in sorted order |
-| Binary Heap | 8 bytes | Array-stored `void*`; up to 2× capacity waste |
+| Binary Heap | 8 bytes | Array-stored `void*`; geometric growth may allocate up to 2× required capacity |
 | Fibonacci Heap | ~56 bytes/node | parent, child, left, right pointers + degree, mark, data |
 | Hash Map | ~32 bytes/entry | key + data + next pointer per entry; bucket array overhead |
 | AVL Tree | ~40 bytes/node | key, value, left, right pointers + height field |
 | Red-Black Tree | ~48 bytes/node | key, value, left, right, parent pointers + color flag |
 | Trie | ~216 bytes/node | 26 child pointers (208 bytes) + value pointer + end flag |
-| Deque | 8 bytes | Circular buffer of `void*`; up to 2× capacity waste |
+| Deque | 8 bytes | Circular buffer of `void*`; geometric growth may allocate up to 2× required capacity |
 | Bloom Filter | ~1.2 bytes/element | At 1% FPP: 9.6 bits per element with optimal hash count |
 | Graph (Adj. List) | ~24 bytes/edge | Edge struct with weight, neighbor ID, next pointer |
 | Graph (Adj. Matrix) | 8×V² bytes | Dense `double` matrix regardless of edge count |
