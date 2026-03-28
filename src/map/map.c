@@ -44,9 +44,9 @@ int bernstein_hash(void *key, int capacity) {
     unsigned long hash = 5381;
     int c;
     while ((c = *str++)) {
-        hash = ((hash << 5) + hash) + c; // map * 33 + c
+        hash = ((hash << 5) + hash) + (unsigned long)c; // map * 33 + c
     }
-    return (int) (hash % capacity);
+    return (int) (hash % (unsigned long)capacity);
 }
 
 /**
@@ -68,7 +68,7 @@ int fnv1a_hash(void *key, int capacity) {
         hash ^= (unsigned long) (*str++);
         hash *= 16777619;
     }
-    return (int) (hash % capacity);
+    return (int) (hash % (unsigned long)capacity);
 }
 
 /**
@@ -89,7 +89,7 @@ int xor_hash(void *key, int capacity) {
     while (*str) {
         hash ^= (hash << 5) + (hash >> 2) + (unsigned long) (*str++);
     }
-    return (int) (hash % capacity);
+    return (int) (hash % (unsigned long)capacity);
 }
 
 /**
@@ -110,7 +110,7 @@ int rotational_hash(void *key, int capacity) {
     while (*str) {
         hash = (hash << 4) ^ (hash >> 28) ^ (unsigned long) (*str++);
     }
-    return (int) (hash % capacity);
+    return (int) (hash % (unsigned long)capacity);
 }
 
 /**
@@ -131,5 +131,5 @@ int additive_hash(void *key, int capacity) {
     while (*str) {
         hash += (unsigned long) (*str++);
     }
-    return (int) (hash % capacity);
+    return (int) (hash % (unsigned long)capacity);
 }

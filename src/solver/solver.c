@@ -139,7 +139,7 @@ static void solver_destroy(solver *s) {
   free(s);
 }
 
-static int is_feasible(lp_problem *prob, vector *solution) {
+int is_feasible(lp_problem *prob, vector *solution) {
   for (int i = 0; i < prob->constraints->rows; i++) {
     double sum = 0;
     for (int j = 0; j < prob->constraints->cols; j++) {

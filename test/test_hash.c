@@ -20,7 +20,7 @@ int string_compare(const void *a, const void *b) {
 void test_insert_and_retrieve_single_item() {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     char *key1 = generate_random_string_data();
-    char *data1 = "Data1";
+    char data1[] = "Data1";
     ht->put(ht, key1, data1);
     char *retrieved_data1 = (char *)ht->get(ht, key1);
     print_test_result(strcmp(retrieved_data1, data1) == 0, "Retrieve inserted data");
@@ -47,8 +47,10 @@ void test_collision_and_chaining() {
         free(key3);
         key3 = generate_random_string_data();  // Ensure they collide
     }
-    ht->put(ht, key2, "Data2");
-    ht->put(ht, key3, "Data3");
+    char data2[] = "Data2";
+    char data3[] = "Data3";
+    ht->put(ht, key2, data2);
+    ht->put(ht, key3, data3);
     char *retrieved_data2 = (char *)ht->get(ht, key2);
     char *retrieved_data3 = (char *)ht->get(ht, key3);
     print_test_result(strcmp(retrieved_data2, "Data2") == 0 && strcmp(retrieved_data3, "Data3") == 0, "Handle collisions correctly");
@@ -59,7 +61,7 @@ void test_collision_and_chaining() {
 
 void test_retrieve_non_existent_item() {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
-    char *non_existent_key = "non_existent_key";
+    char non_existent_key[] = "non_existent_key";
     char *retrieved_non_existent_data = (char *)ht->get(ht, non_existent_key);
     print_test_result(retrieved_non_existent_data == NULL, "Retrieve non-existent item");
     ht->free(ht);
@@ -68,7 +70,7 @@ void test_retrieve_non_existent_item() {
 void test_insert_and_retrieve_numeric_keys() {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     int numeric_key = 123;
-    char *numeric_data = "NumericData";
+    char numeric_data[] = "NumericData";
     ht->put(ht, &numeric_key, numeric_data);
     char *retrieved_numeric_data = (char *)ht->get(ht, &numeric_key);
     print_test_result(strcmp(retrieved_numeric_data, numeric_data) == 0, "Insert and retrieve items with numeric keys");
@@ -77,8 +79,8 @@ void test_insert_and_retrieve_numeric_keys() {
 
 void test_remove_item() {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
-    char *key_to_remove = "key_to_remove";
-    char *data_to_remove = "DataToRemove";
+    char key_to_remove[] = "key_to_remove";
+    char data_to_remove[] = "DataToRemove";
     ht->put(ht, key_to_remove, data_to_remove);
     ht->remove(ht, key_to_remove);
     char *removed_data = (char *)ht->get(ht, key_to_remove);
@@ -88,8 +90,8 @@ void test_remove_item() {
 
 void test_retrieve_after_removal() {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
-    char *key = "key";
-    char *data = "data";
+    char key[] = "key";
+    char data[] = "data";
     ht->put(ht, key, data);
     ht->remove(ht, key);
     char *data_after_removal = (char *)ht->get(ht, key);
@@ -110,6 +112,7 @@ void test_insert_retrieve_large_number_of_items() {
         ht->put(ht, stored_key, strdup(data));
         char *retrieved_data = (char *)ht->get(ht, stored_key);
         assert(strcmp(retrieved_data, data) == 0);
+        (void)retrieved_data;
     }
 
     print_test_result(ht->size == num_items, "Correct number of items stored");
@@ -118,9 +121,9 @@ void test_insert_retrieve_large_number_of_items() {
 
 void test_handling_of_duplicate_keys() {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
-    char *key = "duplicate_key";
-    char *first_data = "first_data";
-    char *second_data = "second_data";
+    char key[] = "duplicate_key";
+    char first_data[] = "first_data";
+    char second_data[] = "second_data";
     ht->put(ht, key, first_data);
     ht->put(ht, key, second_data);
     char *retrieved_data = (char *)ht->get(ht, key);
@@ -130,7 +133,7 @@ void test_handling_of_duplicate_keys() {
 
 void test_null_key_insertion() {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
-    char *data = "data_for_null_key";
+    char data[] = "data_for_null_key";
     ht->put(ht, NULL, data);
     char *retrieved_data = (char *)ht->get(ht, NULL);
     print_test_result(strcmp(retrieved_data, data) == 0, "Should be able to retrieve data inserted with a NULL key");
@@ -139,7 +142,7 @@ void test_null_key_insertion() {
 
 void test_insert_retrieve_with_null_values() {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
-    char *key = "test_key";
+    char key[] = "test_key";
     ht->put(ht, key, NULL);
     char *retrieved_data = (char *)ht->get(ht, key);
     print_test_result(retrieved_data == NULL, "Should retrieve NULL for inserted NULL value");
@@ -148,7 +151,8 @@ void test_insert_retrieve_with_null_values() {
 
 void test_map_get_empty() {
     map *m = create_map(HASH_MAP, 10, NULL, string_compare);
-    print_test_result(m->get(m, "missing") == NULL, "Get on empty map returns NULL");
+    char missing[] = "missing";
+    print_test_result(m->get(m, missing) == NULL, "Get on empty map returns NULL");
     m->free(m);
 }
 
@@ -156,8 +160,8 @@ void test_with_high_volume () {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     int num_operations = 20000;
     clock_t start = clock();
-    char *key = "key";
-    char *data = "data";
+    char key[] = "key";
+    char data[] = "data";
 
     for (int i = 0; i < num_operations; i++) {
         ht->put(ht, key, data);
@@ -212,16 +216,18 @@ void test_concurrent_access() {
 
 void test_map_put_bulk() {
     map *m = create_map(HASH_MAP, 10, NULL, string_compare);
-    char *keys[] = {"key1", "key2", "key3"};
-    char *vals[] = {"val1", "val2", "val3"};
+    char k1[] = "key1", k2[] = "key2", k3[] = "key3";
+    char v1[] = "val1", v2[] = "val2", v3[] = "val3";
+    void *keys[] = {k1, k2, k3};
+    void *vals[] = {v1, v2, v3};
 
-    map_put_bulk(m, (void **)keys, (void **)vals, 3);
+    map_put_bulk(m, keys, vals, 3);
     print_test_result(m->size == 3, "Map bulk put inserts all pairs");
 
     int ok = 1;
     for (int i = 0; i < 3; i++) {
         char *retrieved = (char *)m->get(m, keys[i]);
-        if (!retrieved || strcmp(retrieved, vals[i]) != 0) {
+        if (!retrieved || strcmp(retrieved, (char *)vals[i]) != 0) {
             ok = 0;
         }
     }
@@ -232,13 +238,16 @@ void test_map_put_bulk() {
 
 void test_map_put_bulk_with_duplicate_keys() {
     map *m = create_map(HASH_MAP, 10, NULL, string_compare);
-    char *keys[] = {"key1", "key2", "key1"};
-    char *vals[] = {"val1", "val2", "val3"};
+    char k1[] = "key1", k2[] = "key2", k3[] = "key1";
+    char v1[] = "val1", v2[] = "val2", v3[] = "val3";
+    void *keys[] = {k1, k2, k3};
+    void *vals[] = {v1, v2, v3};
 
-    map_put_bulk(m, (void **)keys, (void **)vals, 3);
+    map_put_bulk(m, keys, vals, 3);
     print_test_result(m->size == 2, "Map bulk put with duplicates has correct size");
 
-    char *retrieved = (char *)m->get(m, "key1");
+    char key1_lookup[] = "key1";
+    char *retrieved = (char *)m->get(m, key1_lookup);
     print_test_result(retrieved && strcmp(retrieved, "val3") == 0, "Map bulk put duplicate key retains last value");
 
     m->free(m);
@@ -246,19 +255,21 @@ void test_map_put_bulk_with_duplicate_keys() {
 
 void test_map_put_bulk_edge_cases() {
     map *m = create_map(HASH_MAP, 10, NULL, string_compare);
-    char *keys[] = {"k"};
-    char *vals[] = {"v"};
+    char k1[] = "k";
+    char v1[] = "v";
+    void *keys[] = {k1};
+    void *vals[] = {v1};
 
-    map_put_bulk(m, (void **)keys, (void **)vals, 0);
+    map_put_bulk(m, keys, vals, 0);
     print_test_result(m->size == 0, "Map bulk put with count 0 does nothing");
 
-    map_put_bulk(m, NULL, (void **)vals, 3);
+    map_put_bulk(m, NULL, vals, 3);
     print_test_result(m->size == 0, "Map bulk put with NULL keys does nothing");
 
-    map_put_bulk(m, (void **)keys, NULL, 3);
+    map_put_bulk(m, keys, NULL, 3);
     print_test_result(m->size == 0, "Map bulk put with NULL values does nothing");
 
-    map_put_bulk(NULL, (void **)keys, (void **)vals, 1);
+    map_put_bulk(NULL, keys, vals, 1);
     print_test_result(1, "Map bulk put with NULL map does not crash");
 
     m->free(m);

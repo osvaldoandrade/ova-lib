@@ -14,7 +14,7 @@ map *create_hash_map(int capacity, int (*hash_func)(void *, int), comparator key
     }
     map *table = (map *) malloc(sizeof(map));
     if (table) {
-        table->buckets = (map_entry **) calloc(capacity, sizeof(map_entry *));
+        table->buckets = (map_entry **) calloc((size_t)capacity, sizeof(map_entry *));
         if (!table->buckets) {
             free(table);
             return NULL;
@@ -59,7 +59,7 @@ void resize_and_rehash(map *ht) {
     if (new_capacity == old_capacity) {
         return; // Already at maximum capacity
     }
-    map_entry **new_buckets = calloc(new_capacity, sizeof(map_entry*));
+    map_entry **new_buckets = calloc((size_t)new_capacity, sizeof(map_entry*));
 
     if (!new_buckets) {
         return;
@@ -97,7 +97,7 @@ void resize_and_rehash(map *ht) {
 void hash_insert(map *self, void *key, void *data) {
     if (self->lock) pthread_mutex_lock(self->lock);
 
-    float load_factor = (float)self->size / self->capacity;
+    double load_factor = (double)self->size / (double)self->capacity;
     if (load_factor > LOAD_FACTOR) {
         resize_and_rehash(self);
     }

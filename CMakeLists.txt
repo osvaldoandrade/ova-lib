@@ -3,6 +3,24 @@ project(ova_lib C)
 set(CMAKE_C_STANDARD 11)
 set(LIB_VERSION 0.0.1)
 
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(
+        -Wall -Wextra -Wpedantic
+        -Wcast-align -Wcast-qual
+        -Wconversion -Wsign-conversion
+        -Wdouble-promotion
+        -Wformat=2 -Wformat-security
+        -Wnull-dereference
+        -Wshadow
+        -Wstrict-overflow=2
+        -Wswitch-default -Wswitch-enum
+        -Wundef
+        -Wuninitialized
+        -Wwrite-strings
+        -Werror
+    )
+endif()
+
 find_program(VALGRIND_PROGRAM valgrind)
 if(VALGRIND_PROGRAM)
     # Configure CTest memcheck to use Valgrind when available.

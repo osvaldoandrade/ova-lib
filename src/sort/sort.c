@@ -14,6 +14,7 @@
  * @param index2 The index of the second element to be swapped.
  */
 void sorter_swap(sorter *self, list *lst, int index1, int index2) {
+    (void)self;
     void *temp1 = lst->get(lst, index1);
     void *temp2 = lst->get(lst, index2);
 
@@ -61,7 +62,7 @@ static int sorter_partition(list *lst, int low, int high, sorter *self) {
  * @param lst A pointer to the list to be sorted.
  */
 static void sorter_quick(sorter *self, list *lst) {
-    int *stack = malloc(sizeof(int) * lst->size(lst) * 2);
+    int *stack = malloc(sizeof(int) * (size_t)lst->size(lst) * 2);
     if (!stack) return;
 
     int top = 0;
@@ -165,6 +166,7 @@ int collections_binary_search(sorter *self, list *lst, void *item) {
  * @param dest A pointer to the destination list.
  */
 void collections_copy(sorter *self, list *src, list *dest) {
+    (void)self;
     int size = src->size(src);
     for (int i = 0; i < size; i++) {
         void *item = src->get(src, i);
@@ -281,6 +283,7 @@ void *collections_min(sorter *self, list *lst) {
  * @retval NULL If memory allocation failed or if the sorter creation was unsuccessful.
  */
 sorter *create_sorter(list *data, comparator cmp) {
+    (void)data;
     sorter *s = malloc(sizeof(sorter));
     if (!s) return NULL;
 

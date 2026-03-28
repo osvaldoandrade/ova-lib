@@ -2,6 +2,7 @@
 #include "../../include/queue.h"
 
 static void linked_initialize(queue *self, comparator compare) {
+    (void)compare;
     self->front = NULL;
     self->rear = NULL;
     self->length = 0;

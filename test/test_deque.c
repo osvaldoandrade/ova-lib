@@ -285,7 +285,7 @@ void test_deque_high_volume() {
     deque *d = create_deque(16);
     const int max_data = 1000;
     clock_t start = clock();
-    int* data_array = generate_random_int_data(max_data);
+    int* data_array = generate_random_int_data((size_t)max_data);
     
     // Push all elements to back
     for (int i = 0; i < max_data; i++) {
@@ -296,12 +296,14 @@ void test_deque_high_volume() {
     for (int i = 0; i < max_data; i++) {
         int *result = (int*)deque_get(d, i);
         assert(result != NULL && *result == data_array[i]);
+        (void)result;
     }
     
     // Pop all elements from front
     for (int i = 0; i < max_data; i++) {
         int *result = (int*)deque_pop_front(d);
         assert(result != NULL && *result == data_array[i]);
+        (void)result;
     }
     
     assert(deque_is_empty(d));
