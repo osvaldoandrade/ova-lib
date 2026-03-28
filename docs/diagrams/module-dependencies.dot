@@ -102,7 +102,9 @@ digraph ova_lib_modules {
     queue_h  -> heap_h   [label="priority queue\nuses heap"];
     map_h    -> heap_h   [label="create_map\naccepts heap\ncapacity hint", style=dotted];
     set_h    -> list_h   [label="set_to_list()"];
+    set_h    -> map_h    [label="SET_HASH\nwraps map"];
     set_h    -> tree_h   [label="SET_TREE\nuses tree"];
+    trie_h   -> list_h   [label="get_words_with_prefix()\nreturns list*"];
     tree_h   -> list_h   [label="tree_range_query()\nreturns list*"];
     graph_h  -> list_h   [label="neighbor lists,\nBFS/DFS results"];
     graph_h  -> matrix_h [label="floyd_warshall\nreturns matrix*"];

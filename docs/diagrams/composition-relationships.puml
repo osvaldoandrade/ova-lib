@@ -90,6 +90,7 @@ package "List Implementations" #FFF8E1 {
     }
     class LinkedList <<concrete>> {
         - node *head
+        - node *tail
         - int size
     }
     class SortedList <<concrete>> {
@@ -111,7 +112,7 @@ package "List Implementations" #FFF8E1 {
 
 package "Heap Implementations" #FFF0F0 {
     class BinaryHeap <<concrete>> {
-        - void **data  [1-indexed array]
+        - void **data  [0-indexed array]
         - int size, capacity
         - comparator cmp
         - decrease_key = NULL
@@ -252,5 +253,98 @@ TreeSet  --> ITree  : wraps
 HashSet  --> Map    : wraps
 ISet     ..> IList  : set_to_list()\nreturns IList*
 ITree    ..> IList  : range_query()\nreturns IList*
+
+' ════════════════════════════════════════════════════════════════
+' Graph (direct-function module, two representations)
+' ════════════════════════════════════════════════════════════════
+package "Graph" #F0FFFF {
+    class Graph <<composite>> {
+        - graph_type type          [DIRECTED | UNDIRECTED]
+        - graph_representation rep [ADJ_LIST | ADJ_MATRIX]
+        - list **adj_lists         [ADJ_LIST path]
+        - double *adj_matrix       [ADJ_MATRIX path]
+        + add_vertex / add_edge / remove_edge
+        + bfs / dfs / dijkstra / bellman_ford
+        + mst_prim / mst_kruskal
+        + floyd_warshall
+    }
+
+    Graph o-- IList : adj_lists\nuse list*
+    Graph ..> "Matrix (matrix.h)" : floyd_warshall\nreturns matrix*
+}
+
+' ════════════════════════════════════════════════════════════════
+' Trie (self-contained prefix tree)
+' ════════════════════════════════════════════════════════════════
+package "Trie (self-contained)" #FFFFF0 {
+    class Trie <<concrete>> {
+        - trie_node *root
+        - size_t word_count
+        + insert / search / delete
+        + starts_with / get_words_with_prefix
+    }
+
+    Trie ..> IList : get_words_with_prefix()\nreturns list*
+}
+
+' ════════════════════════════════════════════════════════════════
+' Bloom Filter (self-contained probabilistic set)
+' ════════════════════════════════════════════════════════════════
+package "Bloom Filter (self-contained)" #FFF0FF {
+    class BloomFilter <<concrete>> {
+        - uint8_t *bits
+        - size_t m_bits, k_hashes
+        + add / might_contain
+        + current_fpp / clear
+    }
+}
+
+' ════════════════════════════════════════════════════════════════
+' Sorter (vtable adapter over lists)
+' ════════════════════════════════════════════════════════════════
+package "Sorter (vtable)" #F5FFF0 {
+    interface ISorter <<vtable>> {
+        + sort(lst)
+        + shuffle(lst)
+        + reverse(lst)
+        + binary_search(lst, item) : int
+        + swap(lst, i, j)
+        + min / max / min_max
+        + copy(src, dest)
+    }
+
+    ISorter ..> IList : operates on list*
+    ISorter ..> types : uses comparator
+}
+
+' ════════════════════════════════════════════════════════════════
+' Deque (self-contained circular buffer)
+' ════════════════════════════════════════════════════════════════
+package "Deque (self-contained)" #F0FFF8 {
+    class Deque <<concrete>> {
+        - void **buffer  [circular]
+        - int capacity, size, front
+        + push_front / push_back
+        + pop_front / pop_back
+        + peek_front / peek_back / get
+    }
+}
+
+' ════════════════════════════════════════════════════════════════
+' Matrix / Vector (vtable with function pointers)
+' ════════════════════════════════════════════════════════════════
+package "Matrix / Vector (vtable)" #FFF8F0 {
+    interface IMatrix <<vtable>> {
+        + add / subtract / multiply
+        + determinant / inverse / transpose
+        + resize / copy / print / destroy
+    }
+
+    class Vector <<concrete>> {
+        - double *data
+        - int size
+        + resize / print / destroy
+    }
+}
 
 @enduml
