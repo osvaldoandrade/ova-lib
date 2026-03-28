@@ -3,6 +3,6 @@
 
 #include "../../include/queue.h"
 
-queue *create_linked_queue();
+queue *create_linked_queue(void);
 
 #endif // LINKED_QUEUE_H
