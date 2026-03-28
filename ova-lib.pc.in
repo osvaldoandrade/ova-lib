@@ -1,10 +1,11 @@
 prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=${prefix}
-libdir=${exec_prefix}/lib
-includedir=${prefix}/include
+libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 
 Name: ova-lib
 Description: Lightweight data structures and algorithms in C
 Version: @LIB_VERSION@
 Libs: -L${libdir} -lova_lib
+Libs.private: -lm
 Cflags: -I${includedir}

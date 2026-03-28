@@ -150,10 +150,10 @@ set(CPACK_GENERATOR "TGZ")
 include(CPack)
 
 # pkg-config support
+include(GNUInstallDirs)
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/ova-lib.pc.in
     ${CMAKE_BINARY_DIR}/ova-lib.pc
     @ONLY
 )
-include(GNUInstallDirs)
 install(FILES ${CMAKE_BINARY_DIR}/ova-lib.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
