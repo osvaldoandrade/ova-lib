@@ -29,7 +29,7 @@ jobs:
             c_flags: ""
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Set up MSYS2
         if: runner.os == 'Windows'
@@ -96,7 +96,7 @@ jobs:
     name: AddressSanitizer
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Install dependencies
         run: |
@@ -122,7 +122,7 @@ jobs:
     name: Valgrind Memcheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Install dependencies
         run: |
@@ -145,7 +145,7 @@ jobs:
     name: Coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Install dependencies
         run: |
@@ -175,7 +175,7 @@ jobs:
     name: Cppcheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: Install cppcheck
         run: |
