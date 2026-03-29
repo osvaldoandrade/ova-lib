@@ -158,7 +158,7 @@ void test_map_get_empty(void) {
     m->free(m);
 }
 
-void test_with_high_volume () {
+void test_with_high_volume(void) {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     int num_operations = 20000;
     clock_t start = clock();
