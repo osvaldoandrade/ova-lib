@@ -139,9 +139,6 @@ typedef struct matrix {
 /**
  * @brief The struct represents a vector.
  */
-/**
- * @brief The struct represents a vector.
- */
 typedef struct vector {
     double *data;   /**< Pointer to the vector element array. */
     int size;       /**< Number of elements in the vector. */
