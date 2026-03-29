@@ -1,5 +1,14 @@
 #ifndef LIST_H
 #define LIST_H
+
+/**
+ * @file list.h
+ * @brief List data structure with array, linked, and sorted implementations.
+ *
+ * Provides a common list interface with pluggable implementations including
+ * array list, linked list, and sorted list. Operations are accessed via function pointers.
+ */
+
 #include "types.h"
 
 typedef enum {

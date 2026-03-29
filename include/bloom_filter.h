@@ -1,6 +1,14 @@
 #ifndef BLOOM_FILTER_H
 #define BLOOM_FILTER_H
 
+/**
+ * @file bloom_filter.h
+ * @brief Probabilistic data structure for approximate set membership testing.
+ *
+ * A Bloom filter uses multiple hash functions to compactly represent a set.
+ * It may produce false positives but never false negatives.
+ */
+
 #include "types.h"
 
 typedef struct bloom_filter bloom_filter;
@@ -14,12 +22,21 @@ typedef struct bloom_filter bloom_filter;
  */
 bloom_filter *create_bloom_filter(int expected_elements, double false_positive_rate);
 
+/**
+ * @brief Frees all memory associated with the Bloom filter.
+ *
+ * @param bf The Bloom filter to free.
+ */
 void bloom_filter_free(bloom_filter *bf);
 
 /**
  * @brief Add an element to the Bloom filter.
  *
  * The element is treated as an opaque byte sequence of length @p len.
+ *
+ * @param bf The Bloom filter.
+ * @param element Pointer to the element data.
+ * @param len Length of the element in bytes.
  */
 void bloom_filter_add(bloom_filter *bf, const void *element, size_t len);
 
@@ -28,11 +45,18 @@ void bloom_filter_add(bloom_filter *bf, const void *element, size_t len);
  *
  * Returns true if the element might be present (possible false positives),
  * and false if the element is definitely not present (no false negatives).
+ *
+ * @param bf The Bloom filter.
+ * @param element Pointer to the element data.
+ * @param len Length of the element in bytes.
+ * @return true if the element might be present, false if definitely absent.
  */
 bool bloom_filter_might_contain(const bloom_filter *bf, const void *element, size_t len);
 
 /**
  * @brief Clear all bits and reset insertion counters.
+ *
+ * @param bf The Bloom filter to clear.
  */
 void bloom_filter_clear(bloom_filter *bf);
 
@@ -42,6 +66,9 @@ void bloom_filter_clear(bloom_filter *bf);
  * The estimate uses the standard Bloom filter approximation:
  *   p ~= (1 - exp(-(k*n)/m))^k
  * where n is the number of insert calls performed on this instance.
+ *
+ * @param bf The Bloom filter.
+ * @return The estimated false positive probability.
  */
 double bloom_filter_current_fpp(const bloom_filter *bf);
 

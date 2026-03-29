@@ -1,7 +1,15 @@
 #ifndef STACK_H
 #define STACK_H
 
-#include "types.h"  // Assume-se que este cabeçalho define tipos comuns usados em toda a biblioteca
+/**
+ * @file stack.h
+ * @brief Stack data structure with array-based and linked-list-based implementations.
+ *
+ * Provides a common stack interface with pluggable implementations.
+ * Operations are accessed via function pointers.
+ */
+
+#include "types.h"
 
 typedef enum {
     ARRAY_STACK,
@@ -79,6 +87,7 @@ typedef struct stack {
  * This function creates a new stack and initializes its function pointers.
  * The memory for the stack is allocated and the function pointers are set to the appropriate functions.
  *
+ * @param type The stack implementation type (ARRAY_STACK or LINKED_STACK).
  * @return A pointer to the newly created stack.
  */
 stack *create_stack(StackType type);

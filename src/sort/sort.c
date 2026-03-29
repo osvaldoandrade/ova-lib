@@ -276,17 +276,6 @@ void *collections_min(sorter *self, list *lst) {
     return minimum;
 }
 
-/**
- * @brief Creates a sorter structure.
- *
- * This function creates and allocates memory for a sorter structure.
- * It initializes the function pointers and assigns the comparator function.
- *
- * @param data A pointer to the list of data to be sorted.
- * @param cmp The comparator function for sorting the data.
- * @return A pointer to the created sorter structure.
- * @retval NULL If memory allocation failed or if the sorter creation was unsuccessful.
- */
 sorter *create_sorter(list *data, comparator cmp) {
     (void)data;
     sorter *s = malloc(sizeof(sorter));

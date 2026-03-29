@@ -1,6 +1,14 @@
 #ifndef TREE_H
 #define TREE_H
 
+/**
+ * @file tree.h
+ * @brief Balanced binary search tree with AVL and Red-Black tree implementations.
+ *
+ * Provides a common tree interface supporting insert, search, delete, min/max,
+ * predecessor/successor, range queries, and in-order traversal.
+ */
+
 #include "list.h"
 #include "types.h"
 
@@ -30,20 +38,54 @@ tree *create_tree(tree_type type, comparator cmp);
  * @brief Frees the tree and all internal node allocations.
  *
  * This function does not free user-provided keys/values.
+ *
+ * @param t The tree to free.
  */
 void tree_free(tree *t);
 
+/**
+ * @brief Inserts a key/value pair into the tree.
+ *
+ * If a key equal to @p key already exists, the associated value is updated.
+ *
+ * @param t The tree.
+ * @param key Pointer to the key.
+ * @param value Pointer to the value.
+ */
 void tree_insert(tree *t, void *key, void *value);
+
+/**
+ * @brief Searches for a key in the tree.
+ *
+ * @param t The tree.
+ * @param key Pointer to the key to search for.
+ * @return Pointer to the associated value if found, or NULL if the key is not present.
+ */
 void *tree_search(tree *t, void *key);
+
+/**
+ * @brief Deletes a key and its associated value from the tree.
+ *
+ * If the key is not found, no action is taken.
+ *
+ * @param t The tree.
+ * @param key Pointer to the key to delete.
+ */
 void tree_delete(tree *t, void *key);
 
 /**
  * @brief Returns the value associated with the minimum key, or NULL if empty.
+ *
+ * @param t The tree.
+ * @return Pointer to the value associated with the minimum key, or NULL.
  */
 void *tree_min(tree *t);
 
 /**
  * @brief Returns the value associated with the maximum key, or NULL if empty.
+ *
+ * @param t The tree.
+ * @return Pointer to the value associated with the maximum key, or NULL.
  */
 void *tree_max(tree *t);
 
@@ -52,6 +94,10 @@ void *tree_max(tree *t);
  *
  * The predecessor is the largest key strictly smaller than @p key. The key does
  * not need to exist in the tree.
+ *
+ * @param t The tree.
+ * @param key Pointer to the reference key.
+ * @return Pointer to the predecessor value, or NULL if no predecessor exists.
  */
 void *tree_predecessor(tree *t, void *key);
 
@@ -60,6 +106,10 @@ void *tree_predecessor(tree *t, void *key);
  *
  * The successor is the smallest key strictly larger than @p key. The key does
  * not need to exist in the tree.
+ *
+ * @param t The tree.
+ * @param key Pointer to the reference key.
+ * @return Pointer to the successor value, or NULL if no successor exists.
  */
 void *tree_successor(tree *t, void *key);
 
@@ -69,6 +119,11 @@ void *tree_successor(tree *t, void *key);
  * The returned list contains pointers to the values stored in the tree (it does
  * not allocate/copy keys or values). The caller owns the list container and must
  * free it with list->free(list).
+ *
+ * @param t The tree.
+ * @param low Pointer to the lower bound key.
+ * @param high Pointer to the upper bound key.
+ * @return A list of value pointers in the range, or NULL on failure.
  */
 list *tree_range_query(tree *t, void *low, void *high);
 
@@ -76,11 +131,17 @@ list *tree_range_query(tree *t, void *low, void *high);
  * @brief Traverses the tree in ascending key order.
  *
  * The callback receives (key, value) pointers as stored in the tree.
+ *
+ * @param t The tree.
+ * @param callback Function called for each key/value pair.
  */
 void tree_in_order_traverse(tree *t, void (*callback)(void *, void *));
 
 /**
  * @brief Returns the number of key/value pairs stored in the tree.
+ *
+ * @param t The tree.
+ * @return The number of elements in the tree.
  */
 int tree_size(const tree *t);
 
