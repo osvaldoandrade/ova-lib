@@ -65,7 +65,7 @@ static int linked_size(const queue *self) {
     return self->length;
 }
 
-queue *create_linked_queue() {
+queue *create_linked_queue(void) {
     queue *q = malloc(sizeof(queue));
     if (!q) return NULL;
 
