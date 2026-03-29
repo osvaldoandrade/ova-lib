@@ -113,7 +113,8 @@ void test_insert_retrieve_large_number_of_items() {
         sprintf(data[i], "data%d", i);
         ht->put(ht, keys[i], data[i]);
         char *retrieved_data = (char *)ht->get(ht, keys[i]);
-        assert(strcmp(retrieved_data, data[i]) == 0);
+        assert_not_null(retrieved_data);
+        assert_string_equal(data[i], retrieved_data);
     }
 
     print_test_result(ht->size == num_items, "Correct number of items stored");
