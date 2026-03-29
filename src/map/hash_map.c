@@ -159,12 +159,12 @@ void *hash_get(map *self, void *key) {
 void *hash_remove(map *self, void *key) {
     if (self->lock) pthread_mutex_lock(self->lock);
 
-    int index = self->hash_func(key, self->capacity);
+    int index = (key == NULL) ? 0 : self->hash_func(key, self->capacity);
     map_entry *prev = NULL;
     map_entry *current = self->buckets[index];
 
     while (current) {
-        if (self->key_compare(current->key, key) == 0) {
+        if ((current->key == key) || (key != NULL && self->key_compare(current->key, key) == 0)) {
             void *data = current->data;
             if (prev == NULL) {
                 self->buckets[index] = current->next;

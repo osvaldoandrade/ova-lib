@@ -23,8 +23,13 @@ binary_heap *binary_heap_init(int initial_capacity, comparator cmp) {
 static void binary_heap_put(heap *self, void *item) {
     binary_heap *h = (binary_heap *)self->impl;
     if (h->size == h->capacity) {
-        h->capacity *= 2;
-        h->data = realloc(h->data, h->capacity * sizeof(void *));
+        int new_capacity = (h->capacity > 0) ? h->capacity * 2 : 4;
+        void **new_data = realloc(h->data, new_capacity * sizeof(void *));
+        if (!new_data) {
+            return;
+        }
+        h->capacity = new_capacity;
+        h->data = new_data;
     }
     h->data[h->size] = item;
     sift_up(h, h->size);
@@ -57,6 +62,7 @@ static void binary_heap_free(heap *self) {
     binary_heap *h = (binary_heap *) self->impl;
     free(h->data);
     free(h);
+    free(self);
 }
 
 heap *create_binary_heap(int initial_capacity, comparator compare_function) {
@@ -111,4 +117,3 @@ static void sift_down(binary_heap *h, int index) {
         index = largest;
     }
 }
-

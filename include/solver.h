@@ -25,6 +25,8 @@ typedef struct lp_problem {
   vector* objective;
   vector* bounds;
   ProblemType type;
+  int constraint_count;
+  int constraint_capacity;
 
   double* solution; // Array to store solution values for X1, X2, etc.
   double z_value;   // Store the objective function value
@@ -48,18 +50,7 @@ solver* create_solver(SolverType type);
 
 // Factory method for creating an LP problem
 lp_problem* create_problem(int numVariables, int numConstraints);
-
-/**
- * @brief Checks whether a given solution is feasible for a matrix programming problem.
- *
- * This function checks whether the given solution satisfies all the constraints of the
- * matrix programming problem defined by `prob`.
- *
- * @param prob The matrix programming problem.
- * @param solution The solution vector to be checked.
- * @return 1 if the solution is feasible, 0 otherwise.
- */
-static int is_feasible(lp_problem *prob, vector *solution);
+void destroy_problem(lp_problem *problem);
 
 /**
  * Determines whether a given solution improves the objective value of a matrix programming problem.

@@ -61,12 +61,17 @@ static int sorter_partition(list *lst, int low, int high, sorter *self) {
  * @param lst A pointer to the list to be sorted.
  */
 static void sorter_quick(sorter *self, list *lst) {
-    int *stack = malloc(sizeof(int) * lst->size(lst) * 2);
+    int size = lst->size(lst);
+    if (size < 2) {
+        return;
+    }
+
+    int *stack = malloc(sizeof(int) * size * 2);
     if (!stack) return;
 
     int top = 0;
     stack[top++] = 0;
-    stack[top++] = lst->size(lst) - 1;
+    stack[top++] = size - 1;
 
     while (top > 0) {
         int high = stack[--top];

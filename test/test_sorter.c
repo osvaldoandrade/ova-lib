@@ -121,8 +121,15 @@ void test_sorter_binary_search() {
 void test_sorter_large_sort() {
     const int MAX = 1000;
     list *lst = create_list(ARRAY_LIST, MAX, NULL);
-    for(int i=MAX-1;i>=0;i--){
-        lst->insert(lst, &i, 0);
+    int *values = malloc((size_t)MAX * sizeof(int));
+    if (values == NULL) {
+        print_test_result(0, "Large sort within time limit");
+        lst->free(lst);
+        return;
+    }
+    for(int i = 0; i < MAX; i++){
+        values[i] = MAX - 1 - i;
+        lst->insert(lst, &values[i], i);
     }
     sorter *s = create_sorter(lst, int_compare);
     clock_t start = clock();
@@ -136,6 +143,7 @@ void test_sorter_large_sort() {
     }
     print_test_result(sorted && elapsed_ms < 1500.0, "Large sort within time limit");
     lst->free(lst);
+    free(values);
     free(s);
 }
 
