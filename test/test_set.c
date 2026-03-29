@@ -49,7 +49,7 @@ static int list_values_match(list *lst, const int *expected, int expected_count)
     return 1;
 }
 
-static void test_hash_set_basic_ops() {
+static void test_hash_set_basic_ops(void) {
     set *s = create_set(SET_HASH, int_comparator, int_hash);
     if (!s) {
         print_test_result(0, "Hash set creation");
@@ -87,7 +87,7 @@ static void test_hash_set_basic_ops() {
     set_free(s);
 }
 
-static void test_set_algebra_hash() {
+static void test_set_algebra_hash(void) {
     set *a = create_set(SET_HASH, int_comparator, int_hash);
     set *b = create_set(SET_HASH, int_comparator, int_hash);
     if (!a || !b) {
@@ -127,7 +127,7 @@ static void test_set_algebra_hash() {
     set_free(b);
 }
 
-static void test_tree_set_basic_ops_and_order() {
+static void test_tree_set_basic_ops_and_order(void) {
     set *s = create_set(SET_TREE, int_comparator, NULL);
     if (!s) {
         print_test_result(0, "Tree set creation");
@@ -162,7 +162,7 @@ static void test_tree_set_basic_ops_and_order() {
     set_free(s);
 }
 
-static void test_set_algebra_tree_ordered_result() {
+static void test_set_algebra_tree_ordered_result(void) {
     set *a = create_set(SET_TREE, int_comparator, NULL);
     set *b = create_set(SET_TREE, int_comparator, NULL);
     if (!a || !b) {
@@ -194,7 +194,7 @@ static void test_set_algebra_tree_ordered_result() {
     set_free(b);
 }
 
-static void test_hash_set_add_bulk() {
+static void test_hash_set_add_bulk(void) {
     set *s = create_set(SET_HASH, int_comparator, int_hash);
     if (!s) {
         print_test_result(0, "Hash set creation for bulk test");
@@ -216,7 +216,7 @@ static void test_hash_set_add_bulk() {
     set_free(s);
 }
 
-static void test_tree_set_add_bulk() {
+static void test_tree_set_add_bulk(void) {
     set *s = create_set(SET_TREE, int_comparator, NULL);
     if (!s) {
         print_test_result(0, "Tree set creation for bulk test");
@@ -239,7 +239,7 @@ static void test_tree_set_add_bulk() {
     set_free(s);
 }
 
-static void test_set_add_bulk_with_duplicates() {
+static void test_set_add_bulk_with_duplicates(void) {
     set *s = create_set(SET_HASH, int_comparator, int_hash);
     if (!s) {
         print_test_result(0, "Hash set creation for bulk duplicate test");
@@ -255,7 +255,7 @@ static void test_set_add_bulk_with_duplicates() {
     set_free(s);
 }
 
-static void test_set_add_bulk_edge_cases() {
+static void test_set_add_bulk_edge_cases(void) {
     set *s = create_set(SET_HASH, int_comparator, int_hash);
     int v = 1;
     void *ptrs[] = {&v};
@@ -272,7 +272,7 @@ static void test_set_add_bulk_edge_cases() {
     set_free(s);
 }
 
-static void run_all_tests() {
+static void run_all_tests(void) {
     test_hash_set_basic_ops();
     test_set_algebra_hash();
     test_tree_set_basic_ops_and_order();
@@ -283,7 +283,7 @@ static void run_all_tests() {
     test_set_add_bulk_edge_cases();
 }
 
-int main() {
+int main(void) {
     run_all_tests();
     return 0;
 }

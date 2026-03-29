@@ -6,7 +6,7 @@
 
 extern size_t array_list_active_buffer_count(void);
 
-void test_array_list_insert_and_get() {
+void test_array_list_insert_and_get(void) {
     list *lst = create_list(ARRAY_LIST, 10, NULL);
     int items_to_test[] = {10, 20, 30, 40, 50};
     int num_items = sizeof(items_to_test) / sizeof(items_to_test[0]);
@@ -28,7 +28,7 @@ void test_array_list_insert_and_get() {
     lst->free(lst);
 }
 
-void test_array_list_remove() {
+void test_array_list_remove(void) {
     list *lst = create_list(ARRAY_LIST, 10, NULL);
     int items[] = {5, 15, 25, 35};
     for (int i = 0; i < 4; i++) {
@@ -43,7 +43,7 @@ void test_array_list_remove() {
     lst->free(lst);
 }
 
-void test_array_list_capacity_increase() {
+void test_array_list_capacity_increase(void) {
     list *lst = create_list(ARRAY_LIST, 2, NULL);
     int items[] = {10, 20, 30};  // Mais itens do que a capacidade inicial
 
@@ -63,7 +63,7 @@ void test_array_list_capacity_increase() {
 
     lst->free(lst);
 }
-void test_insert_at_specific_index() {
+void test_insert_at_specific_index(void) {
     list *lst = create_list(ARRAY_LIST, 5, NULL);
     int initial_items[] = {10, 20, 40, 50};
     int item_to_insert = 30;
@@ -82,7 +82,7 @@ void test_insert_at_specific_index() {
     lst->free(lst);
 }
 
-void test_access_out_of_bounds() {
+void test_access_out_of_bounds(void) {
     list *lst = create_list(ARRAY_LIST, 3, NULL);
     int items[] = {10, 20, 30};
 
@@ -96,7 +96,7 @@ void test_access_out_of_bounds() {
     lst->free(lst);
 }
 
-void test_insert_invalid_index() {
+void test_insert_invalid_index(void) {
     list *lst = create_list(ARRAY_LIST, 2, NULL);
     int val = 5;
     lst->insert(lst, &val, 5); /* invalid index */
@@ -104,7 +104,7 @@ void test_insert_invalid_index() {
     lst->free(lst);
 }
 
-void test_list_clear() {
+void test_list_clear(void) {
     list *lst = create_list(ARRAY_LIST, 5, NULL);
     if (lst == NULL) {
         print_test_result(0, "Failed to create list");
@@ -120,7 +120,7 @@ void test_list_clear() {
     print_test_result(1, "List should be empty after clear");  // Simplificando a verificação para sempre passar
 }
 
-void test_array_list_releases_internal_buffer() {
+void test_array_list_releases_internal_buffer(void) {
     size_t before = array_list_active_buffer_count();
     list *lst = create_list(ARRAY_LIST, 4, NULL);
 
@@ -140,7 +140,7 @@ void test_array_list_releases_internal_buffer() {
     print_test_result(after == before, "Array List should release internal buffer on free");
 }
 
-void test_high_volume_linked_list_insertions() {
+void test_high_volume_linked_list_insertions(void) {
     const int MAX = 1000;
     clock_t start = clock();
     list *lst = create_list(ARRAY_LIST, 10, NULL);
@@ -170,7 +170,7 @@ void test_high_volume_linked_list_insertions() {
 }
 
 
-void test_array_list_insert_bulk() {
+void test_array_list_insert_bulk(void) {
     list *lst = create_list(ARRAY_LIST, 2, NULL);
     int items[] = {10, 20, 30, 40, 50};
     void *ptrs[] = {&items[0], &items[1], &items[2], &items[3], &items[4]};
@@ -189,7 +189,7 @@ void test_array_list_insert_bulk() {
     lst->free(lst);
 }
 
-void test_array_list_insert_bulk_empty() {
+void test_array_list_insert_bulk_empty(void) {
     list *lst = create_list(ARRAY_LIST, 4, NULL);
     int items[] = {1};
     void *ptrs[] = {&items[0]};
@@ -206,20 +206,20 @@ void test_array_list_insert_bulk_empty() {
     lst->free(lst);
 }
 
-void test_safe_double_capacity_normal() {
+void test_safe_double_capacity_normal(void) {
     print_test_result(safe_double_capacity(1) == 2, "safe_double_capacity(1) == 2");
     print_test_result(safe_double_capacity(4) == 8, "safe_double_capacity(4) == 8");
     print_test_result(safe_double_capacity(100) == 200, "safe_double_capacity(100) == 200");
     print_test_result(safe_double_capacity(INT_MAX / 2) == (INT_MAX / 2) * 2, "safe_double_capacity(INT_MAX/2) doubles without overflow");
 }
 
-void test_safe_double_capacity_overflow_protection() {
+void test_safe_double_capacity_overflow_protection(void) {
     print_test_result(safe_double_capacity(INT_MAX / 2 + 1) == INT_MAX, "safe_double_capacity(INT_MAX/2+1) returns INT_MAX");
     print_test_result(safe_double_capacity(INT_MAX) == INT_MAX, "safe_double_capacity(INT_MAX) returns INT_MAX");
     print_test_result(safe_double_capacity(INT_MAX - 1) == INT_MAX, "safe_double_capacity(INT_MAX-1) returns INT_MAX");
 }
 
-void run_all_tests() {
+void run_all_tests(void) {
     test_safe_double_capacity_normal();
     test_safe_double_capacity_overflow_protection();
     test_array_list_insert_and_get();
@@ -236,7 +236,7 @@ void run_all_tests() {
     //test_high_volume_array_list_insertions();
 }
 
-int main() {
+int main(void) {
     run_all_tests();
     return 0;
 }

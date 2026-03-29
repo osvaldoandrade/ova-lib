@@ -89,7 +89,7 @@ static void consolidate(fibonacci_heap *h) {
         fib_node *x = w;
         w = w->right;
 
-        if (!x || !x->data) {
+        if (x->data == NULL) {
             continue;
         }
 
@@ -97,7 +97,7 @@ static void consolidate(fibonacci_heap *h) {
 
         while (d < D && A[d]) {
             fib_node *y = A[d];
-            if (!y || !y->data) {
+            if (y->data == NULL) {
                 A[d] = NULL;
                 break;
             }

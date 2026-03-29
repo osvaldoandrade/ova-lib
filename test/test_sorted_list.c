@@ -9,7 +9,7 @@ static int int_comparator(const void *a, const void *b) {
     return 0;
 }
 
-static void test_sorted_list_insertion_order() {
+static void test_sorted_list_insertion_order(void) {
     int data[] = {5, 1, 4, 3, 2};
     int expected[] = {1, 2, 3, 4, 5};
 
@@ -36,7 +36,7 @@ static void test_sorted_list_insertion_order() {
     lst->free(lst);
 }
 
-static void test_sorted_list_lookup() {
+static void test_sorted_list_lookup(void) {
     int data[] = {10, 7, 9, 8};
     int expected[] = {7, 8, 9, 10};
 
@@ -63,7 +63,7 @@ static void test_sorted_list_lookup() {
     lst->free(lst);
 }
 
-static void test_sorted_list_remove() {
+static void test_sorted_list_remove(void) {
     int data[] = {3, 1, 4, 2};
     list *lst = create_list(SORTED_LIST, 2, int_comparator);
     if (!lst) {
@@ -92,13 +92,13 @@ static void test_sorted_list_remove() {
     lst->free(lst);
 }
 
-static void run_all_tests() {
+static void run_all_tests(void) {
     test_sorted_list_insertion_order();
     test_sorted_list_lookup();
     test_sorted_list_remove();
 }
 
-int main() {
+int main(void) {
     run_all_tests();
     return 0;
 }

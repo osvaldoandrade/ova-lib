@@ -36,7 +36,7 @@ static int assert_in_order_keys(tree *t, const int *expected, int expected_count
     return 1;
 }
 
-static void test_avl_tree_basic_ops() {
+static void test_avl_tree_basic_ops(void) {
     tree *t = create_tree(TREE_AVL, int_comparator);
     if (!t) {
         print_test_result(0, "AVL tree creation");
@@ -132,7 +132,7 @@ static void test_avl_tree_basic_ops() {
     tree_free(t);
 }
 
-int main() {
+int main(void) {
     test_avl_tree_basic_ops();
     return 0;
 }

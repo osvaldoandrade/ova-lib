@@ -17,7 +17,7 @@ int int_compare(const void *a, const void *b) {
 }
 
 
-void test_sorter_sort() {
+void test_sorter_sort(void) {
     list *lst = create_list(ARRAY_LIST, 10, NULL);
     int items[] = {50, 40, 30, 20, 10};
     for (int i = 0; i < 5; i++) {
@@ -42,7 +42,7 @@ void test_sorter_sort() {
     free(s);
 }
 
-void test_sort_empty_list() {
+void test_sort_empty_list(void) {
     list *lst = create_list(ARRAY_LIST, 1, NULL);
     sorter *s = create_sorter(lst, int_compare);
     s->sort(s, lst);
@@ -51,7 +51,7 @@ void test_sort_empty_list() {
     free(s);
 }
 
-void test_sorter_shuffle() {
+void test_sorter_shuffle(void) {
     list *lst = create_list(ARRAY_LIST, 10, NULL);
     int items[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     for (int i = 0; i < 10; i++) {
@@ -75,7 +75,7 @@ void test_sorter_shuffle() {
     free(s);
 }
 
-void test_sorter_reverse() {
+void test_sorter_reverse(void) {
     list *lst = create_list(ARRAY_LIST, 5, NULL);
     int items[] = {10, 20, 30, 40, 50};
     for (int i = 0; i < 5; i++) {
@@ -100,7 +100,7 @@ void test_sorter_reverse() {
     free(s);
 }
 
-void test_sorter_binary_search() {
+void test_sorter_binary_search(void) {
     list *lst = create_list(ARRAY_LIST, 10, NULL);
     int items[] = {50, 40, 30, 20, 10, 60, 70, 80, 90, 100};
     for (int i = 0; i < 10; i++) {
@@ -118,7 +118,7 @@ void test_sorter_binary_search() {
     free(s);
 }
 
-void test_sorter_large_sort() {
+void test_sorter_large_sort(void) {
     const int MAX = 1000;
     list *lst = create_list(ARRAY_LIST, MAX, NULL);
     int *values = malloc((size_t)MAX * sizeof(int));
@@ -147,7 +147,7 @@ void test_sorter_large_sort() {
     free(s);
 }
 
-void test_sorter_copy() {
+void test_sorter_copy(void) {
     list *src = create_list(ARRAY_LIST, 5, NULL);
     list *dest = create_list(ARRAY_LIST, 5, NULL);
     int items[] = {10, 20, 30, 40, 50};
@@ -174,7 +174,7 @@ void test_sorter_copy() {
     free(s);
 }
 
-void test_sorter_min_max() {
+void test_sorter_min_max(void) {
     list *lst = create_list(ARRAY_LIST, 5, NULL);
     int items[] = {10, 20, 30, 40, 50};
     for (int i = 0; i < 5; i++) {
@@ -204,7 +204,7 @@ void test_sorter_min_max() {
     free(s);
 }
 
-void run_all_tests() {
+void run_all_tests(void) {
     test_sorter_sort();
     test_sorter_shuffle();
     test_sorter_reverse();
@@ -215,7 +215,7 @@ void run_all_tests() {
     test_sorter_min_max();
 }
 
-int main() {
+int main(void) {
     run_all_tests();
     return 0;
 }

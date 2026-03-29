@@ -8,7 +8,7 @@ int int_compare_fibonacci(const void *a, const void *b) {
     return (ib - ia); // Para max-heap; inverter para min-heap
 }
 
-void test_heap_insert_and_extract_max() {
+void test_heap_insert_and_extract_max(void) {
     heap *h = create_heap(FIBONACCI_HEAP,10, int_compare_fibonacci);
     int values[] = {5, 3, 10, 1, 4};
     for (int i = 0; i < (int)(sizeof(values) / sizeof(values[0])); i++) {
@@ -19,7 +19,7 @@ void test_heap_insert_and_extract_max() {
     h->free(h);
 }
 
-void test_heap_peek_max() {
+void test_heap_peek_max(void) {
     heap *h = create_heap(FIBONACCI_HEAP, 10, int_compare_fibonacci);
     int values[] = {5, 3, 10, 1, 4};
     for (int i = 0; i < (int)(sizeof(values) / sizeof(values[0])); i++) {
@@ -30,7 +30,7 @@ void test_heap_peek_max() {
     h->free(h);
 }
 
-void test_heap_empty_check() {
+void test_heap_empty_check(void) {
     heap *h = create_heap(FIBONACCI_HEAP, 10, int_compare_fibonacci);
     print_test_result(h->size(h) == 0, "Heap empty on creation"); // Usar função size() aqui
     int value = 10;
@@ -39,13 +39,13 @@ void test_heap_empty_check() {
     h->free(h);
 }
 
-void test_heap_pop_empty() {
+void test_heap_pop_empty(void) {
     heap *h = create_heap(FIBONACCI_HEAP, 10, int_compare_fibonacci);
     print_test_result(h->pop(h) == NULL, "Pop on empty fibonacci heap returns NULL");
     h->free(h);
 }
 
-void test_heap_high_volume() {
+void test_heap_high_volume(void) {
     heap *h = create_heap(FIBONACCI_HEAP, 10000, int_compare_fibonacci);
     const int MAX = 1000;
     int values[MAX];
@@ -62,7 +62,7 @@ void test_heap_high_volume() {
     h->free(h);
 }
 
-void test_heap_put_with_handle() {
+void test_heap_put_with_handle(void) {
     heap *h = create_heap(FIBONACCI_HEAP, 10, int_compare_fibonacci);
     int value = 42;
     void *handle = h->put_with_handle(h, &value);
@@ -70,7 +70,7 @@ void test_heap_put_with_handle() {
     h->free(h);
 }
 
-void test_heap_decrease_key() {
+void test_heap_decrease_key(void) {
     heap *h = create_heap(FIBONACCI_HEAP, 10, int_compare_fibonacci);
     static int values[] = {50, 30, 20, 10};
     void *handles[4];
@@ -91,7 +91,7 @@ void test_heap_decrease_key() {
     h->free(h);
 }
 
-void test_heap_decrease_key_cascading() {
+void test_heap_decrease_key_cascading(void) {
     heap *h = create_heap(FIBONACCI_HEAP, 10, int_compare_fibonacci);
     static int values[10];
     void *handles[10];
@@ -115,7 +115,7 @@ void test_heap_decrease_key_cascading() {
     h->free(h);
 }
 
-void test_heap_delete_node() {
+void test_heap_delete_node(void) {
     heap *h = create_heap(FIBONACCI_HEAP, 10, int_compare_fibonacci);
     static int values[] = {50, 30, 20, 10, 40};
     void *handles[5];
@@ -141,7 +141,7 @@ void test_heap_delete_node() {
     h->free(h);
 }
 
-void test_heap_delete_min_node() {
+void test_heap_delete_min_node(void) {
     heap *h = create_heap(FIBONACCI_HEAP, 10, int_compare_fibonacci);
     static int values[] = {50, 30, 20, 10, 40};
     void *handles[5];
@@ -160,7 +160,7 @@ void test_heap_delete_min_node() {
     h->free(h);
 }
 
-void test_heap_complex_operations() {
+void test_heap_complex_operations(void) {
     heap *h = create_heap(FIBONACCI_HEAP, 10, int_compare_fibonacci);
     static int values[20];
     void *handles[20];
@@ -195,7 +195,7 @@ void test_heap_complex_operations() {
     h->free(h);
 }
 
-void run_all_heap_tests() {
+void run_all_heap_tests(void) {
     test_heap_insert_and_extract_max();
     test_heap_peek_max();
     test_heap_empty_check();
@@ -209,7 +209,7 @@ void run_all_heap_tests() {
     test_heap_complex_operations();
 }
 
-int main() {
+int main(void) {
     run_all_heap_tests();
     return 0;
 }

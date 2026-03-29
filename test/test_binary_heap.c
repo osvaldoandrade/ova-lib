@@ -10,7 +10,7 @@ int int_compare(const void *a, const void *b) {
     return (arg1 > arg2) - (arg1 < arg2);
 }
 
-void test_heap_insert_and_extract_max() {
+void test_heap_insert_and_extract_max(void) {
     heap *h = create_heap(BINARY_HEAP,10, int_compare);
     int values[] = {5, 3, 10, 1, 4};
     for (int i = 0; i < (int)(sizeof(values) / sizeof(values[0])); i++) {
@@ -21,7 +21,7 @@ void test_heap_insert_and_extract_max() {
     h->free(h);
 }
 
-void test_heap_peek_max() {
+void test_heap_peek_max(void) {
     heap *h = create_heap(BINARY_HEAP, 10, int_compare);
     int values[] = {5, 3, 10, 1, 4};
     for (int i = 0; i < (int)(sizeof(values) / sizeof(values[0])); i++) {
@@ -32,7 +32,7 @@ void test_heap_peek_max() {
     h->free(h);
 }
 
-void test_heap_empty_check() {
+void test_heap_empty_check(void) {
     heap *h = create_heap(BINARY_HEAP, 10, int_compare);
     print_test_result(h->size(h) == 0, "Heap empty on creation"); // Usar função size() aqui
     int value = 10;
@@ -41,13 +41,13 @@ void test_heap_empty_check() {
     h->free(h);
 }
 
-void test_heap_pop_empty() {
+void test_heap_pop_empty(void) {
     heap *h = create_heap(BINARY_HEAP, 10, int_compare);
     print_test_result(h->pop(h) == NULL, "Pop on empty heap returns NULL");
     h->free(h);
 }
 
-void test_heap_high_volume() {
+void test_heap_high_volume(void) {
     heap *h = create_heap(BINARY_HEAP, 10000, int_compare);
     const int MAX = 1000;
     int values[MAX];
@@ -64,13 +64,13 @@ void test_heap_high_volume() {
     h->free(h);
 }
 
-void test_safe_double_capacity_for_binary_heap() {
+void test_safe_double_capacity_for_binary_heap(void) {
     print_test_result(safe_double_capacity(10) == 20, "Heap safe_double_capacity(10) == 20");
     print_test_result(safe_double_capacity(INT_MAX / 2 + 1) == INT_MAX, "Heap safe_double_capacity caps at INT_MAX");
     print_test_result(safe_double_capacity(INT_MAX) == INT_MAX, "Heap safe_double_capacity(INT_MAX) stays INT_MAX");
 }
 
-void run_all_heap_tests() {
+void run_all_heap_tests(void) {
     test_safe_double_capacity_for_binary_heap();
     test_heap_insert_and_extract_max();
     test_heap_peek_max();
@@ -79,7 +79,7 @@ void run_all_heap_tests() {
     test_heap_high_volume();
 }
 
-int main() {
+int main(void) {
     run_all_heap_tests();
     return 0;
 }

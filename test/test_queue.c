@@ -3,19 +3,19 @@
 #include <string.h>
 #include <time.h>
 
-void test_queue_empty_initially() {
+void test_queue_empty_initially(void) {
     queue *q = create_queue(QUEUE_TYPE_NORMAL, 10, NULL);
     print_test_result(q->is_empty(q), "Queue should be empty after initialization");
     q->free(q);
 }
 
-void test_queue_dequeue_empty() {
+void test_queue_dequeue_empty(void) {
     queue *q = create_queue(QUEUE_TYPE_NORMAL, 0, NULL);
     print_test_result(q->dequeue(q) == NULL, "Dequeue on empty queue returns NULL");
     q->free(q);
 }
 
-void test_queue_enqueue_dequeue_single() {
+void test_queue_enqueue_dequeue_single(void) {
     queue *q = create_queue(QUEUE_TYPE_NORMAL, 10, NULL);
     int data1 = 42;
     q->enqueue(q, &data1);
@@ -26,7 +26,7 @@ void test_queue_enqueue_dequeue_single() {
     q->free(q);
 }
 
-void test_queue_enqueue_dequeue_multiple() {
+void test_queue_enqueue_dequeue_multiple(void) {
     queue *q = create_queue(QUEUE_TYPE_NORMAL, 10, NULL);
     int data1 = 42, data2 = 56;
     q->enqueue(q, &data1);
@@ -40,7 +40,7 @@ void test_queue_enqueue_dequeue_multiple() {
     q->free(q);
 }
 
-void test_queue_high_volume() {
+void test_queue_high_volume(void) {
     queue *q = create_queue(QUEUE_TYPE_NORMAL, 10, NULL);
     const int max_data = 1000;
     clock_t start = clock();
@@ -64,7 +64,7 @@ void test_queue_high_volume() {
     q->free(q);
 }
 
-void test_queue_with_string_data() {
+void test_queue_with_string_data(void) {
     queue *q = create_queue(QUEUE_TYPE_NORMAL, 10, NULL);
     char* str_data = generate_random_string_data();
     q->enqueue(q, str_data);
@@ -75,7 +75,7 @@ void test_queue_with_string_data() {
     q->free(q);
 }
 
-void run_all_queue_tests() {
+void run_all_queue_tests(void) {
     test_queue_empty_initially();
     test_queue_dequeue_empty();
     test_queue_enqueue_dequeue_single();
@@ -84,7 +84,7 @@ void run_all_queue_tests() {
     test_queue_with_string_data();
 }
 
-int main() {
+int main(void) {
     run_all_queue_tests();
     return 0;
 }

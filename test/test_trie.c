@@ -32,7 +32,7 @@ static int list_matches_words(list *lst, const char **expected, int expected_cou
     return 1;
 }
 
-static void test_trie_basic_ops() {
+static void test_trie_basic_ops(void) {
     trie *t = create_trie();
     if (!t) {
         print_test_result(0, "Trie creation");
@@ -88,7 +88,7 @@ static void test_trie_basic_ops() {
     trie_free(t);
 }
 
-int main() {
+int main(void) {
     test_trie_basic_ops();
     return 0;
 }

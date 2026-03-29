@@ -3,7 +3,7 @@
 #include "../src/list/array_list.h"
 #include <time.h>
 
-void test_array_stack_push_pop() {
+void test_array_stack_push_pop(void) {
     stack *stk = create_stack(ARRAY_STACK);
     int items_to_test[] = {10, 20, 30, 40, 50};
     int num_items = sizeof(items_to_test) / sizeof(items_to_test[0]);
@@ -25,7 +25,7 @@ void test_array_stack_push_pop() {
     stk->free(stk);
 }
 
-void test_array_stack_empty_after_pop() {
+void test_array_stack_empty_after_pop(void) {
     stack *stk = create_stack(ARRAY_STACK);
     int item = 123;
     stk->push(stk, &item);
@@ -36,7 +36,7 @@ void test_array_stack_empty_after_pop() {
     stk->free(stk);
 }
 
-void test_stack_top_behavior_array() {
+void test_stack_top_behavior_array(void) {
     stack *stk = create_stack(ARRAY_STACK);
     print_test_result(stk->top(stk) == NULL, "Array stack top on new stack NULL");
     int v=7;
@@ -47,7 +47,7 @@ void test_stack_top_behavior_array() {
     stk->free(stk);
 }
 
-void test_array_stack_high_volume() {
+void test_array_stack_high_volume(void) {
     stack *stk = create_stack(ARRAY_STACK);
     const int MAX = 1000;
     clock_t start = clock();
@@ -58,14 +58,14 @@ void test_array_stack_high_volume() {
     stk->free(stk);
 }
 
-void run_all_tests() {
+void run_all_tests(void) {
     test_array_stack_push_pop();
     test_array_stack_empty_after_pop();
     test_stack_top_behavior_array();
     test_array_stack_high_volume();
 }
 
-int main() {
+int main(void) {
     run_all_tests();
     return 0;
 }

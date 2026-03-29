@@ -56,14 +56,14 @@ void test_graph_basic_undirected(graph_representation rep) {
     graph_free(g);
 }
 
-void run_all_graph_tests() {
+void run_all_graph_tests(void) {
     test_graph_add_edge_implicit_vertices(GRAPH_ADJACENCY_LIST);
     test_graph_add_edge_implicit_vertices(GRAPH_ADJACENCY_MATRIX);
     test_graph_basic_undirected(GRAPH_ADJACENCY_LIST);
     test_graph_basic_undirected(GRAPH_ADJACENCY_MATRIX);
 }
 
-int main() {
+int main(void) {
     run_all_graph_tests();
     return 0;
 }

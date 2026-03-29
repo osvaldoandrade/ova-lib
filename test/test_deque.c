@@ -5,7 +5,7 @@
 #include <string.h>
 #include <time.h>
 
-void test_deque_create() {
+void test_deque_create(void) {
     deque *d = create_deque(10);
     print_test_result(d != NULL, "Deque should be created successfully");
     print_test_result(deque_is_empty(d), "New deque should be empty");
@@ -13,13 +13,13 @@ void test_deque_create() {
     deque_free(d);
 }
 
-void test_deque_create_default_capacity() {
+void test_deque_create_default_capacity(void) {
     deque *d = create_deque(0);
     print_test_result(d != NULL, "Deque with default capacity should be created");
     deque_free(d);
 }
 
-void test_deque_push_front_single() {
+void test_deque_push_front_single(void) {
     deque *d = create_deque(10);
     int value = 42;
     deque_push_front(d, &value);
@@ -30,7 +30,7 @@ void test_deque_push_front_single() {
     deque_free(d);
 }
 
-void test_deque_push_back_single() {
+void test_deque_push_back_single(void) {
     deque *d = create_deque(10);
     int value = 99;
     deque_push_back(d, &value);
@@ -41,7 +41,7 @@ void test_deque_push_back_single() {
     deque_free(d);
 }
 
-void test_deque_push_pop_front() {
+void test_deque_push_pop_front(void) {
     deque *d = create_deque(10);
     int value1 = 1, value2 = 2, value3 = 3;
     
@@ -64,7 +64,7 @@ void test_deque_push_pop_front() {
     deque_free(d);
 }
 
-void test_deque_push_pop_back() {
+void test_deque_push_pop_back(void) {
     deque *d = create_deque(10);
     int value1 = 10, value2 = 20, value3 = 30;
     
@@ -87,7 +87,7 @@ void test_deque_push_pop_back() {
     deque_free(d);
 }
 
-void test_deque_mixed_operations() {
+void test_deque_mixed_operations(void) {
     deque *d = create_deque(10);
     int values[6] = {1, 2, 3, 4, 5, 6};
     
@@ -115,7 +115,7 @@ void test_deque_mixed_operations() {
     deque_free(d);
 }
 
-void test_deque_get() {
+void test_deque_get(void) {
     deque *d = create_deque(10);
     int values[5] = {10, 20, 30, 40, 50};
     
@@ -142,7 +142,7 @@ void test_deque_get() {
     deque_free(d);
 }
 
-void test_deque_random_access_after_operations() {
+void test_deque_random_access_after_operations(void) {
     deque *d = create_deque(5);
     int values[5] = {1, 2, 3, 4, 5};
     
@@ -164,7 +164,7 @@ void test_deque_random_access_after_operations() {
     deque_free(d);
 }
 
-void test_deque_resize() {
+void test_deque_resize(void) {
     deque *d = create_deque(4);
     int values[20];
     
@@ -185,7 +185,7 @@ void test_deque_resize() {
     deque_free(d);
 }
 
-void test_deque_resize_with_front_operations() {
+void test_deque_resize_with_front_operations(void) {
     deque *d = create_deque(4);
     int values[20];
     
@@ -208,7 +208,7 @@ void test_deque_resize_with_front_operations() {
     deque_free(d);
 }
 
-void test_deque_pop_empty() {
+void test_deque_pop_empty(void) {
     deque *d = create_deque(10);
     
     void *result = deque_pop_front(d);
@@ -220,7 +220,7 @@ void test_deque_pop_empty() {
     deque_free(d);
 }
 
-void test_deque_peek_empty() {
+void test_deque_peek_empty(void) {
     deque *d = create_deque(10);
     
     void *result = deque_peek_front(d);
@@ -232,7 +232,7 @@ void test_deque_peek_empty() {
     deque_free(d);
 }
 
-void test_deque_null_operations() {
+void test_deque_null_operations(void) {
     print_test_result(deque_size(NULL) == 0, "Size of NULL deque should be 0");
     print_test_result(deque_is_empty(NULL), "NULL deque should be considered empty");
     print_test_result(deque_pop_front(NULL) == NULL, "Pop front on NULL deque should return NULL");
@@ -248,7 +248,7 @@ void test_deque_null_operations() {
     print_test_result(1, "NULL deque operations should not crash");
 }
 
-void test_deque_circular_wrap() {
+void test_deque_circular_wrap(void) {
     deque *d = create_deque(8);
     int values[10];
     
@@ -281,7 +281,7 @@ void test_deque_circular_wrap() {
     deque_free(d);
 }
 
-void test_deque_high_volume() {
+void test_deque_high_volume(void) {
     deque *d = create_deque(16);
     const int max_data = 1000;
     clock_t start = clock();
@@ -315,7 +315,7 @@ void test_deque_high_volume() {
     deque_free(d);
 }
 
-void test_deque_with_string_data() {
+void test_deque_with_string_data(void) {
     deque *d = create_deque(10);
     char* str1 = generate_random_string_data();
     char* str2 = generate_random_string_data();
@@ -336,7 +336,7 @@ void test_deque_with_string_data() {
     deque_free(d);
 }
 
-void test_deque_alternating_operations() {
+void test_deque_alternating_operations(void) {
     deque *d = create_deque(10);
     int values[10];
     
@@ -369,13 +369,13 @@ void test_deque_alternating_operations() {
     deque_free(d);
 }
 
-void test_safe_double_capacity_for_deque() {
+void test_safe_double_capacity_for_deque(void) {
     print_test_result(safe_double_capacity(16) == 32, "Deque safe_double_capacity(16) == 32");
     print_test_result(safe_double_capacity(INT_MAX / 2 + 1) == INT_MAX, "Deque safe_double_capacity caps at INT_MAX");
     print_test_result(safe_double_capacity(INT_MAX) == INT_MAX, "Deque safe_double_capacity(INT_MAX) stays INT_MAX");
 }
 
-void run_all_deque_tests() {
+void run_all_deque_tests(void) {
     test_safe_double_capacity_for_deque();
     test_deque_create();
     test_deque_create_default_capacity();
@@ -397,7 +397,7 @@ void run_all_deque_tests() {
     test_deque_alternating_operations();
 }
 
-int main() {
+int main(void) {
     run_all_deque_tests();
     return 0;
 }

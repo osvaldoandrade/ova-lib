@@ -19,7 +19,7 @@ static void cleanup_solver_test(lp_problem *problem, solver *mySolver, matrix *s
   destroy_problem(problem);
 }
 
-void test_simplex_solver1() {
+void test_simplex_solver1(void) {
   int numVariables = 2;
   int numConstraints = 3;
   lp_problem *problem = create_problem(numVariables, numConstraints);
@@ -55,7 +55,7 @@ void test_simplex_solver1() {
   cleanup_solver_test(problem, mySolver, solution);
 }
 
-void test_solver_initializes_solution_vector() {
+void test_solver_initializes_solution_vector(void) {
   int numVariables = 2;
   int numConstraints = 2;
   lp_problem *problem = create_problem(numVariables, numConstraints);
@@ -82,7 +82,7 @@ void test_solver_initializes_solution_vector() {
   cleanup_solver_test(problem, mySolver, solution);
 }
 
-void test_simplex_solver2() {
+void test_simplex_solver2(void) {
   int numVariables = 3;
   int numConstraints = 3;
   lp_problem *problem = create_problem(numVariables, numConstraints);
@@ -111,7 +111,7 @@ void test_simplex_solver2() {
   cleanup_solver_test(problem, mySolver, solution);
 }
 
-int main() {
+int main(void) {
   test_solver_initializes_solution_vector();
   test_simplex_solver1();
   test_simplex_solver2();

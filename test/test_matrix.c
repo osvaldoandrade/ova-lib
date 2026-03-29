@@ -19,7 +19,7 @@ int compare_matrices(matrix *m1, matrix *m2) {
     return 1;
 }
 
-void test_matrix_add() {
+void test_matrix_add(void) {
     matrix *m1 = create_matrix(2, 2);
     matrix *m2 = create_matrix(2, 2);
     m1->data[0][0] = 1; m1->data[0][1] = 2;
@@ -41,7 +41,7 @@ void test_matrix_add() {
     expected->destroy(expected);
 }
 
-void test_matrix_subtract() {
+void test_matrix_subtract(void) {
     matrix *m1 = create_matrix(2, 2);
     matrix *m2 = create_matrix(2, 2);
     m1->data[0][0] = 5; m1->data[0][1] = 5;
@@ -63,7 +63,7 @@ void test_matrix_subtract() {
     expected->destroy(expected);
 }
 
-void test_matrix_multiply() {
+void test_matrix_multiply(void) {
     // Create matrices with appropriate dimensions for multiplication
     matrix *m1 = create_matrix(2, 3);
     matrix *m2 = create_matrix(3, 2);
@@ -100,7 +100,7 @@ void test_matrix_multiply() {
     expected->destroy(expected);
 }
 
-void test_matrix_determinant() {
+void test_matrix_determinant(void) {
     // Create a matrix with a known determinant
     matrix *m = create_matrix(3, 3);
     m->data[0][0] = 1; m->data[0][1] = 2; m->data[0][2] = 3;
@@ -127,7 +127,7 @@ void test_matrix_determinant() {
     m->destroy(m);
 }
 
-void test_matrix_transpose() {
+void test_matrix_transpose(void) {
     // Create a matrix
     matrix *m = create_matrix(2, 3);
     m->data[0][0] = 1; m->data[0][1] = 2; m->data[0][2] = 3;
@@ -153,7 +153,7 @@ void test_matrix_transpose() {
     expected->destroy(expected);
 }
 
-void test_matrix_inverse() {
+void test_matrix_inverse(void) {
     // Create a 2x2 matrix
     matrix *m = create_matrix(2, 2);
     m->data[0][0] = 4; m->data[0][1] = 7;
@@ -181,7 +181,7 @@ void test_matrix_inverse() {
     expected->destroy(expected);
 }
 
-void run_all_tests() {
+void run_all_tests(void) {
     test_matrix_add();
     test_matrix_subtract();
     test_matrix_multiply();
@@ -190,7 +190,7 @@ void run_all_tests() {
     test_matrix_inverse();
 }
 
-int main() {
+int main(void) {
     run_all_tests();
     return 0;
 }

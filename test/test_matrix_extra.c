@@ -15,12 +15,12 @@ int compare_matrices(matrix *m1, matrix *m2) {
     return 1;
 }
 
-void test_create_matrix_invalid() {
+void test_create_matrix_invalid(void) {
     matrix *m = create_matrix(0, 3);
     print_test_result(m == NULL, "create_matrix should fail on zero dimension");
 }
 
-void test_matrix_resize() {
+void test_matrix_resize(void) {
     matrix *m = create_matrix(2, 2);
     m->data[0][0] = 1; m->data[0][1] = 2;
     m->data[1][0] = 3; m->data[1][1] = 4;
@@ -34,7 +34,7 @@ void test_matrix_resize() {
     m->destroy(m);
 }
 
-void test_matrix_resize_shrink_and_expand() {
+void test_matrix_resize_shrink_and_expand(void) {
     matrix *m = create_matrix(3, 3);
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -59,7 +59,7 @@ void test_matrix_resize_shrink_and_expand() {
     m->destroy(m);
 }
 
-void test_matrix_resize_failure_keeps_state() {
+void test_matrix_resize_failure_keeps_state(void) {
     matrix *m = create_matrix(2, 2);
     m->data[0][0] = 7; m->data[0][1] = 8;
     m->data[1][0] = 9; m->data[1][1] = 10;
@@ -73,7 +73,7 @@ void test_matrix_resize_failure_keeps_state() {
     m->destroy(m);
 }
 
-void test_matrix_copy() {
+void test_matrix_copy(void) {
     matrix *m = create_matrix(2,2);
     m->data[0][0] = 5; m->data[0][1] = 6;
     m->data[1][0] = 7; m->data[1][1] = 8;
@@ -83,7 +83,7 @@ void test_matrix_copy() {
     m->destroy(m);
 }
 
-void test_matrix_inverse_singular() {
+void test_matrix_inverse_singular(void) {
     matrix *m = create_matrix(2,2);
     m->data[0][0] = 1; m->data[0][1] = 2;
     m->data[1][0] = 2; m->data[1][1] = 4; // determinant zero
@@ -93,7 +93,7 @@ void test_matrix_inverse_singular() {
     m->destroy(m);
 }
 
-void test_matrix_determinant_non_square() {
+void test_matrix_determinant_non_square(void) {
     matrix *m = create_matrix(2,3);
     int err = 0;
     double d = m->determinant(m, &err);
@@ -101,7 +101,7 @@ void test_matrix_determinant_non_square() {
     m->destroy(m);
 }
 
-void test_large_matrix_multiply() {
+void test_large_matrix_multiply(void) {
     const int N = 100;
     matrix *a = create_matrix(N, N);
     matrix *b = create_matrix(N, N);
@@ -121,7 +121,7 @@ void test_large_matrix_multiply() {
     b->destroy(b);
 }
 
-void test_vector_resize() {
+void test_vector_resize(void) {
     vector *v = create_vector(2);
     v->data[0] = 1; v->data[1] = 2;
     v->resize(v, 4);
@@ -131,7 +131,7 @@ void test_vector_resize() {
     v->destroy(v);
 }
 
-void run_all_tests() {
+void run_all_tests(void) {
     test_create_matrix_invalid();
     test_matrix_resize();
     test_matrix_resize_shrink_and_expand();
@@ -143,7 +143,7 @@ void run_all_tests() {
     test_vector_resize();
 }
 
-int main() {
+int main(void) {
     run_all_tests();
     return 0;
 }

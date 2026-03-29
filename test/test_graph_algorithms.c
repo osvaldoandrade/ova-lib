@@ -285,7 +285,7 @@ void test_toposort_and_cycles(graph_representation rep) {
     graph_free(cyc);
 }
 
-void run_all_graph_algorithm_tests() {
+void run_all_graph_algorithm_tests(void) {
     test_bfs_and_dfs(GRAPH_ADJACENCY_LIST);
     test_bfs_and_dfs(GRAPH_ADJACENCY_MATRIX);
 
@@ -304,7 +304,7 @@ void run_all_graph_algorithm_tests() {
     test_toposort_and_cycles(GRAPH_ADJACENCY_MATRIX);
 }
 
-int main() {
+int main(void) {
     run_all_graph_algorithm_tests();
     return 0;
 }

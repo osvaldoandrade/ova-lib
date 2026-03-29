@@ -15,19 +15,19 @@ int int_compare_fibonacci(const void *a, const void *b) {
     return (ib - ia); // Para max-heap; inverter para min-heap
 }
 
-void test_priority_queue_empty_initially() {
+void test_priority_queue_empty_initially(void) {
     queue *pq = create_queue(QUEUE_TYPE_PRIORITY, 10, int_compare_binary);
     print_test_result(pq->is_empty(pq), "Priority Queue should be empty after initialization");
     pq->free(pq);
 }
 
-void test_priority_queue_dequeue_empty() {
+void test_priority_queue_dequeue_empty(void) {
     queue *pq = create_queue(QUEUE_TYPE_PRIORITY, 4, int_compare_binary);
     print_test_result(pq->dequeue(pq) == NULL, "Dequeue on empty priority queue returns NULL");
     pq->free(pq);
 }
 
-void test_priority_queue_enqueue_dequeue() {
+void test_priority_queue_enqueue_dequeue(void) {
     queue *pq = create_queue(QUEUE_TYPE_PRIORITY, 10, int_compare_binary);
     int data1 = 42;
     pq->enqueue(pq, &data1);
@@ -38,7 +38,7 @@ void test_priority_queue_enqueue_dequeue() {
     pq->free(pq);
 }
 
-void test_priority_queue_multiple_elements() {
+void test_priority_queue_multiple_elements(void) {
     queue *pq = create_queue(QUEUE_TYPE_PRIORITY, 10, int_compare_binary);
     int data1 = 42, data2 = 56, data3 = 15;
     pq->enqueue(pq, &data3);
@@ -58,7 +58,7 @@ void test_priority_queue_multiple_elements() {
     pq->free(pq);
 }
 
-void test_priority_queue_high_volume() {
+void test_priority_queue_high_volume(void) {
     queue *pq = create_queue(QUEUE_TYPE_PRIORITY, 10, int_compare_binary);
     const int max_data = 1000;
     clock_t start = clock();
@@ -87,7 +87,7 @@ void test_priority_queue_high_volume() {
     pq->free(pq);
 }
 
-void run_all_priority_queue_tests() {
+void run_all_priority_queue_tests(void) {
     test_priority_queue_empty_initially();
     test_priority_queue_dequeue_empty();
     test_priority_queue_enqueue_dequeue();
@@ -95,7 +95,7 @@ void run_all_priority_queue_tests() {
     test_priority_queue_high_volume();
 }
 
-int main() {
+int main(void) {
     run_all_priority_queue_tests();
     return 0;
 }

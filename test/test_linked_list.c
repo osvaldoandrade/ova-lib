@@ -2,7 +2,7 @@
 #include "../include/list.h"
 #include <time.h>
 
-void test_linked_list_insert_and_get() {
+void test_linked_list_insert_and_get(void) {
     list *lst = create_list(LINKED_LIST, 10, NULL);
     int items_to_test[] = {10, 20, 30, 40, 50};
     int num_items = sizeof(items_to_test) / sizeof(items_to_test[0]);
@@ -24,7 +24,7 @@ void test_linked_list_insert_and_get() {
     lst->free(lst);
 }
 
-void test_linked_list_remove() {
+void test_linked_list_remove(void) {
     list *lst = create_list(LINKED_LIST, 10, NULL);
     int items[] = {5, 15, 25, 35};
     for (int i = 0; i < 4; i++) {
@@ -39,7 +39,7 @@ void test_linked_list_remove() {
     lst->free(lst);
 }
 
-void test_linked_list_capacity_increase() {
+void test_linked_list_capacity_increase(void) {
     list *lst = create_list(LINKED_LIST, 2, NULL);
     int items[] = {10, 20, 30};
 
@@ -59,7 +59,7 @@ void test_linked_list_capacity_increase() {
 
     lst->free(lst);
 }
-void test_insert_at_specific_index() {
+void test_insert_at_specific_index(void) {
     list *lst = create_list(LINKED_LIST, 5, NULL);
     int initial_items[] = {10, 20, 40, 50};
     int item_to_insert = 30;
@@ -78,7 +78,7 @@ void test_insert_at_specific_index() {
     lst->free(lst);
 }
 
-void test_access_out_of_bounds() {
+void test_access_out_of_bounds(void) {
     list *lst = create_list(LINKED_LIST, 3, NULL);
     int items[] = {10, 20, 30};
 
@@ -91,7 +91,7 @@ void test_access_out_of_bounds() {
     lst->free(lst);
 }
 
-void test_invalid_index_insertion() {
+void test_invalid_index_insertion(void) {
     list *lst = create_list(LINKED_LIST, 2, NULL);
     int v = 3;
     lst->insert(lst, &v, 4);
@@ -99,7 +99,7 @@ void test_invalid_index_insertion() {
     lst->free(lst);
 }
 
-void test_list_clear() {
+void test_list_clear(void) {
     list *lst = create_list(LINKED_LIST, 5, NULL);
     if (lst == NULL) {
         print_test_result(0, "Failed to create list");
@@ -114,7 +114,7 @@ void test_list_clear() {
     print_test_result(1, "List should be empty after clear");  // Simplificando a verificação para sempre passar
 }
 
-void test_high_volume_linked_list_insertions() {
+void test_high_volume_linked_list_insertions(void) {
     const int MAX = 1000;
     clock_t start = clock();
     list *lst = create_list(LINKED_LIST, 10, NULL);
@@ -140,7 +140,7 @@ void test_high_volume_linked_list_insertions() {
     free(values);
 }
 
-void run_all_tests() {
+void run_all_tests(void) {
     test_linked_list_insert_and_get();
     test_linked_list_remove();
     test_linked_list_capacity_increase();
@@ -151,7 +151,7 @@ void run_all_tests() {
     test_high_volume_linked_list_insertions();
 }
 
-int main() {
+int main(void) {
     run_all_tests();
     return 0;
 }

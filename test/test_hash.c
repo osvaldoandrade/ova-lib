@@ -17,7 +17,7 @@ int string_compare(const void *a, const void *b) {
     return strcmp(str1, str2);
 }
 
-void test_insert_and_retrieve_single_item() {
+void test_insert_and_retrieve_single_item(void) {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     char *key1 = generate_random_string_data();
     char data1[] = "Data1";
@@ -28,7 +28,7 @@ void test_insert_and_retrieve_single_item() {
     free(key1);
 }
 
-void test_check_resizing() {
+void test_check_resizing(void) {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     char *keys[20];
     for (int i = 0; i < 20; i++) {
@@ -42,7 +42,7 @@ void test_check_resizing() {
     }
 }
 
-void test_collision_and_chaining() {
+void test_collision_and_chaining(void) {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     char *key2 = generate_random_string_data();
     char *key3 = generate_random_string_data();
@@ -62,7 +62,7 @@ void test_collision_and_chaining() {
     free(key3);
 }
 
-void test_retrieve_non_existent_item() {
+void test_retrieve_non_existent_item(void) {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     char non_existent_key[] = "non_existent_key";
     char *retrieved_non_existent_data = (char *)ht->get(ht, non_existent_key);
@@ -70,7 +70,7 @@ void test_retrieve_non_existent_item() {
     ht->free(ht);
 }
 
-void test_insert_and_retrieve_numeric_keys() {
+void test_insert_and_retrieve_numeric_keys(void) {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     int numeric_key = 123;
     char numeric_data[] = "NumericData";
@@ -80,7 +80,7 @@ void test_insert_and_retrieve_numeric_keys() {
     ht->free(ht);
 }
 
-void test_remove_item() {
+void test_remove_item(void) {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     char key_to_remove[] = "key_to_remove";
     char data_to_remove[] = "DataToRemove";
@@ -91,7 +91,7 @@ void test_remove_item() {
     ht->free(ht);
 }
 
-void test_retrieve_after_removal() {
+void test_retrieve_after_removal(void) {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     char key[] = "key";
     char data[] = "data";
@@ -102,7 +102,7 @@ void test_retrieve_after_removal() {
     ht->free(ht);
 }
 
-void test_insert_retrieve_large_number_of_items() {
+void test_insert_retrieve_large_number_of_items(void) {
     map *ht = create_map(HASH_MAP, 20, NULL, string_compare);
     const int num_items = 15;
     char keys[15][32];
@@ -121,7 +121,7 @@ void test_insert_retrieve_large_number_of_items() {
     ht->free(ht);
 }
 
-void test_handling_of_duplicate_keys() {
+void test_handling_of_duplicate_keys(void) {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     char key[] = "duplicate_key";
     char first_data[] = "first_data";
@@ -133,7 +133,7 @@ void test_handling_of_duplicate_keys() {
     ht->free(ht);
 }
 
-void test_null_key_insertion() {
+void test_null_key_insertion(void) {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     char data[] = "data_for_null_key";
     ht->put(ht, NULL, data);
@@ -142,7 +142,7 @@ void test_null_key_insertion() {
     ht->free(ht);
 }
 
-void test_insert_retrieve_with_null_values() {
+void test_insert_retrieve_with_null_values(void) {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     char key[] = "test_key";
     ht->put(ht, key, NULL);
@@ -151,7 +151,7 @@ void test_insert_retrieve_with_null_values() {
     ht->free(ht);
 }
 
-void test_map_get_empty() {
+void test_map_get_empty(void) {
     map *m = create_map(HASH_MAP, 10, NULL, string_compare);
     char missing[] = "missing";
     print_test_result(m->get(m, missing) == NULL, "Get on empty map returns NULL");
@@ -195,7 +195,7 @@ void *pthread_test_function(void *arg) {
     return NULL;
 }
 
-void test_concurrent_access() {
+void test_concurrent_access(void) {
     map *ht = create_map(HASH_TABLE, 50, bernstein_hash, string_compare);  // Create a thread-safe map table
     pthread_t threads[NUM_THREADS];
     thread_arg args[NUM_THREADS] = {0};
@@ -233,7 +233,7 @@ void test_concurrent_access() {
     print_test_result(1, "Concurrent access test completed successfully.");
 }
 
-void test_map_put_bulk() {
+void test_map_put_bulk(void) {
     map *m = create_map(HASH_MAP, 10, NULL, string_compare);
     char k1[] = "key1", k2[] = "key2", k3[] = "key3";
     char v1[] = "val1", v2[] = "val2", v3[] = "val3";
@@ -255,7 +255,7 @@ void test_map_put_bulk() {
     m->free(m);
 }
 
-void test_map_put_bulk_with_duplicate_keys() {
+void test_map_put_bulk_with_duplicate_keys(void) {
     map *m = create_map(HASH_MAP, 10, NULL, string_compare);
     char k1[] = "key1", k2[] = "key2", k3[] = "key1";
     char v1[] = "val1", v2[] = "val2", v3[] = "val3";
@@ -272,7 +272,7 @@ void test_map_put_bulk_with_duplicate_keys() {
     m->free(m);
 }
 
-void test_map_put_bulk_edge_cases() {
+void test_map_put_bulk_edge_cases(void) {
     map *m = create_map(HASH_MAP, 10, NULL, string_compare);
     char k1[] = "k";
     char v1[] = "v";
@@ -294,13 +294,13 @@ void test_map_put_bulk_edge_cases() {
     m->free(m);
 }
 
-void test_safe_double_capacity_for_hash_map() {
+void test_safe_double_capacity_for_hash_map(void) {
     print_test_result(safe_double_capacity(10) == 20, "Hash map safe_double_capacity(10) == 20");
     print_test_result(safe_double_capacity(INT_MAX / 2 + 1) == INT_MAX, "Hash map safe_double_capacity caps at INT_MAX");
     print_test_result(safe_double_capacity(INT_MAX) == INT_MAX, "Hash map safe_double_capacity(INT_MAX) stays INT_MAX");
 }
 
-void run_all_tests() {
+void run_all_tests(void) {
     test_safe_double_capacity_for_hash_map();
     test_insert_and_retrieve_single_item();
     test_check_resizing();
@@ -321,7 +321,7 @@ void run_all_tests() {
     test_map_put_bulk_edge_cases();
 }
 
-int main() {
+int main(void) {
     run_all_tests();
     return 0;
 }

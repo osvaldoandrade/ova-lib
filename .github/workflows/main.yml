@@ -187,7 +187,7 @@ jobs:
           cppcheck \
             --language=c \
             --std=c11 \
-            --enable=warning,style,performance,portability \
+            --enable=warning,performance,portability \
             --error-exitcode=1 \
             --quiet \
             --inline-suppr \

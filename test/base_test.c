@@ -55,7 +55,7 @@ int* generate_random_int_data(size_t count) {
  *
  * @return A pointer to the generated string. The caller is responsible for freeing the allocated memory.
  */
-char* generate_random_string_data() {
+char* generate_random_string_data(void) {
     char* str = malloc(6); // Fixed size for simplicity
     for (int i = 0; i < 5; i++) {
         str[i] = (char)('a' + (rand() % 26)); // Generates a random character between 'a' and 'z'

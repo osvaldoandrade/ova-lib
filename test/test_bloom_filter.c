@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-static void test_bloom_filter_create_validation() {
+static void test_bloom_filter_create_validation(void) {
     bloom_filter *bf = create_bloom_filter(0, 0.01);
     print_test_result(bf == NULL, "Bloom filter rejects expected_elements <= 0");
     bloom_filter_free(bf);
@@ -17,7 +17,7 @@ static void test_bloom_filter_create_validation() {
     bloom_filter_free(bf);
 }
 
-static void test_bloom_filter_basic_ops() {
+static void test_bloom_filter_basic_ops(void) {
     bloom_filter *bf = create_bloom_filter(100, 0.01);
     if (!bf) {
         print_test_result(0, "Bloom filter creation");
@@ -53,7 +53,7 @@ static void test_bloom_filter_basic_ops() {
     bloom_filter_free(bf);
 }
 
-static void test_bloom_filter_empty_keys() {
+static void test_bloom_filter_empty_keys(void) {
     bloom_filter *bf = create_bloom_filter(100, 0.01);
     if (!bf) {
         print_test_result(0, "Bloom filter creation");
@@ -84,13 +84,13 @@ static void test_bloom_filter_empty_keys() {
     bloom_filter_free(bf);
 }
 
-static void run_all_tests() {
+static void run_all_tests(void) {
     test_bloom_filter_create_validation();
     test_bloom_filter_basic_ops();
     test_bloom_filter_empty_keys();
 }
 
-int main() {
+int main(void) {
     run_all_tests();
     return 0;
 }
