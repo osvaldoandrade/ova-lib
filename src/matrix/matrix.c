@@ -28,14 +28,14 @@ matrix *create_matrix(int rows, int cols) {
         return NULL;  // Handle memory allocation failure for the matrix structure
     }
 
-    m->data = calloc((size_t)rows, sizeof(double *));
+    m->data = malloc((size_t)rows * sizeof(double *));
     if (m->data == NULL) {
         free(m);  // Free the allocated structure if row allocation fails
         return NULL;
     }
 
     for (int i = 0; i < rows; i++) {
-        m->data[i] = calloc((size_t)cols, sizeof(double));
+        m->data[i] = malloc((size_t)cols * sizeof(double));
         if (m->data[i] == NULL) {
             for (int j = 0; j < i; j++) {
                 free(m->data[j]);  // Free previously allocated rows on failure
@@ -439,4 +439,5 @@ void matrix_print(const matrix *self) {
         printf("\n");
     }
 }
+
 
