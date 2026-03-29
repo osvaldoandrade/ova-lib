@@ -1,87 +1,183 @@
-name: CMake on multiple platforms
+name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  create-release:
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    steps:
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_ACTIONS_TOKEN }}
-        with:
-          tag_name: 0.1.${{ github.run_number }}
-          release_name: 0.1.${{ github.run_number }}
-          body: "Release of version v${{ github.run_number }}.0.0 based on the HEAD"
-          draft: false
-          prerelease: false
-
-  build-and-upload:
-    needs: create-release
+  build-test:
+    name: Build and Test (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            arch: x64
-            build_type: Release
-          - os: ubuntu-latest
-            arch: x86
-            build_type: Release
-          - os: macos-latest
-            arch: x64
-            build_type: Release
-    steps:
-      - uses: actions/checkout@v3
+          - name: linux-x64
+            os: ubuntu-latest
+            shell: bash
+            c_flags: ""
+          - name: linux-x86
+            os: ubuntu-latest
+            shell: bash
+            c_flags: "-m32"
+            multilib: true
+          - name: macos
+            os: macos-latest
+            shell: bash
+            c_flags: ""
+          - name: windows-mingw64
+            os: windows-latest
+            shell: msys2 {0}
+            c_flags: ""
 
-      - name: Set up dependencies
-        if: matrix.os == 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            base-devel
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-make
+            mingw-w64-x86_64-ninja
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential
-          if [ "${{ matrix.arch }}" == "x86" ]; then
+          sudo apt-get install -y build-essential cmake
+          if [ "${{ matrix.multilib }}" = "true" ]; then
             sudo dpkg --add-architecture i386
             sudo apt-get update
-            sudo apt-get install -y gcc-multilib g++-multilib
+            sudo apt-get install -y gcc-multilib g++-multilib libc6-dev-i386
           fi
 
-      - name: Set architecture flag and configure CMake
+      - name: Configure
+        shell: ${{ matrix.shell }}
         run: |
-          if [ "${{ matrix.arch }}" == "x86" ]; then
-            C_FLAGS="-m32"
-          else
-            C_FLAGS="-m64"
+          EXTRA_FLAGS=""
+          if [ -n "${{ matrix.c_flags }}" ]; then
+            EXTRA_FLAGS="-DCMAKE_C_FLAGS=${{ matrix.c_flags }}"
           fi
-          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -S ${{ github.workspace }} -DCMAKE_C_FLAGS=$C_FLAGS
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release ${EXTRA_FLAGS}
 
       - name: Build
-        run: cmake --build build --config ${{ matrix.build_type }}
+        shell: ${{ matrix.shell }}
+        run: cmake --build build --config Release --parallel
 
       - name: Test
-        working-directory: build
-        run: ctest --build-config ${{ matrix.build_type }}
+        shell: ${{ matrix.shell }}
+        run: ctest --test-dir build --output-on-failure
 
-      - name: Package TGZ
+  asan:
+    name: AddressSanitizer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
         run: |
-          cd build
-          cpack -G TGZ
-          mv *.tar.gz ova_lib-${{ matrix.os }}-${{ matrix.arch }}-${{ github.run_number }}.tar.gz
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
 
-      - name: Upload Release Asset TGZ
-        uses: actions/upload-release-asset@v1
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer -g"
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_ACTIONS_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./build/ova_lib-${{ matrix.os }}-${{ matrix.arch }}-${{ github.run_number }}.tar.gz
-          asset_name: ova_lib-${{ matrix.os }}-${{ matrix.arch }}-${{ github.run_number }}.tar.gz
-          asset_content_type: application/gzip
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1:strict_string_checks=1
+        run: ctest --test-dir build --output-on-failure
+
+  memcheck:
+    name: Valgrind Memcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake valgrind
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Functional tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Memcheck
+        run: ctest --test-dir build -T memcheck --output-on-failure
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake lcov
+
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_FLAGS="--coverage -O0"
+          -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Collect coverage
+        run: |
+          lcov --capture --directory build --output-file coverage.info --ignore-errors unused
+          lcov --remove coverage.info '/usr/*' '*/test/*' --output-file coverage.info --ignore-errors unused
+          lcov --list coverage.info --ignore-errors unused
+
+  cppcheck:
+    name: Cppcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck
+        run: |
+          cppcheck \
+            --language=c \
+            --std=c11 \
+            --enable=warning,style,performance,portability \
+            --error-exitcode=1 \
+            --quiet \
+            --inline-suppr \
+            --suppress=unusedFunction:src/trie/trie.c \
+            --suppress=constParameterCallback:src/set/hash_set.c \
+            --suppress=constParameterCallback:src/set/tree_set.c \
+            --suppress=checkersReport \
+            -I include \
+            src include

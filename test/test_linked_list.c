@@ -118,25 +118,26 @@ void test_high_volume_linked_list_insertions() {
     const int MAX = 1000;
     clock_t start = clock();
     list *lst = create_list(LINKED_LIST, 10, NULL);
+    int *values = malloc((size_t)MAX * sizeof(int));
     if (lst == NULL) {
         print_test_result(0, "Failed to create list");
         return;
     }
+    if (values == NULL) {
+        print_test_result(0, "Malloc failed");
+        lst->free(lst);
+        return;
+    }
 
     for (int i = 0; i < MAX; i++) {
-        int *data = malloc(sizeof(int));
-        if (data == NULL) {
-            print_test_result(0, "Malloc failed");
-            lst->free(lst);
-            return;
-        }
-        *data = i;
-        lst->insert(lst, data, i);
+        values[i] = i;
+        lst->insert(lst, &values[i], i);
     }
     print_test_result(lst->size(lst) == MAX, "High volume insertion should match the count");
     double elapsed_ms = ((double)(clock() - start) / CLOCKS_PER_SEC) * 1000.0;
     print_test_result(elapsed_ms < 1000.0, "Linked list high volume within time limit");
     lst->free(lst);
+    free(values);
 }
 
 void run_all_tests() {

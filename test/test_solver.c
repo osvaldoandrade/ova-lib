@@ -9,6 +9,16 @@ int approx_equal(double a, double b) {
   return fabs(a - b) < FLOAT_TOL;
 }
 
+static void cleanup_solver_test(lp_problem *problem, solver *mySolver, matrix *solution) {
+  if (solution) {
+    solution->destroy(solution);
+  }
+  if (mySolver) {
+    mySolver->destroy(mySolver);
+  }
+  destroy_problem(problem);
+}
+
 void test_simplex_solver1() {
   int numVariables = 2;
   int numConstraints = 3;
@@ -42,9 +52,7 @@ void test_simplex_solver1() {
     printf("Problem is infeasible or another error occurred.\n");
   }
 
-  if (solution) {
-    solution->destroy(solution);
-  }
+  cleanup_solver_test(problem, mySolver, solution);
 }
 
 void test_solver_initializes_solution_vector() {
@@ -71,9 +79,7 @@ void test_solver_initializes_solution_vector() {
     printf("Solver failed to initialize solution vector.\n");
   }
 
-  if (solution) {
-    solution->destroy(solution);
-  }
+  cleanup_solver_test(problem, mySolver, solution);
 }
 
 void test_simplex_solver2() {
@@ -102,9 +108,7 @@ void test_simplex_solver2() {
     printf("Problem is unbounded or infeasible.\n");
   }
 
-  if (solution) {
-    solution->destroy(solution);
-  }
+  cleanup_solver_test(problem, mySolver, solution);
 }
 
 int main() {

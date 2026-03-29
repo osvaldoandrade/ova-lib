@@ -25,6 +25,8 @@ typedef struct lp_problem {
   vector* objective;
   vector* bounds;
   ProblemType type;
+  int constraint_count;
+  int constraint_capacity;
 
   double* solution; // Array to store solution values for X1, X2, etc.
   double z_value;   // Store the objective function value
@@ -48,6 +50,7 @@ solver* create_solver(SolverType type);
 
 // Factory method for creating an LP problem
 lp_problem* create_problem(int numVariables, int numConstraints);
+void destroy_problem(lp_problem *problem);
 
 /**
  * @brief Checks whether a given solution is feasible for a matrix programming problem.

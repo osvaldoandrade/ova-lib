@@ -27,7 +27,7 @@ void test_heap_peek_max() {
     for (int i = 0; i < (int)(sizeof(values) / sizeof(values[0])); i++) {
         h->put(h, &values[i]);
     }
-    int *max = (int *)h->pop(h);
+    int *max = (int *)h->peek(h);
     print_test_result(*max == 10, "Heap peek max");
     h->free(h);
 }
@@ -50,9 +50,11 @@ void test_heap_pop_empty() {
 void test_heap_high_volume() {
     heap *h = create_heap(BINARY_HEAP, 10000, int_compare);
     const int MAX = 1000;
+    int values[MAX];
     clock_t start = clock();
     for (int i = 0; i < MAX; i++) {
-        h->put(h, &i);
+        values[i] = i;
+        h->put(h, &values[i]);
     }
     for (int i = 0; i < MAX; i++) {
         h->pop(h);

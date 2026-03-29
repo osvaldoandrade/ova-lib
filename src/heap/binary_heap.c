@@ -68,6 +68,7 @@ static void binary_heap_free(heap *self) {
     binary_heap *h = (binary_heap *) self->impl;
     free(h->data);
     free(h);
+    free(self);
 }
 
 heap *create_binary_heap(int initial_capacity, comparator compare_function) {
@@ -125,4 +126,3 @@ static void sift_down(binary_heap *h, int index) {
         index = largest;
     }
 }
-

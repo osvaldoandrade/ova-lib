@@ -24,19 +24,22 @@ void test_insert_and_retrieve_single_item() {
     ht->put(ht, key1, data1);
     char *retrieved_data1 = (char *)ht->get(ht, key1);
     print_test_result(strcmp(retrieved_data1, data1) == 0, "Retrieve inserted data");
-    free(key1);
     ht->free(ht);
+    free(key1);
 }
 
 void test_check_resizing() {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
+    char *keys[20];
     for (int i = 0; i < 20; i++) {
-        char *key = generate_random_string_data();
-        ht->put(ht, key, key);
-        free(key);
+        keys[i] = generate_random_string_data();
+        ht->put(ht, keys[i], keys[i]);
     }
     print_test_result(ht->capacity > 10, "Check resizing (capacity should be greater than initial)");
     ht->free(ht);
+    for (int i = 0; i < 20; i++) {
+        free(keys[i]);
+    }
 }
 
 void test_collision_and_chaining() {
@@ -54,9 +57,9 @@ void test_collision_and_chaining() {
     char *retrieved_data2 = (char *)ht->get(ht, key2);
     char *retrieved_data3 = (char *)ht->get(ht, key3);
     print_test_result(strcmp(retrieved_data2, "Data2") == 0 && strcmp(retrieved_data3, "Data3") == 0, "Handle collisions correctly");
+    ht->free(ht);
     free(key2);
     free(key3);
-    ht->free(ht);
 }
 
 void test_retrieve_non_existent_item() {
@@ -102,17 +105,15 @@ void test_retrieve_after_removal() {
 void test_insert_retrieve_large_number_of_items() {
     map *ht = create_map(HASH_MAP, 20, NULL, string_compare);
     const int num_items = 15;
-    char key[32];
-    char data[20];
+    char keys[15][32];
+    char data[15][20];
 
     for (int i = 0; i < num_items; i++) {
-        sprintf(key, "key%d", i);
-        sprintf(data, "data%d", i);
-        char *stored_key = strdup(key);
-        ht->put(ht, stored_key, strdup(data));
-        char *retrieved_data = (char *)ht->get(ht, stored_key);
-        assert(strcmp(retrieved_data, data) == 0);
-        (void)retrieved_data;
+        sprintf(keys[i], "key%d", i);
+        sprintf(data[i], "data%d", i);
+        ht->put(ht, keys[i], data[i]);
+        char *retrieved_data = (char *)ht->get(ht, keys[i]);
+        assert(strcmp(retrieved_data, data[i]) == 0);
     }
 
     print_test_result(ht->size == num_items, "Correct number of items stored");
@@ -176,19 +177,19 @@ void test_with_high_volume () {
 typedef struct {
     map *ht;
     int id;
+    char (*keys)[32];
+    char (*values)[32];
 } thread_arg;
 
 void *pthread_test_function(void *arg) {
     thread_arg *data = (thread_arg *)arg;
-    char key[32];
-    char value[32];
     for (int i = 0; i < OPERATIONS_PER_THREAD; i++) {
-        sprintf(key, "key_%d_%d", data->id, i);
-        sprintf(value, "value_%d_%d", data->id, i);
-        data->ht->put(data->ht, strdup(key), strdup(value));
-        char *retrieved = (char *)data->ht->get(data->ht, key);
+        sprintf(data->keys[i], "key_%d_%d", data->id, i);
+        sprintf(data->values[i], "value_%d_%d", data->id, i);
+        data->ht->put(data->ht, data->keys[i], data->values[i]);
+        char *retrieved = (char *)data->ht->get(data->ht, data->keys[i]);
         assert_not_null(retrieved);
-        assert_string_equal(value, retrieved);
+        assert_string_equal(data->values[i], retrieved);
     }
     return NULL;
 }
@@ -196,11 +197,24 @@ void *pthread_test_function(void *arg) {
 void test_concurrent_access() {
     map *ht = create_map(HASH_TABLE, 50, bernstein_hash, string_compare);  // Create a thread-safe map table
     pthread_t threads[NUM_THREADS];
-    thread_arg args[NUM_THREADS];
+    thread_arg args[NUM_THREADS] = {0};
 
     for (int i = 0; i < NUM_THREADS; i++) {
         args[i].ht = ht;
         args[i].id = i;
+        args[i].keys = calloc(OPERATIONS_PER_THREAD, sizeof(*args[i].keys));
+        args[i].values = calloc(OPERATIONS_PER_THREAD, sizeof(*args[i].values));
+        if (args[i].keys == NULL || args[i].values == NULL) {
+            perror("Failed to allocate thread buffers");
+            free(args[i].keys);
+            free(args[i].values);
+            ht->free(ht);
+            for (int j = 0; j < i; j++) {
+                free(args[j].keys);
+                free(args[j].values);
+            }
+            return;
+        }
         if (pthread_create(&threads[i], NULL, pthread_test_function, &args[i]) != 0) {
             perror("Failed to create thread");
         }
@@ -211,6 +225,10 @@ void test_concurrent_access() {
     }
 
     ht->free(ht);
+    for (int i = 0; i < NUM_THREADS; i++) {
+        free(args[i].keys);
+        free(args[i].values);
+    }
     print_test_result(1, "Concurrent access test completed successfully.");
 }
 
