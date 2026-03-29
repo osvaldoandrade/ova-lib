@@ -19,7 +19,7 @@ static void linked_list_remove(list *self, int index);
 static void linked_list_free(list *self);
 static int linked_list_size(const list *self);
 
-list *create_linked_list(void) {
+list *create_linked_list() {
     list *lst = malloc(sizeof(list));
     linked_list_impl *impl = malloc(sizeof(linked_list_impl));
 
