@@ -25,12 +25,12 @@ static int int_hash(void *key, int capacity) {
 
 static int set_contains_int(const set *s, int v) {
     int tmp = v;
-    return set_contains(s, &tmp) ? 1 : 0;
+    return s->contains(s, &tmp) ? 1 : 0;
 }
 
 static int set_remove_int(set *s, int v) {
     int tmp = v;
-    return set_remove(s, &tmp) ? 1 : 0;
+    return s->remove(s, &tmp) ? 1 : 0;
 }
 
 static int list_values_match(list *lst, const int *expected, int expected_count) {
@@ -59,13 +59,13 @@ static void test_hash_set_basic_ops(void) {
     int values[] = {1, 21, 41, 62};
     int ok = 1;
     for (int i = 0; i < 4; i++) {
-        ok = ok && set_add(s, &values[i]);
+        ok = ok && s->add(s, &values[i]);
     }
     print_test_result(ok, "Hash set add inserts unique elements");
-    print_test_result(set_size(s) == 4, "Hash set size reflects inserted elements");
+    print_test_result(s->size(s) == 4, "Hash set size reflects inserted elements");
 
     int dup = 21;
-    print_test_result(!set_add(s, &dup), "Hash set add returns false on duplicate");
+    print_test_result(!s->add(s, &dup), "Hash set add returns false on duplicate");
 
     ok = 1;
     for (int i = 0; i < 4; i++) {
@@ -75,16 +75,16 @@ static void test_hash_set_basic_ops(void) {
 
     print_test_result(set_remove_int(s, 41), "Hash set remove deletes existing element");
     print_test_result(!set_contains_int(s, 41), "Hash set contains is false after removal");
-    print_test_result(set_size(s) == 3, "Hash set size decreases after removal");
+    print_test_result(s->size(s) == 3, "Hash set size decreases after removal");
     print_test_result(!set_remove_int(s, 41), "Hash set remove returns false when missing");
 
-    list *lst = set_to_list(s);
+    list *lst = s->to_list(s);
     print_test_result(lst && lst->size(lst) == 3, "Hash set to_list returns all elements");
     if (lst) {
         lst->free(lst);
     }
 
-    set_free(s);
+    if (s) { s->free(s); }
 }
 
 static void test_set_algebra_hash(void) {
@@ -92,39 +92,39 @@ static void test_set_algebra_hash(void) {
     set *b = create_set(SET_HASH, int_comparator, int_hash);
     if (!a || !b) {
         print_test_result(0, "Hash set algebra setup");
-        set_free(a);
-        set_free(b);
+        if (a) { a->free(a); }
+        if (b) { b->free(b); }
         return;
     }
 
     int av[] = {1, 2, 3};
     int bv[] = {3, 4, 5};
     for (int i = 0; i < 3; i++) {
-        set_add(a, &av[i]);
-        set_add(b, &bv[i]);
+        a->add(a, &av[i]);
+        b->add(b, &bv[i]);
     }
 
-    set *u = set_union(a, b);
-    print_test_result(u && set_size(u) == 5 &&
+    set *u = a->union_with(a, b);
+    print_test_result(u && u->size(u) == 5 &&
                               set_contains_int(u, 1) && set_contains_int(u, 2) &&
                               set_contains_int(u, 3) && set_contains_int(u, 4) &&
                               set_contains_int(u, 5),
                       "Set union combines unique elements (hash)");
 
-    set *i = set_intersection(a, b);
-    print_test_result(i && set_size(i) == 1 && set_contains_int(i, 3), "Set intersection finds common elements (hash)");
+    set *i = a->intersection_with(a, b);
+    print_test_result(i && i->size(i) == 1 && set_contains_int(i, 3), "Set intersection finds common elements (hash)");
 
-    set *d = set_difference(a, b);
-    print_test_result(d && set_size(d) == 2 && set_contains_int(d, 1) && set_contains_int(d, 2) && !set_contains_int(d, 3),
+    set *d = a->difference_with(a, b);
+    print_test_result(d && d->size(d) == 2 && set_contains_int(d, 1) && set_contains_int(d, 2) && !set_contains_int(d, 3),
                       "Set difference removes elements present in other (hash)");
 
-    print_test_result(i && u && set_is_subset(i, u), "Subset check works (hash)");
+    print_test_result(i && u && i->is_subset_of(i, u), "Subset check works (hash)");
 
-    set_free(u);
-    set_free(i);
-    set_free(d);
-    set_free(a);
-    set_free(b);
+    if (u) { u->free(u); }
+    if (i) { i->free(i); }
+    if (d) { d->free(d); }
+    if (a) { a->free(a); }
+    if (b) { b->free(b); }
 }
 
 static void test_tree_set_basic_ops_and_order(void) {
@@ -136,13 +136,13 @@ static void test_tree_set_basic_ops_and_order(void) {
 
     int values[] = {20, 4, 15, 70, 50, 100, 3, 10};
     for (int i = 0; i < 8; i++) {
-        set_add(s, &values[i]);
+        s->add(s, &values[i]);
     }
-    print_test_result(set_size(s) == 8, "Tree set size reflects inserted elements");
+    print_test_result(s->size(s) == 8, "Tree set size reflects inserted elements");
     print_test_result(set_contains_int(s, 70) && set_contains_int(s, 3), "Tree set contains finds inserted elements");
 
     int expected1[] = {3, 4, 10, 15, 20, 50, 70, 100};
-    list *lst = set_to_list(s);
+    list *lst = s->to_list(s);
     print_test_result(list_values_match(lst, expected1, 8), "Tree set to_list yields ordered elements");
     if (lst) {
         lst->free(lst);
@@ -150,16 +150,16 @@ static void test_tree_set_basic_ops_and_order(void) {
 
     print_test_result(set_remove_int(s, 3) && set_remove_int(s, 70) && set_remove_int(s, 20),
                       "Tree set remove deletes existing elements");
-    print_test_result(set_size(s) == 5, "Tree set size decreases after removals");
+    print_test_result(s->size(s) == 5, "Tree set size decreases after removals");
 
     int expected2[] = {4, 10, 15, 50, 100};
-    lst = set_to_list(s);
+    lst = s->to_list(s);
     print_test_result(list_values_match(lst, expected2, 5), "Tree set remains ordered after removals");
     if (lst) {
         lst->free(lst);
     }
 
-    set_free(s);
+    if (s) { s->free(s); }
 }
 
 static void test_set_algebra_tree_ordered_result(void) {
@@ -167,31 +167,31 @@ static void test_set_algebra_tree_ordered_result(void) {
     set *b = create_set(SET_TREE, int_comparator, NULL);
     if (!a || !b) {
         print_test_result(0, "Tree set algebra setup");
-        set_free(a);
-        set_free(b);
+        if (a) { a->free(a); }
+        if (b) { b->free(b); }
         return;
     }
 
     int av[] = {41, 21, 1};
     int bv[] = {21, 62};
     for (int i = 0; i < 3; i++) {
-        set_add(a, &av[i]);
+        a->add(a, &av[i]);
     }
     for (int i = 0; i < 2; i++) {
-        set_add(b, &bv[i]);
+        b->add(b, &bv[i]);
     }
 
-    set *u = set_union(a, b);
+    set *u = a->union_with(a, b);
     int expected_union[] = {1, 21, 41, 62};
-    list *lst = u ? set_to_list(u) : NULL;
+    list *lst = u ? u->to_list(u) : NULL;
     print_test_result(u && list_values_match(lst, expected_union, 4), "Tree set union produces ordered result");
     if (lst) {
         lst->free(lst);
     }
 
-    set_free(u);
-    set_free(a);
-    set_free(b);
+    if (u) { u->free(u); }
+    if (a) { a->free(a); }
+    if (b) { b->free(b); }
 }
 
 static void test_hash_set_add_bulk(void) {
@@ -204,16 +204,16 @@ static void test_hash_set_add_bulk(void) {
     int values[] = {10, 20, 30, 40, 50};
     void *ptrs[] = {&values[0], &values[1], &values[2], &values[3], &values[4]};
 
-    set_add_bulk(s, ptrs, 5);
-    print_test_result(set_size(s) == 5, "Hash set bulk add inserts all elements");
+    s->add_bulk(s, ptrs, 5);
+    print_test_result(s->size(s) == 5, "Hash set bulk add inserts all elements");
 
     int ok = 1;
     for (int i = 0; i < 5; i++) {
-        ok = ok && set_contains(s, &values[i]);
+        ok = ok && s->contains(s, &values[i]);
     }
     print_test_result(ok, "Hash set bulk add elements are all findable");
 
-    set_free(s);
+    if (s) { s->free(s); }
 }
 
 static void test_tree_set_add_bulk(void) {
@@ -226,17 +226,17 @@ static void test_tree_set_add_bulk(void) {
     int values[] = {50, 10, 40, 20, 30};
     void *ptrs[] = {&values[0], &values[1], &values[2], &values[3], &values[4]};
 
-    set_add_bulk(s, ptrs, 5);
-    print_test_result(set_size(s) == 5, "Tree set bulk add inserts all elements");
+    s->add_bulk(s, ptrs, 5);
+    print_test_result(s->size(s) == 5, "Tree set bulk add inserts all elements");
 
     int expected[] = {10, 20, 30, 40, 50};
-    list *lst = set_to_list(s);
+    list *lst = s->to_list(s);
     print_test_result(list_values_match(lst, expected, 5), "Tree set bulk add maintains order");
     if (lst) {
         lst->free(lst);
     }
 
-    set_free(s);
+    if (s) { s->free(s); }
 }
 
 static void test_set_add_bulk_with_duplicates(void) {
@@ -249,10 +249,10 @@ static void test_set_add_bulk_with_duplicates(void) {
     int values[] = {10, 20, 10, 30, 20};
     void *ptrs[] = {&values[0], &values[1], &values[2], &values[3], &values[4]};
 
-    set_add_bulk(s, ptrs, 5);
-    print_test_result(set_size(s) == 3, "Set bulk add skips duplicates");
+    s->add_bulk(s, ptrs, 5);
+    print_test_result(s->size(s) == 3, "Set bulk add skips duplicates");
 
-    set_free(s);
+    if (s) { s->free(s); }
 }
 
 static void test_set_add_bulk_edge_cases(void) {
@@ -260,16 +260,16 @@ static void test_set_add_bulk_edge_cases(void) {
     int v = 1;
     void *ptrs[] = {&v};
 
-    set_add_bulk(s, ptrs, 0);
-    print_test_result(set_size(s) == 0, "Set bulk add with count 0 does nothing");
+    s->add_bulk(s, ptrs, 0);
+    print_test_result(s->size(s) == 0, "Set bulk add with count 0 does nothing");
 
-    set_add_bulk(s, NULL, 3);
-    print_test_result(set_size(s) == 0, "Set bulk add with NULL elements does nothing");
+    s->add_bulk(s, NULL, 3);
+    print_test_result(s->size(s) == 0, "Set bulk add with NULL elements does nothing");
 
-    set_add_bulk(NULL, ptrs, 1);
+    s->add_bulk(NULL, ptrs, 1);
     print_test_result(1, "Set bulk add with NULL set does not crash");
 
-    set_free(s);
+    if (s) { s->free(s); }
 }
 
 static void run_all_tests(void) {
@@ -287,4 +287,3 @@ int main(void) {
     run_all_tests();
     return 0;
 }
-

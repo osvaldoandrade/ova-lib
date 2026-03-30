@@ -1,10 +1,8 @@
 #ifndef HEAP_QUEUE_H
 #define HEAP_QUEUE_H
 
-#include "../../include/queue.h"
-#include "../../include/heap.h"
+#include "queue_internal.h"
 
-void priority_initialize(queue *self, comparator compare);
 int priority_enqueue(queue *self, void *data);
 void *priority_dequeue(queue *self);
 int priority_is_empty(const queue *self);

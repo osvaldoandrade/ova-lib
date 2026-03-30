@@ -48,7 +48,6 @@ static tree_node *avl_rotate_right(tree_node *y) {
 
     x->right = y;
     x->parent = y->parent;
-
     y->left = t2;
     y->parent = x;
 
@@ -70,7 +69,6 @@ static tree_node *avl_rotate_left(tree_node *x) {
 
     y->left = x;
     y->parent = x->parent;
-
     x->right = t2;
     x->parent = y;
 
@@ -83,7 +81,7 @@ static tree_node *avl_rotate_left(tree_node *x) {
     return y;
 }
 
-static tree_node *avl_insert_node(tree *t, tree_node *node, void *key, void *value, tree_node *parent) {
+static tree_node *avl_insert_node(tree_impl *t, tree_node *node, void *key, void *value, tree_node *parent) {
     if (!node) {
         tree_node *created = avl_new_node(key, value, parent);
         if (created) {
@@ -116,11 +114,9 @@ static tree_node *avl_insert_node(tree *t, tree_node *node, void *key, void *val
     if (balance > 1 && node->left && t->cmp(key, node->left->key) < 0) {
         return avl_rotate_right(node);
     }
-
     if (balance < -1 && node->right && t->cmp(key, node->right->key) > 0) {
         return avl_rotate_left(node);
     }
-
     if (balance > 1 && node->left && t->cmp(key, node->left->key) > 0) {
         node->left = avl_rotate_left(node->left);
         if (node->left) {
@@ -128,7 +124,6 @@ static tree_node *avl_insert_node(tree *t, tree_node *node, void *key, void *val
         }
         return avl_rotate_right(node);
     }
-
     if (balance < -1 && node->right && t->cmp(key, node->right->key) < 0) {
         node->right = avl_rotate_right(node->right);
         if (node->right) {
@@ -150,7 +145,7 @@ static tree_node *avl_min_node(tree_node *node) {
     return node;
 }
 
-static tree_node *avl_delete_node(tree *t, tree_node *root, void *key) {
+static tree_node *avl_delete_node(tree_impl *t, tree_node *root, void *key) {
     if (!root) {
         return NULL;
     }
@@ -220,7 +215,7 @@ static tree_node *avl_delete_node(tree *t, tree_node *root, void *key) {
     return root;
 }
 
-void avl_tree_insert(tree *t, void *key, void *value) {
+void avl_tree_insert(tree_impl *t, void *key, void *value) {
     if (!t || !t->cmp) {
         return;
     }
@@ -231,7 +226,7 @@ void avl_tree_insert(tree *t, void *key, void *value) {
     }
 }
 
-void avl_tree_delete(tree *t, void *key) {
+void avl_tree_delete(tree_impl *t, void *key) {
     if (!t || !t->cmp || !key) {
         return;
     }
@@ -241,4 +236,3 @@ void avl_tree_delete(tree *t, void *key) {
         t->root->parent = NULL;
     }
 }
-

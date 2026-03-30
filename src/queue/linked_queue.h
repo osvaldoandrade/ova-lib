@@ -1,7 +1,7 @@
 #ifndef LINKED_QUEUE_H
 #define LINKED_QUEUE_H
 
-#include "../../include/queue.h"
+#include "queue_internal.h"
 
 queue *create_linked_queue(void);
 

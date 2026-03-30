@@ -24,7 +24,7 @@ void test_sorter_sort(void) {
         lst->insert(lst, &items[i], i);
     }
 
-    sorter *s = create_sorter(lst, int_compare);
+    sorter *s = create_sorter(int_compare);
     s->sort(s, lst);
 
     int passed = 1;
@@ -39,16 +39,16 @@ void test_sorter_sort(void) {
     print_test_result(passed, "Sorter sort operation ensures list is sorted");
 
     lst->free(lst);
-    free(s);
+    s->free(s);
 }
 
 void test_sort_empty_list(void) {
     list *lst = create_list(ARRAY_LIST, 1, NULL);
-    sorter *s = create_sorter(lst, int_compare);
+    sorter *s = create_sorter(int_compare);
     s->sort(s, lst);
     print_test_result(lst->size(lst) == 0, "Sort on empty list safe");
     lst->free(lst);
-    free(s);
+    s->free(s);
 }
 
 void test_sorter_shuffle(void) {
@@ -58,7 +58,7 @@ void test_sorter_shuffle(void) {
         lst->insert(lst, &items[i], i);
     }
 
-    sorter *s = create_sorter(lst, int_compare);
+    sorter *s = create_sorter(int_compare);
     s->shuffle(s, lst);
 
     int is_same = 1;
@@ -72,7 +72,7 @@ void test_sorter_shuffle(void) {
     print_test_result(!is_same, "Shuffle operation should change the order of items");
 
     lst->free(lst);
-    free(s);
+    s->free(s);
 }
 
 void test_sorter_reverse(void) {
@@ -82,7 +82,7 @@ void test_sorter_reverse(void) {
         lst->insert(lst, &items[i], i);
     }
 
-    sorter *s = create_sorter(lst, int_compare);
+    sorter *s = create_sorter(int_compare);
     s->reverse(s, lst);
 
     int passed = 1;
@@ -97,7 +97,7 @@ void test_sorter_reverse(void) {
     print_test_result(passed, "Reverse operation");
 
     lst->free(lst);
-    free(s);
+    s->free(s);
 }
 
 void test_sorter_binary_search(void) {
@@ -106,7 +106,7 @@ void test_sorter_binary_search(void) {
     for (int i = 0; i < 10; i++) {
         lst->insert(lst, &items[i], i);
     }
-    sorter *s = create_sorter(lst, int_compare);
+    sorter *s = create_sorter(int_compare);
     s->sort(s, lst);  // Sort the list before binary search
 
     int search_item = 40;
@@ -115,7 +115,7 @@ void test_sorter_binary_search(void) {
     print_test_result(index == 3, "Binary search operation found the correct index");
 
     lst->free(lst);
-    free(s);
+    s->free(s);
 }
 
 void test_sorter_large_sort(void) {
@@ -131,7 +131,7 @@ void test_sorter_large_sort(void) {
         values[i] = MAX - 1 - i;
         lst->insert(lst, &values[i], i);
     }
-    sorter *s = create_sorter(lst, int_compare);
+    sorter *s = create_sorter(int_compare);
     clock_t start = clock();
     s->sort(s, lst);
     double elapsed_ms = ((double)(clock() - start) / CLOCKS_PER_SEC) * 1000.0;
@@ -144,7 +144,7 @@ void test_sorter_large_sort(void) {
     print_test_result(sorted && elapsed_ms < 1500.0, "Large sort within time limit");
     lst->free(lst);
     free(values);
-    free(s);
+    s->free(s);
 }
 
 void test_sorter_copy(void) {
@@ -155,7 +155,7 @@ void test_sorter_copy(void) {
         src->insert(src, &items[i], i);
     }
 
-    sorter *s = create_sorter(src, int_compare);
+    sorter *s = create_sorter(int_compare);
     s->copy(s, src, dest);
 
     int passed = 1;
@@ -171,7 +171,7 @@ void test_sorter_copy(void) {
 
     src->free(src);
     dest->free(dest);
-    free(s);
+    s->free(s);
 }
 
 void test_sorter_min_max(void) {
@@ -181,7 +181,7 @@ void test_sorter_min_max(void) {
         lst->insert(lst, &items[i], i);
     }
 
-    sorter *s = create_sorter(lst, int_compare);
+    sorter *s = create_sorter(int_compare);
 
     // Test min_max
     void *min_val = NULL;
@@ -201,7 +201,7 @@ void test_sorter_min_max(void) {
     print_test_result(passed_max, "Max operation");
 
     lst->free(lst);
-    free(s);
+    s->free(s);
 }
 
 void run_all_tests(void) {

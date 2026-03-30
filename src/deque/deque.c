@@ -1,221 +1,198 @@
 #include "../../include/deque.h"
 #include "../utils/capacity_utils.h"
+
 #include <stdlib.h>
 #include <string.h>
 
 #define DEFAULT_CAPACITY 16
-#define MIN_CAPACITY 4
 
-struct deque {
-    void **buffer;      // Circular buffer for storing elements
-    int capacity;       // Total capacity of the buffer
-    int size;           // Current number of elements
-    int front;          // Index of the front element
-};
+typedef struct deque_impl {
+    void **buffer;
+    int capacity;
+    int size;
+    int front;
+} deque_impl;
 
-/**
- * @brief Creates a new deque with the specified initial capacity.
- */
-deque* create_deque(int capacity) {
-    deque *d = (deque*)malloc(sizeof(deque));
-    if (!d) {
-        return NULL;
-    }
-
-    // Use default capacity if requested capacity is invalid
-    if (capacity <= 0) {
-        capacity = DEFAULT_CAPACITY;
-    }
-
-    d->buffer = (void**)calloc((size_t)capacity, sizeof(void*));
-    if (!d->buffer) {
-        free(d);
-        return NULL;
-    }
-
-    d->capacity = capacity;
-    d->size = 0;
-    d->front = 0;
-
-    return d;
+static deque_impl *deque_impl_from_self(const deque *self) {
+    return self ? (deque_impl *)self->impl : NULL;
 }
 
-/**
- * @brief Helper function to resize the deque when it's full.
- * 
- * Doubles the capacity and reorganizes elements to maintain logical order.
- */
-static int deque_resize(deque *d) {
-    if (!d) {
+static int deque_resize_impl(deque_impl *impl) {
+    if (!impl) {
         return -1;
     }
 
-    int new_capacity = safe_double_capacity(d->capacity);
-    if (new_capacity == d->capacity) {
-        return -1; // Already at maximum capacity
+    int new_capacity = safe_double_capacity(impl->capacity);
+    if (new_capacity == impl->capacity) {
+        return -1;
     }
-    void **new_buffer = (void**)calloc((size_t)new_capacity, sizeof(void*));
+
+    void **new_buffer = (void **)calloc((size_t)new_capacity, sizeof(void *));
     if (!new_buffer) {
         return -1;
     }
 
-    // Copy elements in logical order starting from front
-    for (int i = 0; i < d->size; i++) {
-        int physical_index = (d->front + i) % d->capacity;
-        new_buffer[i] = d->buffer[physical_index];
+    for (int i = 0; i < impl->size; i++) {
+        int physical_index = (impl->front + i) % impl->capacity;
+        new_buffer[i] = impl->buffer[physical_index];
     }
 
-    free(d->buffer);
-    d->buffer = new_buffer;
-    d->capacity = new_capacity;
-    d->front = 0;
+    free(impl->buffer);
+    impl->buffer = new_buffer;
+    impl->capacity = new_capacity;
+    impl->front = 0;
 
     return 0;
 }
 
-/**
- * @brief Inserts an element at the front of the deque.
- */
-void deque_push_front(deque *d, void *element) {
-    if (!d) {
+static void deque_push_front_method(deque *self, void *element) {
+    deque_impl *impl = deque_impl_from_self(self);
+    if (!impl) {
         return;
     }
 
-    // Resize if full
-    if (d->size == d->capacity) {
-        if (deque_resize(d) != 0) {
-            return;
-        }
-    }
-
-    // Move front backwards (circular)
-    d->front = (d->front - 1 + d->capacity) % d->capacity;
-    d->buffer[d->front] = element;
-    d->size++;
-}
-
-/**
- * @brief Inserts an element at the back of the deque.
- */
-void deque_push_back(deque *d, void *element) {
-    if (!d) {
+    if (impl->size == impl->capacity && deque_resize_impl(impl) != 0) {
         return;
     }
 
-    // Resize if full
-    if (d->size == d->capacity) {
-        if (deque_resize(d) != 0) {
-            return;
-        }
-    }
-
-    // Calculate back position (circular)
-    int back = (d->front + d->size) % d->capacity;
-    d->buffer[back] = element;
-    d->size++;
+    impl->front = (impl->front - 1 + impl->capacity) % impl->capacity;
+    impl->buffer[impl->front] = element;
+    impl->size++;
 }
 
-/**
- * @brief Removes and returns the element at the front of the deque.
- */
-void* deque_pop_front(deque *d) {
-    if (!d || d->size == 0) {
+static void deque_push_back_method(deque *self, void *element) {
+    deque_impl *impl = deque_impl_from_self(self);
+    if (!impl) {
+        return;
+    }
+
+    if (impl->size == impl->capacity && deque_resize_impl(impl) != 0) {
+        return;
+    }
+
+    int back = (impl->front + impl->size) % impl->capacity;
+    impl->buffer[back] = element;
+    impl->size++;
+}
+
+static void *deque_pop_front_method(deque *self) {
+    deque_impl *impl = deque_impl_from_self(self);
+    if (!impl || impl->size == 0) {
         return NULL;
     }
 
-    void *element = d->buffer[d->front];
-    d->buffer[d->front] = NULL;
-    d->front = (d->front + 1) % d->capacity;
-    d->size--;
-
+    void *element = impl->buffer[impl->front];
+    impl->buffer[impl->front] = NULL;
+    impl->front = (impl->front + 1) % impl->capacity;
+    impl->size--;
     return element;
 }
 
-/**
- * @brief Removes and returns the element at the back of the deque.
- */
-void* deque_pop_back(deque *d) {
-    if (!d || d->size == 0) {
+static void *deque_pop_back_method(deque *self) {
+    deque_impl *impl = deque_impl_from_self(self);
+    if (!impl || impl->size == 0) {
         return NULL;
     }
 
-    // Calculate back position
-    int back = (d->front + d->size - 1) % d->capacity;
-    void *element = d->buffer[back];
-    d->buffer[back] = NULL;
-    d->size--;
-
+    int back = (impl->front + impl->size - 1) % impl->capacity;
+    void *element = impl->buffer[back];
+    impl->buffer[back] = NULL;
+    impl->size--;
     return element;
 }
 
-/**
- * @brief Returns the element at the front without removing it.
- */
-void* deque_peek_front(deque *d) {
-    if (!d || d->size == 0) {
+static void *deque_peek_front_method(const deque *self) {
+    deque_impl *impl = deque_impl_from_self(self);
+    if (!impl || impl->size == 0) {
         return NULL;
     }
 
-    return d->buffer[d->front];
+    return impl->buffer[impl->front];
 }
 
-/**
- * @brief Returns the element at the back without removing it.
- */
-void* deque_peek_back(deque *d) {
-    if (!d || d->size == 0) {
+static void *deque_peek_back_method(const deque *self) {
+    deque_impl *impl = deque_impl_from_self(self);
+    if (!impl || impl->size == 0) {
         return NULL;
     }
 
-    int back = (d->front + d->size - 1) % d->capacity;
-    return d->buffer[back];
+    int back = (impl->front + impl->size - 1) % impl->capacity;
+    return impl->buffer[back];
 }
 
-/**
- * @brief Accesses an element at the specified index.
- */
-void* deque_get(deque *d, int index) {
-    if (!d || index < 0 || index >= d->size) {
+static void *deque_get_method(const deque *self, int index) {
+    deque_impl *impl = deque_impl_from_self(self);
+    if (!impl || index < 0 || index >= impl->size) {
         return NULL;
     }
 
-    int physical_index = (d->front + index) % d->capacity;
-    return d->buffer[physical_index];
+    int physical_index = (impl->front + index) % impl->capacity;
+    return impl->buffer[physical_index];
 }
 
-/**
- * @brief Returns the number of elements in the deque.
- */
-int deque_size(deque *d) {
-    if (!d) {
-        return 0;
-    }
-
-    return d->size;
+static int deque_size_method(const deque *self) {
+    deque_impl *impl = deque_impl_from_self(self);
+    return impl ? impl->size : 0;
 }
 
-/**
- * @brief Checks if the deque is empty.
- */
-bool deque_is_empty(deque *d) {
-    if (!d) {
-        return true;
-    }
-
-    return d->size == 0;
+static bool deque_is_empty_method(const deque *self) {
+    return deque_size_method(self) == 0;
 }
 
-/**
- * @brief Frees the memory used by the deque.
- */
-void deque_free(deque *d) {
-    if (!d) {
+static void deque_free_method(deque *self) {
+    if (!self) {
         return;
     }
 
-    if (d->buffer) {
-        free(d->buffer);
+    deque_impl *impl = deque_impl_from_self(self);
+    if (impl) {
+        free(impl->buffer);
+        impl->buffer = NULL;
+        free(impl);
+        self->impl = NULL;
     }
 
-    free(d);
+    free(self);
+}
+
+deque *create_deque(int capacity) {
+    if (capacity <= 0) {
+        capacity = DEFAULT_CAPACITY;
+    }
+
+    deque *out = (deque *)calloc(1, sizeof(deque));
+    if (!out) {
+        return NULL;
+    }
+
+    deque_impl *impl = (deque_impl *)calloc(1, sizeof(deque_impl));
+    if (!impl) {
+        free(out);
+        return NULL;
+    }
+
+    impl->buffer = (void **)calloc((size_t)capacity, sizeof(void *));
+    if (!impl->buffer) {
+        free(impl);
+        free(out);
+        return NULL;
+    }
+
+    impl->capacity = capacity;
+    impl->size = 0;
+    impl->front = 0;
+
+    out->impl = impl;
+    out->push_front = deque_push_front_method;
+    out->push_back = deque_push_back_method;
+    out->pop_front = deque_pop_front_method;
+    out->pop_back = deque_pop_back_method;
+    out->peek_front = deque_peek_front_method;
+    out->peek_back = deque_peek_back_method;
+    out->get = deque_get_method;
+    out->size = deque_size_method;
+    out->is_empty = deque_is_empty_method;
+    out->free = deque_free_method;
+
+    return out;
 }

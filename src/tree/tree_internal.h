@@ -9,6 +9,7 @@ typedef enum {
 } rb_color;
 
 typedef struct tree_node tree_node;
+typedef struct tree_impl tree_impl;
 
 struct tree_node {
     void *key;
@@ -16,26 +17,23 @@ struct tree_node {
     tree_node *left;
     tree_node *right;
     tree_node *parent;
-
-    /* AVL bookkeeping */
     int height;
-
-    /* Red-black bookkeeping */
     rb_color color;
 };
 
-struct tree {
+struct tree_impl {
     tree_type type;
     comparator cmp;
     tree_node *root;
-
-    /* Non-NULL only for red-black trees; acts as a shared NIL/sentinel leaf. */
     tree_node *nil;
-
     size_t size;
 };
 
-static inline int tree_node_is_nil(const tree *t, const tree_node *n) {
+static inline tree_impl *tree_impl_from_tree(const tree *t) {
+    return t ? (tree_impl *)t->impl : NULL;
+}
+
+static inline int tree_node_is_nil(const tree_impl *t, const tree_node *n) {
     if (!t) {
         return 1;
     }
@@ -45,11 +43,10 @@ static inline int tree_node_is_nil(const tree *t, const tree_node *n) {
     return n == NULL;
 }
 
-void avl_tree_insert(tree *t, void *key, void *value);
-void avl_tree_delete(tree *t, void *key);
+void avl_tree_insert(tree_impl *t, void *key, void *value);
+void avl_tree_delete(tree_impl *t, void *key);
 
-void rb_tree_insert(tree *t, void *key, void *value);
-void rb_tree_delete(tree *t, void *key);
+void rb_tree_insert(tree_impl *t, void *key, void *value);
+void rb_tree_delete(tree_impl *t, void *key);
 
 #endif // TREE_INTERNAL_H
-

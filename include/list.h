@@ -1,5 +1,6 @@
 #ifndef LIST_H
 #define LIST_H
+
 #include "types.h"
 
 typedef enum {
@@ -8,93 +9,76 @@ typedef enum {
     SORTED_LIST
 } ListType;
 
-
+/**
+ * @brief Public list object.
+ *
+ * The list stores user-owned payload pointers. Concrete storage details live in
+ * @p impl.
+ */
 typedef struct list {
-
     void *impl;
 
     /**
-     * @brief Function pointer to insert an item in the list at a specific index.
+     * @brief Insert an item at the given index.
      *
-     * This function pointer is used to insert an item into the list at a specified index.
-     *
-     * @param self A pointer to the list structure.
-     * @param item A pointer to the item to be inserted.
-     * @param index The index where the item should be inserted.
+     * @param self List instance.
+     * @param item Item pointer to insert.
+     * @param index Zero-based insertion index.
      */
     void (*insert)(struct list *self, void *item, int index);
 
     /**
-     * @brief Function pointer to retrieve an item from the list.
+     * @brief Insert multiple items at the current end of the list.
      *
-     * This function pointer is used to retrieve an item from the list at the specified index.
-     * The returned item will be a pointer to the data at the given index.
+     * @param self List instance.
+     * @param elements Array of payload pointers.
+     * @param count Number of elements in @p elements.
+     */
+    void (*insert_bulk)(struct list *self, void **elements, int count);
+
+    /**
+     * @brief Retrieve the item at the given index.
      *
-     * @param self A pointer to the list structure.
-     * @param index The index of the item to retrieve.
-     * @return A pointer to the data at the specified index.
+     * @param self List instance.
+     * @param index Zero-based item index.
+     * @return Stored payload pointer, or NULL when out of bounds.
      */
     void *(*get)(struct list *self, int index);
 
     /**
-     * @brief Remove an item from the list at the specified index.
+     * @brief Remove the item at the given index.
      *
-     * This function pointer is used to remove an item from the list at a specified index.
-     * The item at the given index will be removed from the list and the remaining items will be shifted to fill the gap.
-     *
-     * @param self A pointer to the list structure.
-     * @param index The index of the item to be removed.
+     * @param self List instance.
+     * @param index Zero-based item index.
      */
     void (*remove)(struct list *self, int index);
 
     /**
-     * @brief Function pointer to retrieve the size of the list.
+     * @brief Return the current element count.
      *
-     * This function pointer is used to retrieve the size of the list, i.e., the number of elements in the list.
-     * The function returns an integer value representing the size of the list.
-     *
-     * @param self A pointer to the list structure.
-     * @return An integer value representing the size of the list.
+     * @param self List instance.
+     * @return Number of stored elements.
      */
     int (*size)(const struct list *self);
 
     /**
-     * @brief Function pointer to free the memory allocated for the list.
+     * @brief Release the list and its internal allocations.
      *
-     * This function pointer is used to free the memory allocated for the list.
-     * It is important to free the memory to avoid memory leaks.
+     * The list does not free user payloads.
      *
-     * @param self A pointer to the list structure.
+     * @param self List instance.
      */
     void (*free)(struct list *self);
-
 } list;
 
 /**
  * @brief Create a new list.
  *
- * This function creates a new list based on the specified list type and initial capacity.
- * The list can be of type ARRAY_LIST, LINKED_LIST, or SORTED_LIST.
- *
- * @param type The type of list to be created.
- * @param initial_capacity The initial capacity of the list when applicable.
- * @param cmp Comparator used to keep elements ordered for SORTED_LIST.
- *            It is ignored for other list types and may be NULL in those cases.
- * @return A pointer to the newly created list.
- *         If the specified list type is invalid, NULL is returned.
+ * @param type List backend to construct.
+ * @param initial_capacity Initial capacity when applicable.
+ * @param cmp Comparator used by SORTED_LIST. Ignored for other variants.
+ * @return New list instance, or NULL on failure.
  */
 list *create_list(ListType type, int initial_capacity, comparator cmp);
-
-/**
- * @brief Insert multiple elements into the list at the end.
- *
- * This function inserts all elements from the given array into the list,
- * appending each one at the current end of the list.
- *
- * @param l A pointer to the list structure.
- * @param elements An array of pointers to the elements to be inserted.
- * @param count The number of elements to insert.
- */
-void list_insert_bulk(list *l, void **elements, int count);
 
 #endif // LIST_H

@@ -2,8 +2,9 @@
 #include "../include/map.h"
 #include "../src/utils/capacity_utils.h"
 #include <limits.h>
-#include <time.h>
+#include <pthread.h>
 #include <string.h>
+#include <time.h>
 
 #define NUM_THREADS 10
 #define OPERATIONS_PER_THREAD 5000
@@ -15,6 +16,25 @@ int string_compare(const void *a, const void *b) {
     if (str1 == NULL) return -1;
     if (str2 == NULL) return 1;
     return strcmp(str1, str2);
+}
+
+static int int_compare(const void *a, const void *b) {
+    int lhs = *(const int *)a;
+    int rhs = *(const int *)b;
+    return (lhs > rhs) - (lhs < rhs);
+}
+
+static int int_hash(void *key, int capacity) {
+    if (!key || capacity <= 0) {
+        return 0;
+    }
+    return (*(int *)key) % capacity;
+}
+
+static int constant_hash(void *key, int capacity) {
+    (void)key;
+    (void)capacity;
+    return 0;
 }
 
 void test_insert_and_retrieve_single_item(void) {
@@ -35,7 +55,7 @@ void test_check_resizing(void) {
         keys[i] = generate_random_string_data();
         ht->put(ht, keys[i], keys[i]);
     }
-    print_test_result(ht->capacity > 10, "Check resizing (capacity should be greater than initial)");
+    print_test_result(ht->capacity(ht) > 10, "Check resizing (capacity should be greater than initial)");
     ht->free(ht);
     for (int i = 0; i < 20; i++) {
         free(keys[i]);
@@ -43,12 +63,12 @@ void test_check_resizing(void) {
 }
 
 void test_collision_and_chaining(void) {
-    map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
+    map *ht = create_map(HASH_MAP, 10, constant_hash, string_compare);
     char *key2 = generate_random_string_data();
     char *key3 = generate_random_string_data();
-    while (ht->hash_func(key2, ht->capacity) != ht->hash_func(key3, ht->capacity)) {
+    while (strcmp(key2, key3) == 0) {
         free(key3);
-        key3 = generate_random_string_data();  // Ensure they collide
+        key3 = generate_random_string_data();
     }
     char data2[] = "Data2";
     char data3[] = "Data3";
@@ -71,7 +91,7 @@ void test_retrieve_non_existent_item(void) {
 }
 
 void test_insert_and_retrieve_numeric_keys(void) {
-    map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
+    map *ht = create_map(HASH_MAP, 10, int_hash, int_compare);
     int numeric_key = 123;
     char numeric_data[] = "NumericData";
     ht->put(ht, &numeric_key, numeric_data);
@@ -117,7 +137,7 @@ void test_insert_retrieve_large_number_of_items(void) {
         assert_string_equal(data[i], retrieved_data);
     }
 
-    print_test_result(ht->size == num_items, "Correct number of items stored");
+    print_test_result(ht->size(ht) == num_items, "Correct number of items stored");
     ht->free(ht);
 }
 
@@ -169,7 +189,7 @@ void test_with_high_volume(void) {
         ht->put(ht, key, data);
         ht->remove(ht, key);
     }
-    print_test_result(ht->size == 0, "Hash table should be empty after repeated insertions and removals");
+    print_test_result(ht->size(ht) == 0, "Hash table should be empty after repeated insertions and removals");
     double elapsed_ms = ((double)(clock() - start) / CLOCKS_PER_SEC) * 1000.0;
     print_test_result(elapsed_ms < 1500.0, "Hash map high volume within time limit");
     ht->free(ht);
@@ -240,8 +260,8 @@ void test_map_put_bulk(void) {
     void *keys[] = {k1, k2, k3};
     void *vals[] = {v1, v2, v3};
 
-    map_put_bulk(m, keys, vals, 3);
-    print_test_result(m->size == 3, "Map bulk put inserts all pairs");
+    m->put_bulk(m, keys, vals, 3);
+    print_test_result(m->size(m) == 3, "Map bulk put inserts all pairs");
 
     int ok = 1;
     for (int i = 0; i < 3; i++) {
@@ -262,8 +282,8 @@ void test_map_put_bulk_with_duplicate_keys(void) {
     void *keys[] = {k1, k2, k3};
     void *vals[] = {v1, v2, v3};
 
-    map_put_bulk(m, keys, vals, 3);
-    print_test_result(m->size == 2, "Map bulk put with duplicates has correct size");
+    m->put_bulk(m, keys, vals, 3);
+    print_test_result(m->size(m) == 2, "Map bulk put with duplicates has correct size");
 
     char key1_lookup[] = "key1";
     char *retrieved = (char *)m->get(m, key1_lookup);
@@ -279,16 +299,16 @@ void test_map_put_bulk_edge_cases(void) {
     void *keys[] = {k1};
     void *vals[] = {v1};
 
-    map_put_bulk(m, keys, vals, 0);
-    print_test_result(m->size == 0, "Map bulk put with count 0 does nothing");
+    m->put_bulk(m, keys, vals, 0);
+    print_test_result(m->size(m) == 0, "Map bulk put with count 0 does nothing");
 
-    map_put_bulk(m, NULL, vals, 3);
-    print_test_result(m->size == 0, "Map bulk put with NULL keys does nothing");
+    m->put_bulk(m, NULL, vals, 3);
+    print_test_result(m->size(m) == 0, "Map bulk put with NULL keys does nothing");
 
-    map_put_bulk(m, keys, NULL, 3);
-    print_test_result(m->size == 0, "Map bulk put with NULL values does nothing");
+    m->put_bulk(m, keys, NULL, 3);
+    print_test_result(m->size(m) == 0, "Map bulk put with NULL values does nothing");
 
-    map_put_bulk(NULL, keys, vals, 1);
+    m->put_bulk(NULL, keys, vals, 1);
     print_test_result(1, "Map bulk put with NULL map does not crash");
 
     m->free(m);

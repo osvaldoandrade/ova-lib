@@ -3,15 +3,15 @@
 
 #include <stdlib.h>
 
-static tree_node *tree_search_node(const tree *t, void *key) {
-    if (!t || !t->cmp || !key) {
-        return (t && t->nil) ? t->nil : NULL;
+static tree_node *tree_search_node(const tree_impl *impl, void *key) {
+    if (!impl || !impl->cmp || !key) {
+        return (impl && impl->nil) ? impl->nil : NULL;
     }
 
-    tree_node *cur = t->root;
-    tree_node *nil = t->nil;
+    tree_node *cur = impl->root;
+    tree_node *nil = impl->nil;
     while (cur && cur != nil) {
-        int cmp = t->cmp(key, cur->key);
+        int cmp = impl->cmp(key, cur->key);
         if (cmp == 0) {
             return cur;
         }
@@ -21,60 +21,60 @@ static tree_node *tree_search_node(const tree *t, void *key) {
     return nil ? nil : NULL;
 }
 
-static tree_node *tree_min_node(const tree *t, tree_node *node) {
-    if (!t || tree_node_is_nil(t, node)) {
-        return (t && t->nil) ? t->nil : NULL;
+static tree_node *tree_min_node(const tree_impl *impl, tree_node *node) {
+    if (!impl || tree_node_is_nil(impl, node)) {
+        return (impl && impl->nil) ? impl->nil : NULL;
     }
 
-    tree_node *nil = t->nil;
+    tree_node *nil = impl->nil;
     while (node->left && node->left != nil) {
         node = node->left;
     }
     return node;
 }
 
-static tree_node *tree_max_node(const tree *t, tree_node *node) {
-    if (!t || tree_node_is_nil(t, node)) {
-        return (t && t->nil) ? t->nil : NULL;
+static tree_node *tree_max_node(const tree_impl *impl, tree_node *node) {
+    if (!impl || tree_node_is_nil(impl, node)) {
+        return (impl && impl->nil) ? impl->nil : NULL;
     }
 
-    tree_node *nil = t->nil;
+    tree_node *nil = impl->nil;
     while (node->right && node->right != nil) {
         node = node->right;
     }
     return node;
 }
 
-static void tree_free_node(tree *t, tree_node *node) {
-    if (tree_node_is_nil(t, node)) {
+static void tree_free_node(tree_impl *impl, tree_node *node) {
+    if (tree_node_is_nil(impl, node)) {
         return;
     }
 
-    tree_free_node(t, node->left);
-    tree_free_node(t, node->right);
+    tree_free_node(impl, node->left);
+    tree_free_node(impl, node->right);
     free(node);
 }
 
-static void tree_in_order_node(tree *t, tree_node *node, void (*callback)(void *, void *)) {
-    if (!t || !callback || tree_node_is_nil(t, node)) {
+static void tree_in_order_node(tree_impl *impl, tree_node *node, void (*callback)(void *, void *)) {
+    if (!impl || !callback || tree_node_is_nil(impl, node)) {
         return;
     }
 
-    tree_in_order_node(t, node->left, callback);
+    tree_in_order_node(impl, node->left, callback);
     callback(node->key, node->value);
-    tree_in_order_node(t, node->right, callback);
+    tree_in_order_node(impl, node->right, callback);
 }
 
-static void tree_range_query_node(tree *t, tree_node *node, void *low, void *high, list *out) {
-    if (!t || !t->cmp || !out || tree_node_is_nil(t, node)) {
+static void tree_range_query_node(tree_impl *impl, tree_node *node, void *low, void *high, list *out) {
+    if (!impl || !impl->cmp || !out || tree_node_is_nil(impl, node)) {
         return;
     }
 
-    int cmp_low = t->cmp(node->key, low);
-    int cmp_high = t->cmp(node->key, high);
+    int cmp_low = impl->cmp(node->key, low);
+    int cmp_high = impl->cmp(node->key, high);
 
     if (cmp_low > 0) {
-        tree_range_query_node(t, node->left, low, high, out);
+        tree_range_query_node(impl, node->left, low, high, out);
     }
 
     if (cmp_low >= 0 && cmp_high <= 0) {
@@ -82,139 +82,87 @@ static void tree_range_query_node(tree *t, tree_node *node, void *low, void *hig
     }
 
     if (cmp_high < 0) {
-        tree_range_query_node(t, node->right, low, high, out);
+        tree_range_query_node(impl, node->right, low, high, out);
     }
 }
 
-tree *create_tree(tree_type type, comparator cmp) {
-    if (!cmp) {
-        return NULL;
-    }
-
-    tree *t = (tree *)calloc(1, sizeof(tree));
-    if (!t) {
-        return NULL;
-    }
-
-    t->type = type;
-    t->cmp = cmp;
-    t->root = NULL;
-    t->nil = NULL;
-    t->size = 0;
-
-    if (type == TREE_RED_BLACK) {
-        t->nil = (tree_node *)calloc(1, sizeof(tree_node));
-        if (!t->nil) {
-            free(t);
-            return NULL;
-        }
-        t->nil->color = RB_BLACK;
-        t->nil->left = t->nil;
-        t->nil->right = t->nil;
-        t->nil->parent = t->nil;
-        t->nil->height = 0;
-        t->root = t->nil;
-    } else if (type == TREE_AVL) {
-        t->root = NULL;
-    } else {
-        free(t);
-        return NULL;
-    }
-
-    return t;
-}
-
-void tree_free(tree *t) {
-    if (!t) {
+static void tree_insert_method(tree *self, void *key, void *value) {
+    tree_impl *impl = tree_impl_from_tree(self);
+    if (!impl || !impl->cmp || !key) {
         return;
     }
 
-    if (t->type == TREE_RED_BLACK) {
-        if (t->root && t->nil && t->root != t->nil) {
-            tree_free_node(t, t->root);
-        }
-        if (t->nil) {
-            free(t->nil);
-            t->nil = NULL;
-        }
-    } else {
-        tree_free_node(t, t->root);
+    if (impl->type == TREE_AVL) {
+        avl_tree_insert(impl, key, value);
+    } else if (impl->type == TREE_RED_BLACK) {
+        rb_tree_insert(impl, key, value);
     }
-
-    free(t);
 }
 
-void tree_insert(tree *t, void *key, void *value) {
-    if (!t || !t->cmp || !key) {
+static void *tree_search_method(tree *self, void *key) {
+    tree_impl *impl = tree_impl_from_tree(self);
+    if (!impl || !impl->cmp || !key) {
+        return NULL;
+    }
+
+    tree_node *node = tree_search_node(impl, key);
+    if (!node || tree_node_is_nil(impl, node)) {
+        return NULL;
+    }
+    return node->value;
+}
+
+static void tree_delete_method(tree *self, void *key) {
+    tree_impl *impl = tree_impl_from_tree(self);
+    if (!impl || !impl->cmp || !key) {
         return;
     }
 
-    if (t->type == TREE_AVL) {
-        avl_tree_insert(t, key, value);
-    } else if (t->type == TREE_RED_BLACK) {
-        rb_tree_insert(t, key, value);
+    if (impl->type == TREE_AVL) {
+        avl_tree_delete(impl, key);
+    } else if (impl->type == TREE_RED_BLACK) {
+        rb_tree_delete(impl, key);
     }
 }
 
-void *tree_search(tree *t, void *key) {
-    if (!t || !t->cmp || !key) {
+static void *tree_min_method(tree *self) {
+    tree_impl *impl = tree_impl_from_tree(self);
+    if (!impl) {
         return NULL;
     }
 
-    tree_node *n = tree_search_node(t, key);
-    if (!n || tree_node_is_nil(t, n)) {
+    tree_node *node = tree_min_node(impl, impl->root);
+    if (!node || tree_node_is_nil(impl, node)) {
         return NULL;
     }
-    return n->value;
+    return node->value;
 }
 
-void tree_delete(tree *t, void *key) {
-    if (!t || !t->cmp || !key) {
-        return;
+static void *tree_max_method(tree *self) {
+    tree_impl *impl = tree_impl_from_tree(self);
+    if (!impl) {
+        return NULL;
     }
 
-    if (t->type == TREE_AVL) {
-        avl_tree_delete(t, key);
-    } else if (t->type == TREE_RED_BLACK) {
-        rb_tree_delete(t, key);
+    tree_node *node = tree_max_node(impl, impl->root);
+    if (!node || tree_node_is_nil(impl, node)) {
+        return NULL;
     }
+    return node->value;
 }
 
-void *tree_min(tree *t) {
-    if (!t) {
+static void *tree_predecessor_method(tree *self, void *key) {
+    tree_impl *impl = tree_impl_from_tree(self);
+    if (!impl || !impl->cmp || !key) {
         return NULL;
     }
 
-    tree_node *n = tree_min_node(t, t->root);
-    if (!n || tree_node_is_nil(t, n)) {
-        return NULL;
-    }
-    return n->value;
-}
-
-void *tree_max(tree *t) {
-    if (!t) {
-        return NULL;
-    }
-
-    tree_node *n = tree_max_node(t, t->root);
-    if (!n || tree_node_is_nil(t, n)) {
-        return NULL;
-    }
-    return n->value;
-}
-
-void *tree_predecessor(tree *t, void *key) {
-    if (!t || !t->cmp || !key) {
-        return NULL;
-    }
-
-    tree_node *nil = t->nil;
-    tree_node *cur = t->root;
+    tree_node *nil = impl->nil;
+    tree_node *cur = impl->root;
     tree_node *best = nil ? nil : NULL;
 
     while (cur && cur != nil) {
-        int cmp = t->cmp(key, cur->key);
+        int cmp = impl->cmp(key, cur->key);
         if (cmp <= 0) {
             cur = cur->left;
         } else {
@@ -229,17 +177,18 @@ void *tree_predecessor(tree *t, void *key) {
     return best->value;
 }
 
-void *tree_successor(tree *t, void *key) {
-    if (!t || !t->cmp || !key) {
+static void *tree_successor_method(tree *self, void *key) {
+    tree_impl *impl = tree_impl_from_tree(self);
+    if (!impl || !impl->cmp || !key) {
         return NULL;
     }
 
-    tree_node *nil = t->nil;
-    tree_node *cur = t->root;
+    tree_node *nil = impl->nil;
+    tree_node *cur = impl->root;
     tree_node *best = nil ? nil : NULL;
 
     while (cur && cur != nil) {
-        int cmp = t->cmp(key, cur->key);
+        int cmp = impl->cmp(key, cur->key);
         if (cmp >= 0) {
             cur = cur->right;
         } else {
@@ -254,35 +203,117 @@ void *tree_successor(tree *t, void *key) {
     return best->value;
 }
 
-list *tree_range_query(tree *t, void *low, void *high) {
-    if (!t || !t->cmp || !low || !high) {
+static list *tree_range_query_method(tree *self, void *low, void *high) {
+    tree_impl *impl = tree_impl_from_tree(self);
+    if (!impl || !impl->cmp || !low || !high) {
         return NULL;
     }
 
-    if (t->cmp(low, high) > 0) {
+    if (impl->cmp(low, high) > 0) {
         return NULL;
     }
 
-    int cap = (t->size > 0 && t->size < 1024u * 1024u) ? (int)t->size : 4;
+    int cap = (impl->size > 0 && impl->size < 1024u * 1024u) ? (int)impl->size : 4;
     list *out = create_list(ARRAY_LIST, cap, NULL);
     if (!out) {
         return NULL;
     }
-    tree_range_query_node(t, t->root, low, high, out);
+    tree_range_query_node(impl, impl->root, low, high, out);
     return out;
 }
 
-void tree_in_order_traverse(tree *t, void (*callback)(void *, void *)) {
-    if (!t || !callback) {
+static void tree_in_order_traverse_method(tree *self, void (*callback)(void *, void *)) {
+    tree_impl *impl = tree_impl_from_tree(self);
+    if (!impl || !callback) {
         return;
     }
-    tree_in_order_node(t, t->root, callback);
+    tree_in_order_node(impl, impl->root, callback);
 }
 
-int tree_size(const tree *t) {
-    if (!t) {
-        return 0;
+static int tree_size_method(const tree *self) {
+    tree_impl *impl = tree_impl_from_tree(self);
+    return impl ? (int)impl->size : 0;
+}
+
+static void tree_free_method(tree *self) {
+    if (!self) {
+        return;
     }
-    return (int)t->size;
+
+    tree_impl *impl = tree_impl_from_tree(self);
+    if (impl) {
+        if (impl->type == TREE_RED_BLACK) {
+            if (impl->root && impl->nil && impl->root != impl->nil) {
+                tree_free_node(impl, impl->root);
+            }
+            free(impl->nil);
+            impl->nil = NULL;
+        } else {
+            tree_free_node(impl, impl->root);
+        }
+
+        free(impl);
+        self->impl = NULL;
+    }
+
+    free(self);
 }
 
+tree *create_tree(tree_type type, comparator cmp) {
+    if (!cmp) {
+        return NULL;
+    }
+
+    tree *out = (tree *)calloc(1, sizeof(tree));
+    if (!out) {
+        return NULL;
+    }
+
+    tree_impl *impl = (tree_impl *)calloc(1, sizeof(tree_impl));
+    if (!impl) {
+        free(out);
+        return NULL;
+    }
+
+    impl->type = type;
+    impl->cmp = cmp;
+    impl->root = NULL;
+    impl->nil = NULL;
+    impl->size = 0;
+
+    if (type == TREE_RED_BLACK) {
+        impl->nil = (tree_node *)calloc(1, sizeof(tree_node));
+        if (!impl->nil) {
+            free(impl);
+            free(out);
+            return NULL;
+        }
+        impl->nil->color = RB_BLACK;
+        impl->nil->left = impl->nil;
+        impl->nil->right = impl->nil;
+        impl->nil->parent = impl->nil;
+        impl->nil->height = 0;
+        impl->root = impl->nil;
+    } else if (type == TREE_AVL) {
+        impl->root = NULL;
+    } else {
+        free(impl);
+        free(out);
+        return NULL;
+    }
+
+    out->impl = impl;
+    out->insert = tree_insert_method;
+    out->search = tree_search_method;
+    out->delete = tree_delete_method;
+    out->min = tree_min_method;
+    out->max = tree_max_method;
+    out->predecessor = tree_predecessor_method;
+    out->successor = tree_successor_method;
+    out->range_query = tree_range_query_method;
+    out->in_order_traverse = tree_in_order_traverse_method;
+    out->size = tree_size_method;
+    out->free = tree_free_method;
+
+    return out;
+}

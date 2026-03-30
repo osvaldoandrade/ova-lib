@@ -1,119 +1,109 @@
-#include "solver.h"
-#include <stdio.h>
+#include "../include/solver.h"
+#include "base_test.h"
 
 #include <math.h>
 
 #define FLOAT_TOL 0.001
 
-int approx_equal(double a, double b) {
-  return fabs(a - b) < FLOAT_TOL;
+static int approx_equal(double a, double b) {
+    return fabs(a - b) < FLOAT_TOL;
 }
 
-static void cleanup_solver_test(lp_problem *problem, solver *mySolver, matrix *solution) {
-  if (solution) {
-    solution->destroy(solution);
-  }
-  if (mySolver) {
-    mySolver->destroy(mySolver);
-  }
-  destroy_problem(problem);
+static void cleanup_solver_test(lp_problem *problem, solver *solver_instance, matrix *tableau) {
+    if (tableau) {
+        tableau->free(tableau);
+    }
+    if (solver_instance) {
+        solver_instance->free(solver_instance);
+    }
+    if (problem) {
+        problem->free(problem);
+    }
 }
 
 void test_simplex_solver1(void) {
-  int numVariables = 2;
-  int numConstraints = 3;
-  lp_problem *problem = create_problem(numVariables, numConstraints);
+    lp_problem *problem = create_problem(2, 3);
+    matrix *tableau = NULL;
+    solver *solver_instance = NULL;
 
-  double objective_coeffs[] = {3, 5};
-  problem->setObjective(problem, objective_coeffs, PROBLEM_MAX);
+    double objective_coeffs[] = {3, 5};
+    problem->set_objective(problem, objective_coeffs, PROBLEM_MAX);
 
-  double constraint1[] = {1, 2};
-  double constraint2[] = {-3, 1};
-  double constraint3[] = {1, -1};
-  problem->addConstraint(problem, constraint1, 14);
-  problem->addConstraint(problem, constraint2, 0);
-  problem->addConstraint(problem, constraint3, 2);
+    double constraint1[] = {1, 2};
+    double constraint2[] = {-3, 1};
+    double constraint3[] = {1, -1};
+    problem->add_constraint(problem, constraint1, 14);
+    problem->add_constraint(problem, constraint2, 0);
+    problem->add_constraint(problem, constraint3, 2);
 
-  solver *mySolver = create_solver(SOLVER_SIMPLEX);
-  matrix *solution;
-  int result = mySolver->solve(problem, &solution);
+    solver_instance = create_solver(SOLVER_SIMPLEX);
+    int result = solver_instance->solve(solver_instance, problem, &tableau);
 
-  if (result == OPTIMAL) {
-    printf("Optimal solution found.\n");
-    printf("x = %f, y = %f, z = %f\n", problem->solution[0], problem->solution[1], problem->z_value);
-    if (approx_equal(problem->solution[0], 6) && approx_equal(problem->solution[1], 4) && approx_equal(problem->z_value, 38)) {
-      printf("Test passed. Correct solution (x, y, z) = (%f, %f, %f)\n", problem->solution[0], problem->solution[1], problem->z_value);
-    } else {
-      printf("Test failed. Incorrect solution (x, y, z) = (%f, %f, %f)\n", problem->solution[0], problem->solution[1], problem->z_value);
-    }
-  } else if (result == UNBOUNDED) {
-    printf("Problem is unbounded.\n");
-  } else {
-    printf("Problem is infeasible or another error occurred.\n");
-  }
+    print_test_result(result == OPTIMAL &&
+                              approx_equal(problem->solution_value(problem, 0), 6.0) &&
+                              approx_equal(problem->solution_value(problem, 1), 4.0) &&
+                              approx_equal(problem->objective_value(problem), 38.0),
+                      "Simplex solver finds the expected optimum for the 2-variable problem");
 
-  cleanup_solver_test(problem, mySolver, solution);
+    cleanup_solver_test(problem, solver_instance, tableau);
 }
 
 void test_solver_initializes_solution_vector(void) {
-  int numVariables = 2;
-  int numConstraints = 2;
-  lp_problem *problem = create_problem(numVariables, numConstraints);
+    lp_problem *problem = create_problem(2, 2);
+    matrix *tableau = NULL;
+    solver *solver_instance = NULL;
 
-  double objective_coeffs[] = {1, 1};
-  problem->setObjective(problem, objective_coeffs, PROBLEM_MAX);
+    double objective_coeffs[] = {1, 1};
+    problem->set_objective(problem, objective_coeffs, PROBLEM_MAX);
 
-  double constraint1[] = {1, 0};
-  double constraint2[] = {0, 1};
-  problem->addConstraint(problem, constraint1, 1);
-  problem->addConstraint(problem, constraint2, 1);
+    double constraint1[] = {1, 0};
+    double constraint2[] = {0, 1};
+    problem->add_constraint(problem, constraint1, 1);
+    problem->add_constraint(problem, constraint2, 1);
 
-  solver *mySolver = create_solver(SOLVER_SIMPLEX);
-  matrix *solution = NULL;
-  int result = mySolver->solve(problem, &solution);
+    solver_instance = create_solver(SOLVER_SIMPLEX);
+    int result = solver_instance->solve(solver_instance, problem, &tableau);
 
-  if (result == OPTIMAL && problem->solution != NULL) {
-    printf("Solver initialized solution vector successfully. x1 = %f, x2 = %f, z = %f\n",
-           problem->solution[0], problem->solution[1], problem->z_value);
-  } else {
-    printf("Solver failed to initialize solution vector.\n");
-  }
+    print_test_result(result == OPTIMAL &&
+                              approx_equal(problem->solution_value(problem, 0), 1.0) &&
+                              approx_equal(problem->solution_value(problem, 1), 1.0) &&
+                              approx_equal(problem->objective_value(problem), 2.0),
+                      "Solver stores the final solution vector behind accessors");
 
-  cleanup_solver_test(problem, mySolver, solution);
+    cleanup_solver_test(problem, solver_instance, tableau);
 }
 
 void test_simplex_solver2(void) {
-  int numVariables = 3;
-  int numConstraints = 3;
-  lp_problem *problem = create_problem(numVariables, numConstraints);
+    lp_problem *problem = create_problem(3, 3);
+    matrix *tableau = NULL;
+    solver *solver_instance = NULL;
 
-  double objective_coeffs[] = {2, 3, 4};  // Novos coeficientes para a função objetivo
-  problem->setObjective(problem, objective_coeffs, PROBLEM_MAX);
+    double objective_coeffs[] = {2, 3, 4};
+    problem->set_objective(problem, objective_coeffs, PROBLEM_MAX);
 
-  double constraint1[] = {1, 1, 1};  // x + y + z <= 30
-  double constraint2[] = {2, 2, 5};  // 2x + 2y + 5z <= 100
-  double constraint3[] = {4, 1, 2};  // 4x + y + 2z <= 60
-  problem->addConstraint(problem, constraint1, 30);
-  problem->addConstraint(problem, constraint2, 100);
-  problem->addConstraint(problem, constraint3, 60);
+    double constraint1[] = {1, 1, 1};
+    double constraint2[] = {2, 2, 5};
+    double constraint3[] = {4, 1, 2};
+    problem->add_constraint(problem, constraint1, 30);
+    problem->add_constraint(problem, constraint2, 100);
+    problem->add_constraint(problem, constraint3, 60);
 
-  solver *mySolver = create_solver(SOLVER_SIMPLEX);
-  matrix *solution;
-  int result = mySolver->solve(problem, &solution);
+    solver_instance = create_solver(SOLVER_SIMPLEX);
+    int result = solver_instance->solve(solver_instance, problem, &tableau);
 
-  if (result == OPTIMAL) {
-    printf("Optimal solution found for alternative problem.\n");
-    printf("x1 = %f, x2 = %f, x3 = %f, z = %f\n", problem->solution[0], problem->solution[1], problem->solution[2], problem->z_value);
-  } else {
-    printf("Problem is unbounded or infeasible.\n");
-  }
+    print_test_result(result == OPTIMAL &&
+                              approx_equal(problem->solution_value(problem, 0), 0.0) &&
+                              approx_equal(problem->solution_value(problem, 1), 50.0 / 3.0) &&
+                              approx_equal(problem->solution_value(problem, 2), 40.0 / 3.0) &&
+                              approx_equal(problem->objective_value(problem), 310.0 / 3.0),
+                      "Simplex solver finds the expected optimum for the 3-variable problem");
 
-  cleanup_solver_test(problem, mySolver, solution);
+    cleanup_solver_test(problem, solver_instance, tableau);
 }
 
 int main(void) {
-  test_solver_initializes_solution_vector();
-  test_simplex_solver1();
-  test_simplex_solver2();
-  return 0;
+    test_solver_initializes_solution_vector();
+    test_simplex_solver1();
+    test_simplex_solver2();
+    return 0;
 }

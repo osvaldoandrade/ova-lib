@@ -31,7 +31,10 @@ static void free_mst_edges(list *edges) {
     }
     int n = edges->size(edges);
     for (int i = 0; i < n; i++) {
-        free(edges->get(edges, i));
+        graph_weighted_edge *edge = (graph_weighted_edge *)edges->get(edges, i);
+        if (edge) {
+            edge->free(edge);
+        }
     }
     edges->free(edges);
 }
@@ -45,7 +48,7 @@ static double mst_total_weight(list *edges) {
     for (int i = 0; i < n; i++) {
         graph_weighted_edge *e = (graph_weighted_edge *)edges->get(edges, i);
         if (e) {
-            sum += e->weight;
+            sum += e->weight(e);
         }
     }
     return sum;
@@ -58,14 +61,14 @@ static graph *build_unweighted_sample(graph_representation rep) {
     }
 
     for (int i = 0; i <= 4; i++) {
-        graph_add_vertex(g, i);
+        g->add_vertex(g, i);
     }
 
-    graph_add_edge(g, 0, 1, 1.0);
-    graph_add_edge(g, 0, 2, 1.0);
-    graph_add_edge(g, 1, 3, 1.0);
-    graph_add_edge(g, 2, 3, 1.0);
-    graph_add_edge(g, 3, 4, 1.0);
+    g->add_edge(g, 0, 1, 1.0);
+    g->add_edge(g, 0, 2, 1.0);
+    g->add_edge(g, 1, 3, 1.0);
+    g->add_edge(g, 2, 3, 1.0);
+    g->add_edge(g, 3, 4, 1.0);
     return g;
 }
 
@@ -75,11 +78,11 @@ static graph *build_weighted_directed_sample(graph_representation rep) {
         return NULL;
     }
 
-    graph_add_edge(g, 0, 1, 1.0);
-    graph_add_edge(g, 0, 2, 4.0);
-    graph_add_edge(g, 1, 2, 2.0);
-    graph_add_edge(g, 1, 3, 5.0);
-    graph_add_edge(g, 2, 3, 1.0);
+    g->add_edge(g, 0, 1, 1.0);
+    g->add_edge(g, 0, 2, 4.0);
+    g->add_edge(g, 1, 2, 2.0);
+    g->add_edge(g, 1, 3, 5.0);
+    g->add_edge(g, 2, 3, 1.0);
     return g;
 }
 
@@ -88,20 +91,20 @@ void test_bfs_and_dfs(graph_representation rep) {
     assert_not_null(g);
 
     int bfs_expected[] = {0, 1, 2, 3, 4};
-    list *bfs = graph_bfs(g, 0);
+    list *bfs = g->bfs(g, 0);
     list_matches("BFS visit order", bfs, bfs_expected, 5);
     bfs->free(bfs);
 
     int dfs_expected[] = {0, 1, 3, 2, 4};
-    list *dfs_it = graph_dfs_iterative(g, 0);
+    list *dfs_it = g->dfs_iterative(g, 0);
     list_matches("DFS iterative visit order", dfs_it, dfs_expected, 5);
     dfs_it->free(dfs_it);
 
-    list *dfs_rec = graph_dfs_recursive(g, 0);
+    list *dfs_rec = g->dfs_recursive(g, 0);
     list_matches("DFS recursive visit order", dfs_rec, dfs_expected, 5);
     dfs_rec->free(dfs_rec);
 
-    graph_free(g);
+    g->free(g);
 }
 
 void test_shortest_paths(graph_representation rep) {
@@ -109,70 +112,71 @@ void test_shortest_paths(graph_representation rep) {
     assert_not_null(g);
 
     vector *dist = NULL;
-    print_test_result(graph_dijkstra(g, 0, &dist) == 1 && dist != NULL, "Dijkstra returns distances");
+    print_test_result(g->dijkstra(g, 0, &dist) == 1 && dist != NULL, "Dijkstra returns distances");
     if (dist) {
-        print_test_result(dist->data[0] == 0.0 && dist->data[1] == 1.0 && dist->data[2] == 3.0 && dist->data[3] == 4.0,
+        print_test_result(dist->get(dist, 0) == 0.0 && dist->get(dist, 1) == 1.0 &&
+                                  dist->get(dist, 2) == 3.0 && dist->get(dist, 3) == 4.0,
                           "Dijkstra distances are correct");
-        dist->destroy(dist);
+        dist->free(dist);
     }
 
     vector *bf = NULL;
-    print_test_result(graph_bellman_ford(g, 0, &bf) == 1 && bf != NULL, "Bellman-Ford returns distances");
+    print_test_result(g->bellman_ford(g, 0, &bf) == 1 && bf != NULL, "Bellman-Ford returns distances");
     if (bf) {
-        print_test_result(bf->data[3] == 4.0, "Bellman-Ford distance to vertex 3 is correct");
-        bf->destroy(bf);
+        print_test_result(bf->get(bf, 3) == 4.0, "Bellman-Ford distance to vertex 3 is correct");
+        bf->free(bf);
     }
 
-    matrix *fw = graph_floyd_warshall(g);
+    matrix *fw = g->floyd_warshall(g);
     print_test_result(fw != NULL, "Floyd-Warshall returns a matrix");
     if (fw) {
-        print_test_result(fw->data[0][3] == 4.0, "Floyd-Warshall all-pairs distance 0->3 is correct");
-        fw->destroy(fw);
+        print_test_result(fw->get(fw, 0, 3) == 4.0, "Floyd-Warshall all-pairs distance 0->3 is correct");
+        fw->free(fw);
     }
 
-    graph_free(g);
+    g->free(g);
 }
 
 void test_bellman_ford_negative_cycle(graph_representation rep) {
     graph *g = create_graph(GRAPH_DIRECTED, rep);
     assert_not_null(g);
 
-    graph_add_edge(g, 0, 1, 1.0);
-    graph_add_edge(g, 1, 2, -1.0);
-    graph_add_edge(g, 2, 1, -1.0); /* negative cycle reachable from 0 */
+    g->add_edge(g, 0, 1, 1.0);
+    g->add_edge(g, 1, 2, -1.0);
+    g->add_edge(g, 2, 1, -1.0); /* negative cycle reachable from 0 */
 
     vector *dist = NULL;
-    print_test_result(graph_bellman_ford(g, 0, &dist) == 0, "Bellman-Ford detects reachable negative cycle");
+    print_test_result(g->bellman_ford(g, 0, &dist) == 0, "Bellman-Ford detects reachable negative cycle");
     if (dist) {
-        dist->destroy(dist);
+        dist->free(dist);
     }
 
-    graph_free(g);
+    g->free(g);
 }
 
 void test_mst(graph_representation rep) {
     graph *g = create_graph(GRAPH_UNDIRECTED, rep);
     assert_not_null(g);
 
-    graph_add_edge(g, 0, 1, 1.0);
-    graph_add_edge(g, 1, 2, 2.0);
-    graph_add_edge(g, 0, 2, 3.0);
+    g->add_edge(g, 0, 1, 1.0);
+    g->add_edge(g, 1, 2, 2.0);
+    g->add_edge(g, 0, 2, 3.0);
 
-    list *prim = graph_mst_prim(g, 0);
+    list *prim = g->mst_prim(g, 0);
     print_test_result(prim != NULL && prim->size(prim) == 2, "Prim returns |V|-1 edges");
     if (prim) {
         print_test_result(mst_total_weight(prim) == 3.0, "Prim MST total weight is correct");
         free_mst_edges(prim);
     }
 
-    list *kruskal = graph_mst_kruskal(g);
+    list *kruskal = g->mst_kruskal(g);
     print_test_result(kruskal != NULL && kruskal->size(kruskal) == 2, "Kruskal returns |V|-1 edges");
     if (kruskal) {
         print_test_result(mst_total_weight(kruskal) == 3.0, "Kruskal MST total weight is correct");
         free_mst_edges(kruskal);
     }
 
-    graph_free(g);
+    g->free(g);
 }
 
 void test_connectivity_and_scc(graph_representation rep) {
@@ -181,13 +185,13 @@ void test_connectivity_and_scc(graph_representation rep) {
     assert_not_null(u);
 
     for (int i = 0; i <= 5; i++) {
-        graph_add_vertex(u, i);
+        u->add_vertex(u, i);
     }
-    graph_add_edge(u, 0, 1, 1.0);
-    graph_add_edge(u, 1, 2, 1.0);
-    graph_add_edge(u, 3, 4, 1.0);
+    u->add_edge(u, 0, 1, 1.0);
+    u->add_edge(u, 1, 2, 1.0);
+    u->add_edge(u, 3, 4, 1.0);
 
-    list *comps = graph_connected_components(u);
+    list *comps = u->connected_components(u);
     print_test_result(comps != NULL && comps->size(comps) == 3, "Connected components returns expected number of components");
     if (comps) {
         int sizes[3] = {0, 0, 0};
@@ -216,21 +220,21 @@ void test_connectivity_and_scc(graph_representation rep) {
         }
         comps->free(comps);
     }
-    graph_free(u);
+    u->free(u);
 
     /* Strongly connected components (directed) */
     graph *d = create_graph(GRAPH_DIRECTED, rep);
     assert_not_null(d);
 
-    graph_add_edge(d, 0, 1, 1.0);
-    graph_add_edge(d, 1, 2, 1.0);
-    graph_add_edge(d, 2, 0, 1.0);
-    graph_add_edge(d, 2, 3, 1.0);
-    graph_add_edge(d, 3, 4, 1.0);
-    graph_add_edge(d, 4, 3, 1.0);
-    graph_add_vertex(d, 5); /* singleton SCC */
+    d->add_edge(d, 0, 1, 1.0);
+    d->add_edge(d, 1, 2, 1.0);
+    d->add_edge(d, 2, 0, 1.0);
+    d->add_edge(d, 2, 3, 1.0);
+    d->add_edge(d, 3, 4, 1.0);
+    d->add_edge(d, 4, 3, 1.0);
+    d->add_vertex(d, 5); /* singleton SCC */
 
-    list *scc = graph_strongly_connected_components(d);
+    list *scc = d->strongly_connected_components(d);
     print_test_result(scc != NULL && scc->size(scc) == 3, "SCC returns expected number of components");
     if (scc) {
         for (int i = 0; i < scc->size(scc); i++) {
@@ -242,20 +246,20 @@ void test_connectivity_and_scc(graph_representation rep) {
         scc->free(scc);
     }
 
-    graph_free(d);
+    d->free(d);
 }
 
 void test_toposort_and_cycles(graph_representation rep) {
     graph *dag = create_graph(GRAPH_DIRECTED, rep);
     assert_not_null(dag);
 
-    graph_add_edge(dag, 0, 1, 1.0);
-    graph_add_edge(dag, 0, 2, 1.0);
-    graph_add_edge(dag, 1, 3, 1.0);
-    graph_add_edge(dag, 2, 3, 1.0);
+    dag->add_edge(dag, 0, 1, 1.0);
+    dag->add_edge(dag, 0, 2, 1.0);
+    dag->add_edge(dag, 1, 3, 1.0);
+    dag->add_edge(dag, 2, 3, 1.0);
 
-    print_test_result(!graph_has_cycle(dag), "DAG has no cycle");
-    list *topo = graph_topological_sort(dag);
+    print_test_result(!dag->has_cycle(dag), "DAG has no cycle");
+    list *topo = dag->topological_sort(dag);
     print_test_result(topo != NULL && topo->size(topo) == 4, "Topological sort returns all vertices");
     if (topo) {
         int pos[8];
@@ -269,20 +273,20 @@ void test_toposort_and_cycles(graph_representation rep) {
         topo->free(topo);
     }
 
-    graph_free(dag);
+    dag->free(dag);
 
     graph *cyc = create_graph(GRAPH_DIRECTED, rep);
     assert_not_null(cyc);
-    graph_add_edge(cyc, 0, 1, 1.0);
-    graph_add_edge(cyc, 1, 2, 1.0);
-    graph_add_edge(cyc, 2, 0, 1.0);
-    print_test_result(graph_has_cycle(cyc), "Directed cycle is detected");
-    list *topo2 = graph_topological_sort(cyc);
+    cyc->add_edge(cyc, 0, 1, 1.0);
+    cyc->add_edge(cyc, 1, 2, 1.0);
+    cyc->add_edge(cyc, 2, 0, 1.0);
+    print_test_result(cyc->has_cycle(cyc), "Directed cycle is detected");
+    list *topo2 = cyc->topological_sort(cyc);
     print_test_result(topo2 == NULL, "Topological sort returns NULL on cyclic graph");
     if (topo2) {
         topo2->free(topo2);
     }
-    graph_free(cyc);
+    cyc->free(cyc);
 }
 
 void run_all_graph_algorithm_tests(void) {
@@ -308,4 +312,3 @@ int main(void) {
     run_all_graph_algorithm_tests();
     return 0;
 }
-

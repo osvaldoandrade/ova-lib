@@ -1,6 +1,24 @@
 #include "../../include/sort.h"
 #include <stdlib.h>
 
+typedef struct sorter_impl {
+    comparator cmp;
+} sorter_impl;
+
+static sorter_impl *sorter_impl_from_self(const sorter *self) {
+    return self ? (sorter_impl *)self->impl : NULL;
+}
+
+static void sorter_free(sorter *self) {
+    if (!self) {
+        return;
+    }
+
+    free(self->impl);
+    self->impl = NULL;
+    free(self);
+}
+
 /**
  * @brief Swaps two elements in a list at the specified indices.
  *
@@ -39,11 +57,12 @@ void sorter_swap(sorter *self, list *lst, int index1, int index2) {
  * @return The index of the pivot element after partitioning.
  */
 static int sorter_partition(list *lst, int low, int high, sorter *self) {
+    sorter_impl *impl = sorter_impl_from_self(self);
     void *pivot = lst->get(lst, high);
     int i = low - 1;
 
     for (int j = low; j < high; j++) {
-        if (self->cmp(lst->get(lst, j), pivot) <= 0) {
+        if (impl && impl->cmp(lst->get(lst, j), pivot) <= 0) {
             i++;
             self->swap(self, lst, i, j);
         }
@@ -142,12 +161,13 @@ void collections_reverse(sorter *self, list *lst) {
  * @return The index of the item in the list, or -1 if the item is not found.
  */
 int collections_binary_search(sorter *self, list *lst, void *item) {
+    sorter_impl *impl = sorter_impl_from_self(self);
     int low = 0;
     int high = lst->size(lst) - 1;
     while (low <= high) {
         int mid = low + (high - low) / 2;
         void *mid_item = lst->get(lst, mid);
-        int cmp_result = self->cmp(mid_item, item);
+        int cmp_result = impl ? impl->cmp(mid_item, item) : 0;
 
         if (cmp_result == 0) {
             return mid;
@@ -191,6 +211,7 @@ void collections_copy(sorter *self, list *src, list *dest) {
  * @param max A pointer to a pointer where the maximum element will be stored.
  */
 void collections_min_max(sorter *self, list *lst, void **min, void **max) {
+    sorter_impl *impl = sorter_impl_from_self(self);
     int size = lst->size(lst);
     if (size == 0) {
         *min = NULL;
@@ -207,19 +228,19 @@ void collections_min_max(sorter *self, list *lst, void **min, void **max) {
         void *first = lst->get(lst, i);
         void *second = lst->get(lst, i + 1);
 
-        if (self->cmp(first, second) > 0) {
-            if (self->cmp(first, *max) > 0) *max = first;
-            if (self->cmp(second, *min) < 0) *min = second;
+        if (impl && impl->cmp(first, second) > 0) {
+            if (impl->cmp(first, *max) > 0) *max = first;
+            if (impl->cmp(second, *min) < 0) *min = second;
         } else {
-            if (self->cmp(second, *max) > 0) *max = second;
-            if (self->cmp(first, *min) < 0) *min = first;
+            if (impl && impl->cmp(second, *max) > 0) *max = second;
+            if (impl && impl->cmp(first, *min) < 0) *min = first;
         }
     }
 
     if (size % 2 != 0) {
         void *last = lst->get(lst, size - 1);
-        if (self->cmp(last, *max) > 0) *max = last;
-        if (self->cmp(last, *min) < 0) *min = last;
+        if (impl && impl->cmp(last, *max) > 0) *max = last;
+        if (impl && impl->cmp(last, *min) < 0) *min = last;
     }
 }
 
@@ -235,6 +256,7 @@ void collections_min_max(sorter *self, list *lst, void **min, void **max) {
  * @return A pointer to the maximum element found in the list, or NULL if the list is empty.
  */
 void *collections_max(sorter *self, list *lst) {
+    sorter_impl *impl = sorter_impl_from_self(self);
     int size = lst->size(lst);
     if (size == 0) return NULL; // Lista vazia, retorna nulo
 
@@ -242,7 +264,7 @@ void *collections_max(sorter *self, list *lst) {
 
     for (int i = 1; i < size; i++) {
         void *current = lst->get(lst, i);
-        if (self->cmp(current, maximum) > 0) {
+        if (impl && impl->cmp(current, maximum) > 0) {
             maximum = current; // Encontra novo máximo
         }
     }
@@ -261,6 +283,7 @@ void *collections_max(sorter *self, list *lst) {
  * @return A pointer to the minimum element found in the list, or NULL if the list is empty.
  */
 void *collections_min(sorter *self, list *lst) {
+    sorter_impl *impl = sorter_impl_from_self(self);
     int size = lst->size(lst);
     if (size == 0) return NULL; // Lista vazia, retorna nulo
 
@@ -268,7 +291,7 @@ void *collections_min(sorter *self, list *lst) {
 
     for (int i = 1; i < size; i++) {
         void *current = lst->get(lst, i);
-        if (self->cmp(current, minimum) < 0) {
+        if (impl && impl->cmp(current, minimum) < 0) {
             minimum = current; // Encontra novo mínimo
         }
     }
@@ -287,12 +310,19 @@ void *collections_min(sorter *self, list *lst) {
  * @return A pointer to the created sorter structure.
  * @retval NULL If memory allocation failed or if the sorter creation was unsuccessful.
  */
-sorter *create_sorter(list *data, comparator cmp) {
-    (void)data;
+sorter *create_sorter(comparator cmp) {
     sorter *s = malloc(sizeof(sorter));
     if (!s) return NULL;
 
-    s->cmp = cmp;
+    sorter_impl *impl = malloc(sizeof(sorter_impl));
+    if (!impl) {
+        free(s);
+        return NULL;
+    }
+
+    impl->cmp = cmp;
+
+    s->impl = impl;
     s->sort = sorter_quick;
     s->swap = sorter_swap;
     s->shuffle = collections_shuffle;
@@ -302,6 +332,7 @@ sorter *create_sorter(list *data, comparator cmp) {
     s->min = collections_min;
     s->max = collections_max;
     s->min_max = collections_min_max;
+    s->free = sorter_free;
 
     return s;
 }
