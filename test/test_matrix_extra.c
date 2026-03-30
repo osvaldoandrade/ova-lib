@@ -6,11 +6,19 @@
 #define FLOAT_TOL 0.0001
 
 static void set_matrix_value(matrix *m, int row, int col, double value) {
-    assert(m->set(m, row, col, value) == 0);
+    int rc = m->set(m, row, col, value);
+    if (rc != 0) {
+        fprintf(stderr, "matrix set failed at (%d, %d)\n", row, col);
+        abort();
+    }
 }
 
 static void set_vector_value(vector *v, int index, double value) {
-    assert(v->set(v, index, value) == 0);
+    int rc = v->set(v, index, value);
+    if (rc != 0) {
+        fprintf(stderr, "vector set failed at %d\n", index);
+        abort();
+    }
 }
 
 static int compare_matrices(matrix *m1, matrix *m2) {
