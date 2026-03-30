@@ -1,19 +1,36 @@
 # Matrix and Vector Operations
 
-## Allocation and lifecycle
-`create_matrix` allocates a wrapper followed by row pointers to contiguous `double` arrays. Whenever an allocation fails, the function unwinds previously created rows and returns NULL so callers never see partially initialized structures. Construction wires function pointers for arithmetic, structural transformations, and linear algebra helpers, enabling callers to use a single handle for addition, subtraction, multiplication, transposition, resizing, copying, determinant evaluation, and inversion. `matrix_destroy` walks every row before freeing the wrapper, and `matrix_copy` duplicates the dimensions before cloning each row with `memcpy`. `create_vector` zero-initializes storage with `calloc`, assigns callbacks for resizing, printing, and destruction, and keeps ownership internal so solvers can treat vectors as mutable views over coefficient arrays.
+The matrix layer is a public-struct API, not an opaque handle. Callers fill `matrix->data` directly and then route higher operations through method pointers such as `add`, `multiply`, `transpose`, `inverse`, `resize`, `copy`, `print`, and `destroy`.
 
-## Arithmetic primitives
-Addition and subtraction traverse every cell in row-major order, producing a new matrix after verifying that both operands share identical shapes. Each operation runs in O(m·n). Multiplication checks that the inner dimensions match (`self->cols == other->rows`) before launching the classic triple-loop dot product with O(m·n·p) complexity for an m×n matrix multiplied by an n×p matrix.
+## Construction
 
-## Determinant
-`matrix_determinant` clones the operand into a temporary working matrix and performs Gaussian elimination. Whenever a pivot is zero, the routine searches lower rows for a viable swap, multiplies the determinant by −1 when a swap occurs, and continues elimination. Once the matrix is upper triangular, diagonal entries multiply together to yield the determinant in O(n³) time. The function returns zero when no suitable pivot exists and raises an error flag if inputs are invalid.
+`create_matrix(rows, cols)` returns `NULL` for non-positive dimensions or allocation failure. `create_vector(size)` allocates a zero-initialized `double` buffer and installs `resize`, `print`, and `destroy`.
 
-## Inverse
-Inversion relies on Gauss-Jordan elimination. The routine augments the matrix with an identity block, applies the same pivoting strategy used by the determinant implementation, and performs row operations until the left half becomes identity. Failing to find a non-zero pivot indicates a singular matrix; in that case the function releases intermediate allocations and returns NULL. Successful elimination copies the right half of the augmented matrix into the result. Complexity remains O(n³), and the augmented storage doubles the matrix width during computation.
+The public fields matter because callers read and write them directly:
 
-## Structural utilities
-`matrix_transpose` creates a new matrix with flipped dimensions and swaps indices during assignment. `matrix_resize` supports shrinking and expansion by allocating a new grid, copying overlapping entries, zero-filling any newly exposed region, and freeing the previous grid. The function returns −1 when allocation fails. `matrix_print` renders entries with three-decimal precision, which assists in debugging solver tableaux.
+```c
+typedef struct matrix {
+    double **data;
+    int rows;
+    int cols;
+    ...
+} matrix;
+```
 
-## Vector helpers
-`vector_resize` reallocates the buffer while zeroing additional slots. `vector_print` emits a bracketed, comma-separated list of components, and `vector_destroy` frees both the buffer and the wrapper.
+## Arithmetic
+
+`add` and `subtract` require equal shapes. `multiply` requires `self->cols == other->rows`. Each operation allocates a fresh matrix and returns `NULL` on shape mismatch or allocation failure.
+
+`transpose` allocates a fresh matrix with flipped dimensions. `copy` duplicates the current grid. `resize` preserves the overlapping rectangle and zero-fills new cells when the matrix grows.
+
+## Determinant and Inverse
+
+`determinant` requires a square matrix. It returns the computed value and writes `*error = 0` on success or `*error = 1` on invalid input or allocation failure during the working copy.
+
+`inverse` also requires a square matrix. It builds an augmented matrix, performs Gauss-Jordan elimination, and returns `NULL` when the matrix is singular or allocation fails.
+
+## Lifetime
+
+The matrix object owns each row allocation and the row-pointer array. `matrix->destroy(matrix)` frees them all. The vector object owns its `double *data` buffer and is destroyed with `vector->destroy(vector)`.
+
+The solver module builds on this API. If you work with `solver.h`, read this page first and then [solver-simplex.md](solver-simplex.md).

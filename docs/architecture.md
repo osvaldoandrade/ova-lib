@@ -1,51 +1,47 @@
 # Architecture
 
+ova-lib is organized as one CMake project, 16 public headers, 32 library source files, and 22 unit-test programs. The repo does not use a single API pattern. Some modules expose opaque handles, while others expose structs with public fields and method pointers. The documentation in this repo follows the code as shipped, not an abstract pattern that only some modules use.
+
+## Repository Layout
+
+The top level is split into 5 working areas. `include/` holds the public headers. `src/` holds the implementation files grouped by subsystem. `test/` contains one focused test program per area. `docs/` holds the canonical prose. `CMakeLists.txt` and `CMakePresets.json` define the build, test, install, and packaging flow.
+
+The umbrella header `include/ova.h` re-exports the main module headers. `include/types.h` carries the shared comparator and hash typedefs that several modules reuse.
+
+## Interface Shapes
+
+The library uses 2 public shapes.
+
+The first shape is an opaque handle with free functions. `graph`, `tree`, `set`, `trie`, and `bloom_filter` are declared as incomplete types in headers, and callers work through standalone functions such as `graph_add_edge`, `tree_insert`, `set_add`, `trie_search`, and `bloom_filter_add`.
+
+The second shape is a public struct with method pointers. `list`, `queue`, `heap`, `stack`, `matrix`, `vector`, `solver`, `lp_problem`, and `map` expose fields in the public headers and route most operations through function pointers such as `insert`, `get`, `pop`, `destroy`, or `solve`.
+
+That split matters for documentation and for user code. A page that claims every public type is opaque is wrong for the current headers.
+
+## Build Topology
+
+`CMakeLists.txt` defines 2 library targets from the same source set: `ova_lib_static` and `ova_lib_shared`. Both link against `libm`. The project enables CTest through `include(CTest)` and generates 22 test executables named `test_*`.
+
+The build outputs follow one layout:
+
+| Output | Directory |
+| --- | --- |
+| Static and shared libraries | `<build>/lib` |
+| Test executables | `<build>/bin` |
+| Copied public headers for the build tree | `<build>/include` |
+
+`cmake --install` installs headers into `<prefix>/include`, libraries into `<prefix>/lib`, and the generated `ova-lib.pc` file into `<prefix>/lib/pkgconfig`.
+
+## Ownership Model
+
+The containers and graph-like modules own their internal buffers, nodes, buckets, matrices, or adjacency storage. They do not free caller payloads. A `list`, `queue`, `heap`, `map`, `set`, `tree`, or `trie` stores raw pointers. The caller decides whether those pointers refer to borrowed memory, stack values, or heap allocations.
+
+Return values follow the same split. A container destructor frees only the container. Functions that return pointers from inside a structure usually return the stored payload pointer, not a copy.
+
+## Concurrency
+
+The repo is single-threaded except for one path in the hash map. `create_map(HASH_TABLE, ...)` allocates a `pthread_mutex_t` and wraps `put`, `get`, and `remove` with one coarse lock. `create_map(HASH_MAP, ...)` skips the mutex. No other public module adds internal synchronization.
+
 ## Diagrams
 
-Visual representations of the library's design live in [`docs/diagrams/`](diagrams/).
-They are split into five files, each targeting a different aspect of the architecture:
-
-| File | Tool | Coverage |
-|------|------|----------|
-| [`diagrams/factory-patterns.puml`](diagrams/factory-patterns.puml) | PlantUML | Factory functions and the vtable-backed types they produce |
-| [`diagrams/module-dependencies.dot`](diagrams/module-dependencies.dot) | Graphviz | `#include` and logical dependencies between every module |
-| [`diagrams/memory-layouts.puml`](diagrams/memory-layouts.puml) | PlantUML | In-memory field layout of the key public and internal structs |
-| [`diagrams/algorithm-flowcharts.md`](diagrams/algorithm-flowcharts.md) | Mermaid | Step-by-step control flow for heap, hash-map, sort, graph, simplex, and bloom-filter algorithms |
-| [`diagrams/composition-relationships.puml`](diagrams/composition-relationships.puml) | PlantUML | Vtable interfaces, concrete implementations, and cross-module composition |
-
-### Rendering locally
-
-**PlantUML** (requires Java):
-```sh
-plantuml docs/diagrams/factory-patterns.puml
-plantuml docs/diagrams/memory-layouts.puml
-plantuml docs/diagrams/composition-relationships.puml
-```
-
-**Graphviz**:
-```sh
-dot -Tsvg docs/diagrams/module-dependencies.dot -o docs/diagrams/module-dependencies.svg
-```
-
-**Mermaid** diagrams in `algorithm-flowcharts.md` are rendered automatically by
-GitHub and any Markdown viewer with Mermaid support.
-
----
-
-## Repository layout
-The repository divides public interfaces and internal logic by mirroring module boundaries. Public headers live in `include/`, where containers, matrix helpers, sorting utilities, queues, heaps, stacks, and the linear-programming orchestration are exposed. A single umbrella header, `ova.h`, re-exports those declarations so downstream projects can adopt the library with a single include. Implementation files in `src/` shadow the public API while hiding concrete structures within translation units, which keeps the ABI stable and makes it possible to swap strategies without touching callers. Tests reside in `test/`, each compiled into a dedicated executable that CTest discovers automatically. The top-level `CMakeLists.txt` compiles both shared and static variants from a shared object library and stages headers into the build tree for installation.
-
-## Build pipeline
-Building starts by configuring the project with CMake 3.10 or newer. The configuration script enforces C11 mode, flips on position-independent code when shared libraries are requested, and exposes options that enable sanitizers for local debugging. A subsequent `cmake --build` invocation produces `libova_lib.so`, `libova_lib.a`, and module-focused unit tests under `${CMAKE_BINARY_DIR}/test`. Running `ctest --output-on-failure` executes each unit binary and propagates failures back to continuous integration because testing is wired in through `ENABLE_TESTING`. Installation relies on `cmake --install`, which copies headers into `${CMAKE_INSTALL_PREFIX}/include/ova_lib` and libraries into the matching `lib` directory while honoring `DESTDIR` so package managers can stage files into a sandbox.
-
-## Memory ownership
-Every handle returned to callers—lists, heaps, queues, maps, matrices, sorters, linear-programming problems, and solvers—owns only its internal buffers. Payload pointers stay under the caller’s control to avoid double frees and to support embedded deployments. Factory functions allocate opaque implementation structures, wire their function tables immediately, and guard against double-destroy attempts by validating internal pointers before releasing memory. Dynamic buffers grow geometrically when throughput matters: arrays and heaps double capacity during expansion, and hash maps double their bucket array when the load factor rises above 0.75.
-
-## Error handling and invariants
-Constructors abort early when allocations fail and clean up partially built structures before returning. Array-backed containers validate indices and bounds before performing `memmove` so invalid accesses cannot corrupt memory. Solver routines reject NULL handles before progressing. The simplex driver reports `INFEASIBLE` whenever required inputs are missing, and the linear-programming helpers refuse to mutate problems whose backing matrices could not resize correctly.
-
-## Thread safety model
-Components are single-threaded unless stated otherwise. The hash map factory optionally allocates a `pthread_mutex_t` when the requested `map_type` is `HASH_TABLE`; the resulting lock wraps `put`, `get`, and `remove` to provide coarse-grained protection. Iteration APIs are intentionally absent because exposing internal traversal semantics would invite data races in concurrent scenarios. Clients that need iteration perform their own re-hashing or implement visitors tailored to their use case.
-
-## Extensibility surface
-Container types expose uniform vtables so alternative implementations can be injected without recompiling dependents. For example, `create_heap` can yield a binary heap today while future versions can introduce a Fibonacci heap under the same interface, leaving callers to invoke `put`, `pop`, `peek`, and `size` without modification. Solver extension points include placeholder enums for Lagrangean relaxation, branch-and-bound, and branch-and-cut. The stubs compile yet return NULL until full algorithms arrive, preserving forward compatibility. Hash functions remain pluggable through the `hash_func_t` typedef, allowing applications to pick one of the built-in strategies or supply their own routine during map creation.
+The diagram sources stay under [`docs/diagrams/`](diagrams/). They are useful as a supplement, but they are not the source of truth for API claims. The headers and tests are.

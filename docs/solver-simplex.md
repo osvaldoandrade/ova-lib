@@ -1,19 +1,39 @@
 # Linear Programming Solver
 
-## Problem model
-`create_problem` provisions the constraint matrix with dimensions `numConstraints × numVariables`, the objective vector, and the bounds vector. Every allocation is validated, and failures trigger cleanup of partially initialized components before returning NULL. Newly created problems default to `type = PROBLEM_MAX`, `solution = NULL`, and `z_value = 0`. Function pointers expose `addConstraint`, `setObjective`, `setBounds`, and `print`, enabling incremental configuration. `addConstraint` grows the matrix by one row, copies the coefficients, expands the bounds vector, and stores the right-hand side while interpreting constraints as ≤ inequalities. `setObjective` copies coefficients verbatim and records whether the problem targets maximization or minimization. `setBounds` overwrites the RHS vector in place; callers must respect the active constraint count.
+The solver layer in `solver.h` exposes 4 enum values, but the current implementation only supports `SOLVER_SIMPLEX`. The other enum values are declarations in the header, not working algorithm selections in the current source tree.
 
-## Solver selection
-`create_solver` instantiates a solver wrapper that wires `solve` and `destroy`. Only `SOLVER_SIMPLEX` is implemented today, while other enum values return stubs to preserve binary compatibility for future algorithms.
+## Problem Construction
 
-## Simplex initialization
-`simplex_solver` verifies that constraints, objective coefficients, and bounds exist before allocating a tableau sized to `rows + 1` by `cols + rows + 1`. Constraint rows copy coefficients directly and append slack variables along the diagonal. Bounds populate the final column, and the last row stores the objective with negated coefficients to model maximization in canonical simplex form. Ownership of the tableau transfers to the caller through `out_tableau`, which must eventually invoke `matrix->destroy`.
+`create_problem(numVariables, numConstraints)` allocates 3 numeric objects:
 
-## Pivot strategy
-The solver scans the objective row from left to right and chooses the first negative coefficient as the entering variable, following a Bland-style rule that mitigates cycling. The minimum ratio test divides each right-hand side by the corresponding pivot column entry for rows with positive entries, selecting the smallest ratio as the leaving variable. When no valid pivot row exists, the problem is marked unbounded. Pivoting normalizes the chosen row by dividing by the pivot value, then subtracts multiples of that row from every other row to zero the pivot column.
+- one constraint matrix with `numConstraints × numVariables`
+- one objective vector with `numVariables` slots
+- one bounds vector with `numConstraints` slots
 
-## Termination and reporting
-When the objective row contains no negative coefficients, the solution is optimal. The solver reconstructs basic variable values by scanning each column for unit vectors and reading the associated right-hand-side entry. `prob->solution` allocates storage on demand and fills it with recovered basic variable values while leaving nonbasic variables at zero. `prob->z_value` records the objective as the negated value stored in the tableau’s last row and column. The solver reports `OPTIMAL`, `UNBOUNDED`, or `INFEASIBLE` depending on validation and pivot outcomes.
+If `numConstraints < 1`, the implementation raises the capacity to `1`. The problem tracks `constraint_count` separately from `constraint_capacity`, so you can add constraints incrementally through `addConstraint`.
 
-## Utility hooks
-Helper functions such as `is_feasible`, `improves_objective`, and `is_integer` assess constraints, objective deltas, and integrality using an epsilon threshold. They remain unused by the simplex loop today but lay groundwork for branch-and-bound or cutting-plane integrations.
+## Mutators
+
+`setObjective` copies the objective coefficients and stores `PROBLEM_MAX` or `PROBLEM_MIN`.
+
+`addConstraint` appends one `<=` row. If the current capacity is full, it doubles the backing matrix rows and the bounds vector length before copying the new coefficients and bound.
+
+`setBounds` overwrites the active bounds in place. `print` renders the objective and the active `<=` constraints.
+
+## Solving
+
+`create_solver(SOLVER_SIMPLEX)` installs the simplex implementation in `solve`. The solve callback writes a tableau matrix through `matrix **out_tableau` and returns one of 3 status codes from the header:
+
+| Status | Value |
+| --- | --- |
+| `OPTIMAL` | `0` |
+| `UNBOUNDED` | `-1` |
+| `INFEASIBLE` | `-2` |
+
+On `OPTIMAL`, the solver allocates `problem->solution`, fills the basic variable values, and stores the objective value in `problem->z_value`.
+
+## Cleanup
+
+Destroy the tableau with `matrix->destroy`. Destroy the solver with `solver->destroy`. Destroy the problem with `destroy_problem`.
+
+The solver object owns only its own wrapper. The problem object owns the constraint matrix, objective vector, bounds vector, and solution array.

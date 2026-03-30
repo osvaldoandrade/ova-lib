@@ -1,67 +1,29 @@
 # Bloom Filter
 
-ova-lib includes a Bloom filter implementation for space-efficient set membership testing with a tunable false-positive rate.
+The bloom filter module provides one space-bounded membership structure with two tuning inputs: expected element count and target false-positive rate.
 
-Bloom filters have:
-
-- No false negatives: if `bloom_filter_might_contain` returns `false`, the element is definitely not present.
-- Possible false positives: if it returns `true`, the element might be present.
-
-## API
-
-Public declarations live in `include/bloom_filter.h`:
+## Construction
 
 ```c
-bloom_filter* create_bloom_filter(int expected_elements, double false_positive_rate);
-void bloom_filter_free(bloom_filter *bf);
-
-void bloom_filter_add(bloom_filter *bf, const void *element, size_t len);
-bool bloom_filter_might_contain(const bloom_filter *bf, const void *element, size_t len);
-
-void bloom_filter_clear(bloom_filter *bf);
-double bloom_filter_current_fpp(const bloom_filter *bf);
+bloom_filter *create_bloom_filter(int expected_elements, double false_positive_rate);
 ```
 
-## Sizing
+The constructor returns `NULL` when `expected_elements <= 0`, when the false-positive rate is not in the open interval `(0, 1)`, or when the derived bit-array size would overflow the allocator.
 
-The filter chooses the bit-array size (`m`) and number of hash functions (`k`) using standard formulas:
+## Data Model
 
-- `m = -n * ln(p) / (ln(2)^2)`
-- `k = (m / n) * ln(2)`
+The implementation stores:
 
-Where:
+- `m_bits`, the bit-array size
+- `k_hashes`, the number of derived hash probes
+- `items_added`, the number of insert calls applied to the instance
 
-- `n` is `expected_elements`
-- `p` is `false_positive_rate`
+The bit-array size and hash count are derived from the standard Bloom-filter equations. The implementation uses two seeded 64-bit FNV-1a passes and double hashing to derive the `k` probe positions.
 
-## Hashing
+## API Semantics
 
-The implementation uses seeded FNV-1a hashes and a double-hashing scheme to generate `k` indices into the `m`-bit array.
+`bloom_filter_add` treats the payload as an opaque byte sequence of length `len`. `bloom_filter_might_contain` returns `false` only when the item is definitely absent. A `true` result means the item may be present.
 
-## Semantics
+`bloom_filter_clear` resets the bit array and the insertion counter. `bloom_filter_current_fpp` estimates the current false-positive probability from the live `m`, `k`, and `n` values in the instance.
 
-- Elements are treated as raw bytes (`element`, `len`). This supports strings and arbitrary binary keys.
-- The Bloom filter does not store or free elements.
-- `bloom_filter_clear` resets all bits and counters.
-- `bloom_filter_current_fpp` returns an estimate based on the number of insert calls performed on the instance:
-  `p ~= (1 - exp(-(k*n)/m))^k`.
-
-## Example
-
-```c
-#include "bloom_filter.h"
-#include <string.h>
-
-int main(void) {
-    bloom_filter *bf = create_bloom_filter(1000, 0.01);
-
-    const char *key = "hello";
-    bloom_filter_add(bf, key, strlen(key));
-
-    int ok = bloom_filter_might_contain(bf, key, strlen(key));
-
-    bloom_filter_free(bf);
-    return ok ? 0 : 1;
-}
-```
-
+The filter never stores or frees the caller payload.

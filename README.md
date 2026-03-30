@@ -1,241 +1,124 @@
 # ova-lib
 
-ova-lib is a lightweight collection of data structures and algorithms written in ANSI C. It aims to provide simple, self contained containers that can be used across POSIX systems with minimal dependencies.
+ova-lib is a C11 library of data structures and numeric helpers. The tree on `main` exposes 14 module headers plus `ova.h` and `types.h`, builds 32 library translation units, and runs 22 unit-test executables through CTest. The library keeps payload ownership with the caller and stores user data as `void *` across the container APIs.
 
-## Features
+## What Ships
 
-- **Lists**: array based, linked and sorted lists
-- **Queues**: regular and priority queues backed by heaps
-- **Heaps**: binary and Fibonacci implementations
-- **Stacks**: array and linked stacks
-- **Hash Maps**: simple key/value storage with user supplied hashing
-- **Matrices**: basic linear algebra helpers
-- **Sorting**: assorted comparison based sorting routines
-- **Solver**: utilities such as a simplex implementation
-- **Trees**: AVL and Red-Black balanced binary search trees
-- **Tries**: prefix trees for efficient string lookup and autocomplete
-- **Sets**: hash and tree based sets with set algebra operations
-- **Bloom filters**: probabilistic set membership testing with tunable false positives
+The current public surface groups into 8 areas.
+
+| Area | Headers | Notes |
+| --- | --- | --- |
+| Linear containers | `list.h`, `queue.h`, `stack.h`, `deque.h` | Array, linked, sorted, FIFO, priority, and double-ended flows |
+| Priority structures | `heap.h`, `sort.h` | Binary heap, Fibonacci heap, and list-based sorting helpers |
+| Keyed storage | `map.h`, `set.h`, `tree.h`, `trie.h` | Hash table, ordered trees, sets, and prefix lookup |
+| Numeric helpers | `matrix.h`, `solver.h` | Matrix arithmetic, vectors, and a simplex solver |
+| Graphs | `graph.h` | Directed or undirected graphs with two representations |
+| Probabilistic lookup | `bloom_filter.h` | Tunable false-positive membership checks |
+| Umbrella include | `ova.h` | Re-exports the main headers |
+| Shared types | `types.h` | Comparator and hash typedefs |
 
 ## Documentation
 
-Refer to the technical notes under `docs/` for deep dives into each subsystem:
+The repo docs are the canonical narrative. The wiki is a short map into this material.
 
 - [Architecture overview](docs/architecture.md)
-- [Usage best practices guide](docs/best-practices.md)
-- [Container implementations, hashing strategies, and heaps](docs/containers.md)
-- [Graph data structure and algorithms](docs/graph.md)
+- [Usage guide](docs/best-practices.md)
+- [Containers, heaps, maps, and deque](docs/containers.md)
+- [Graphs](docs/graph.md)
 - [Matrix and vector operations](docs/matrix.md)
-- [Simplex solver internals](docs/solver-simplex.md)
-- [Sorting helpers and algorithms](docs/sorting.md)
-- [Balanced trees (AVL/Red-Black)](docs/trees.md)
-- [Trie (prefix tree)](docs/trie.md)
-- [Set implementation and operations](docs/set.md)
+- [Simplex solver](docs/solver-simplex.md)
+- [Sorting helpers](docs/sorting.md)
+- [Balanced trees](docs/trees.md)
+- [Trie](docs/trie.md)
+- [Set](docs/set.md)
 - [Bloom filter](docs/bloom_filter.md)
-- [Performance benchmarks](docs/benchmarks.md)
+- [Performance notes](docs/benchmarks.md)
+- [Documentation review, 2026-03-29](docs/recommendations.md)
+- [Review summary](docs/recommendations-summary.md)
 
-**Code Review and Recommendations:**
-- [📋 Comprehensive Review: 10 New Features + 30 Improvements](docs/recommendations.md) - Detailed analysis with implementation guidance
-- [⚡ Quick Reference Summary](docs/recommendations-summary.md) - Condensed view with priority order
+## Build
 
-## Building
-
-This project uses CMake (>=3.10).
-
-If your CMake supports presets (CMake 3.21+), you can use:
+`CMakeLists.txt` requires CMake 3.10 or newer and sets `C_STANDARD 11`. If your CMake build supports presets, the repo ships two configure presets in `CMakePresets.json`.
 
 ```bash
 cmake --preset dev
 cmake --build build/dev
 ```
 
-Or for a release build:
+For a release build:
 
 ```bash
 cmake --preset release
 cmake --build build/release
 ```
 
-Build the project manually with:
+The manual path stays short:
 
 ```bash
-git clone https://github.com/osvaldoandrade/ova-lib.git
-cd ova-lib
-mkdir build && cd build
-cmake ..
-make
+mkdir -p build
+cmake -S . -B build
+cmake --build build
 ```
 
-This produces both a static and a shared library under `build/lib`. To install them system wide run:
+The build produces `libova_lib.a` and `libova_lib.so` under the build `lib/` directory. `cmake --install` copies headers into `<prefix>/include`, libraries into `<prefix>/lib`, and `ova-lib.pc` into `<prefix>/lib/pkgconfig`.
 
-```bash
-sudo make install
-```
+## Tests
 
-Headers are installed into `/usr/local/include/ova_lib` by default.
-
-## Running the tests
-
-The repository contains a suite of unit tests covering the data structures. After building, execute:
-
-```bash
-ctest --output-on-failure
-```
-
-If you used the presets from the repository root, point CTest at the build directory:
+CTest drives 22 executables listed in `CMakeLists.txt`.
 
 ```bash
 ctest --test-dir build/dev --output-on-failure
 ```
 
-If Valgrind is available on your system, you can run the test suite under memcheck with:
+If Valgrind is installed when CMake configures the tree, the `memcheck` target is available:
 
 ```bash
-make memcheck
+cmake --build build/dev --target memcheck
 ```
 
-The `memcheck` target is only generated when Valgrind is detected at CMake configure time.
+## Examples
 
-All tests should pass and give an overview of how each component is used.
-
-## Example usage
-
-### Queues
-
-Creating and using a simple queue:
-
-```c
-#include "queue.h"
-
-int main(void) {
-    queue *q = create_queue(QUEUE_TYPE_NORMAL, 10, NULL);
-    int value = 42;
-    q->enqueue(q, &value);
-    int *result = (int*)q->dequeue(q);
-    q->free(q);
-    return result && *result == 42 ? 0 : 1;
-}
-```
-
-The queue factory can also create priority queues backed by a heap:
-
-```c
-#include "queue.h"
-
-int int_cmp(const void *a, const void *b) {
-    return (*(const int*)a) - (*(const int*)b);
-}
-
-int main(void) {
-    queue *pq = create_queue(QUEUE_TYPE_PRIORITY, 10, int_cmp);
-    int v1 = 3, v2 = 7;
-    pq->enqueue(pq, &v2);
-    pq->enqueue(pq, &v1);
-    int *max = (int*)pq->dequeue(pq); /* returns 7 */
-    pq->free(pq);
-    return max && *max == 7 ? 0 : 1;
-}
-```
-
-### Sorted lists
-
-Sorted lists preserve ordering on every insertion by relying on a user supplied comparator. Elements are stored as opaque
-`void*` pointers, allowing custom data types to be stored as long as the comparator understands how to order them.
+This list example uses the array-backed implementation and reads values back by index.
 
 ```c
 #include "list.h"
 
-int int_cmp(const void *a, const void *b) {
-    const int lhs = *(const int *)a;
-    const int rhs = *(const int *)b;
+int main(void) {
+    list *values = create_list(ARRAY_LIST, 4, NULL);
+    int a = 3, b = 5;
+
+    values->insert(values, &a, 0);
+    values->insert(values, &b, 1);
+
+    int *first = (int *)values->get(values, 0);
+    int *second = (int *)values->get(values, 1);
+
+    values->free(values);
+    return first && second && *first == 3 && *second == 5 ? 0 : 1;
+}
+```
+
+This queue example uses the heap-backed priority variant. The comparator decides what "higher priority" means.
+
+```c
+#include "queue.h"
+
+static int int_cmp(const void *a, const void *b) {
+    int lhs = *(const int *)a;
+    int rhs = *(const int *)b;
     return (lhs > rhs) - (lhs < rhs);
 }
 
 int main(void) {
-    list *sorted = create_list(SORTED_LIST, 8, int_cmp);
-    int values[] = {4, 1, 3};
-    for (int i = 0; i < 3; ++i) {
-        sorted->insert(sorted, &values[i], i); /* index is ignored */
-    }
+    queue *pq = create_queue(QUEUE_TYPE_PRIORITY, 8, int_cmp);
+    int low = 2, high = 9;
 
-    int *smallest = (int *)sorted->get(sorted, 0); /* returns pointer to value 1 */
-    sorted->free(sorted);
-    return smallest && *smallest == 1 ? 0 : 1;
-}
-```
+    pq->enqueue(pq, &low);
+    pq->enqueue(pq, &high);
 
-### Matrices
-
-Working with matrices:
-
-```c
-#include "matrix.h"
-
-int main(void) {
-    matrix *a = create_matrix(2, 2);
-    matrix *b = create_matrix(2, 2);
-    a->data[0][0] = 1; a->data[0][1] = 2;
-    a->data[1][0] = 3; a->data[1][1] = 4;
-    b->data[0][0] = 1; b->data[0][1] = 1;
-    b->data[1][0] = 1; b->data[1][1] = 1;
-    matrix *sum = a->add(a, b);
-    sum->destroy(sum);
-    a->destroy(a);
-    b->destroy(b);
-    return 0;
-}
-```
-
-### Heaps
-
-Using the heap factory to create a Fibonacci heap:
-
-```c
-#include "heap.h"
-
-int int_cmp(const void *a, const void *b) {
-    return (*(const int*)a) - (*(const int*)b);
-}
-
-int main(void) {
-    heap *h = create_heap(FIBONACCI_HEAP, 0, int_cmp);
-    int vals[] = {5, 1, 9};
-    for (int i = 0; i < 3; ++i)
-        h->put(h, &vals[i]);
-    int *top = (int*)h->pop(h); /* returns 9 */
-    h->free(h);
+    int *top = (int *)pq->dequeue(pq);
+    pq->free(pq);
     return top && *top == 9 ? 0 : 1;
-}
-```
-
-### Simplex solver
-
-Solving a small linear program:
-
-```c
-#include "solver.h"
-
-int main(void) {
-    lp_problem *p = create_problem(2, 3);
-    double obj[] = {3, 5};
-    p->setObjective(p, obj, PROBLEM_MAX);
-
-    double c1[] = {1, 2};
-    double c2[] = {-3, 1};
-    double c3[] = {1, -1};
-    p->addConstraint(p, c1, 14);
-    p->addConstraint(p, c2, 0);
-    p->addConstraint(p, c3, 2);
-
-    solver *s = create_solver(SOLVER_SIMPLEX);
-    matrix *tab;
-    if (s->solve(p, &tab) == OPTIMAL) {
-        printf("x=%f y=%f z=%f\n", p->solution[0], p->solution[1], p->z_value);
-    }
-    tab->destroy(tab);
-    s->destroy(s);
-    /* clean up problem here */
-    return 0;
 }
 ```
 

@@ -1,19 +1,29 @@
-# Sorting Utilities
+# Sorting Helpers
 
-## Sorter factory
-`create_sorter` builds a lightweight object that records the comparator and wires helper callbacks. Quicksort is exposed through the `sort` entry, while `swap`, `shuffle`, `reverse`, `binary_search`, `copy`, `min`, `max`, and `min_max` compose higher-level operations. Because the sorter operates on the abstract `list` interface, the same algorithm can manipulate array lists, linked lists, or custom implementations that follow the contract.
+The sorting module wraps list operations in a `sorter` object created by `create_sorter(list *data, comparator cmp)`. The `data` argument is ignored by the current implementation; the comparator is what matters.
 
-## Element swapping semantics
-`sorter_swap` reads both targeted elements, removes them from the list, and reinserts them at the opposite indices. This approach avoids assuming random-access writes on the underlying storage and preserves invariants for list implementations that might track metadata inside their `insert` and `remove` calls. Each swap performs two removals and two insertions; array lists therefore pay O(n) per swap, whereas linked lists spend O(n) on traversal plus O(1) on relinking.
+## What the Sorter Does
 
-## Iterative quicksort
-`sorter_quick` implements a non-recursive quicksort that relies on an explicit stack sized at twice the list length to store pending subranges. Partitioning chooses the high index as the pivot. Elements less than or equal to the pivot swap forward, and the pivot finally moves into its resolved position. Average runtime remains O(n log n), while worst-case behavior reaches O(n²) when the list is already sorted and the pivot degenerates. The algorithm remains safe under re-entrancy because it allocates and frees its working stack inside each call.
+The sorter installs 8 helpers:
 
-## Randomization and reversal
-`collections_shuffle` executes a Fisher–Yates shuffle by swapping each element with a random index in `[0, i]`. Because the operation routes through the list API, invariants from custom implementations remain intact. `collections_reverse` performs mirrored swaps until the indices meet, delivering an in-place reversal with linear-time cost.
+- `sort`
+- `shuffle`
+- `reverse`
+- `binary_search`
+- `swap`
+- `copy`
+- `min`
+- `max`
+- `min_max`
 
-## Search and copy helpers
-`collections_binary_search` assumes the list is sorted according to the sorter’s comparator. It performs an iterative binary search that returns the matching index or −1. Array lists observe O(log n) runtime, while linked lists degrade to O(n log n) because each index access traverses nodes. `collections_copy` iterates through the source list and inserts each element into the destination at the same index. The destination must already expose an `insert` that grows storage on demand or have adequate capacity.
+`sort` is an iterative quicksort over the public `list` interface. `shuffle` uses Fisher-Yates. `reverse` swaps mirrored pairs. `binary_search` assumes the list is already sorted according to the same comparator. `copy` re-inserts each source element into the destination list.
 
-## Extremum calculations
-`collections_min_max` scans the list in pairs, comparing members to reduce comparator calls before updating global minima and maxima. Odd-length lists handle the final element separately. `collections_min` and `collections_max` perform full linear scans and return NULL for empty lists, matching the behavior of the combined routine.
+## Costs
+
+The choice of underlying list still matters because every helper routes through `insert`, `get`, and `remove`.
+
+On an `ARRAY_LIST`, quicksort behaves as you would expect from indexed access. On a `LINKED_LIST`, the same algorithm pays traversal cost on every indexed read and write, so asymptotic quicksort structure stays the same while the constant factor grows.
+
+## Lifetime Note
+
+The public header currently exposes `create_sorter` but no matching destructor. If you use this helper in long-running code, account for the missing destroy path in your application layer.

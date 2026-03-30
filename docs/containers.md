@@ -1,69 +1,55 @@
 # Containers
 
+This page covers the shipped linear containers, heaps, maps, and deque. The graph, set, trie, matrix, and bloom-filter modules have their own pages because their ownership and return rules differ.
+
 ## Lists
-### Common contract
-List creation routes through `create_list`, which selects an implementation according to the requested `ListType` and wires function pointers for `insert`, `get`, `remove`, `size`, and `free`. Callers interact with the returned handle rather than concrete structures. Ownership of payload pointers always stays with the caller; removing an element simply unlinks the node or shifts slots without freeing the stored pointer.
 
-### Array list (`ARRAY_LIST`)
-The array-backed list stores elements in a contiguous `void **` buffer inside `array_list_impl`. Capacity doubles through `realloc` whenever the write pointer reaches the end, giving amortized constant-time growth for append-heavy workloads. Insertions rely on `memmove` to open gaps, which yields O(n) cost in the worst case when targeting the head. Removals collapse gaps with another `memmove`. Reads are constant time because `get` dereferences the array directly. A diagnostic counter, `active_item_buffers`, tracks allocated backing arrays to help detect leaks during testing.
+`create_list` selects one of 3 implementations behind the same method table: `ARRAY_LIST`, `LINKED_LIST`, or `SORTED_LIST`. Every list exposes `insert`, `get`, `remove`, `size`, and `free`.
 
-### Linked list (`LINKED_LIST`)
-Doubly linked nodes carry `data`, `next`, and `prev` pointers while the implementation keeps `head`, `tail`, and `size` in `linked_list_impl`. Insertion logic walks from the nearest end toward the requested index to cap traversal at roughly half the list when possible. Updating head or tail bypasses traversal entirely. Removal rewires neighbor pointers before releasing the node, giving constant-time deletion when the node reference is already known after traversal.
+`ARRAY_LIST` stores a `void **` buffer and grows geometrically. Appending by inserting at `size` is amortized constant time. Middle insertion and removal shift elements with `memmove`, so they cost linear time.
 
-### Sorted array list (`SORTED_LIST`)
-Sorted lists demand a comparator during creation, and the factory rejects attempts to proceed without one. Each insertion performs a binary search through `find_insert_position` to locate the correct slot, shifts the tail with `memmove`, and maintains sorted order. Lookups by index remain constant time, while insertions and removals remain O(n) because of the required shifting. Capacity never drops below four slots and doubles when the array fills.
+`LINKED_LIST` stores nodes with `prev` and `next` pointers. Insertion or removal at a known position avoids shifting, but `get` still pays traversal cost. The implementation chooses the nearer end when traversing by index.
+
+`SORTED_LIST` keeps the buffer ordered after every insertion. The comparator is required. The `index` argument passed to `insert` is ignored by design, because the implementation places the item where the comparator says it belongs.
 
 ## Queues
-### Linked FIFO queue
-The linked FIFO queue implements an unbounded singly linked chain of `queue_entry` nodes. `enqueue` appends at `rear`, `dequeue` pops from `front`, and both operations run in constant time. Reinitialization simply resets `front`, `rear`, and `length`, allowing queues to be reused once drained.
 
-### Heap-backed priority queue
-Priority queues delegate their storage to a heap produced by `create_heap`. Enqueue operations forward to `heap->put`, while dequeues call `heap->pop`, maintaining the queue vtable without exposing heap details. Size queries also route to the heap, and the comparator supplied during construction determines ordering.
+`create_queue(QUEUE_TYPE_NORMAL, ...)` builds a linked FIFO queue. The `capacity` argument is ignored on that path. `enqueue` appends at the rear, `dequeue` removes from the front, `is_empty` checks length, and `free` releases queue nodes only.
+
+`create_queue(QUEUE_TYPE_PRIORITY, capacity, cmp)` builds a priority queue on top of a binary heap. The comparator is required for meaningful ordering. `enqueue` forwards to the heap, `dequeue` pops the current top-priority payload, and `size` forwards to the heap size.
 
 ## Heaps
-### Binary heap
-The binary heap stores elements in a dynamic array that doubles capacity whenever size equals capacity. Inserting appends at the end and calls `sift_up` to compare against parent nodes until the heap property holds. Removing the top element replaces the root with the last entry, decrements size, and restores ordering via `sift_down`, choosing the highest-priority child on each step. Push and pop operations run in logarithmic time, while `peek` and `size` remain constant time.
 
-### Fibonacci heap
-Fibonacci heaps organize nodes into a circular doubly linked root list where each node tracks its degree, parent, child, and a `mark` flag. Insertions splice nodes into the root list in constant time and update the minimum pointer if required. The `put_with_handle` operation returns an opaque node handle that can be used with `decrease_key` and `delete_node` operations.
+`create_heap(BINARY_HEAP, capacity, cmp)` builds an array-backed heap. The top element is whichever payload the comparator ranks highest. `put` and `pop` cost logarithmic time. `peek` and `size` cost constant time.
 
-Removing the minimum promotes its children into the root list and triggers consolidation, which uses a fixed array of forty-five buckets (`A[45]`) to link roots of equal degree, matching the upper bound for heaps with fewer than `φ^45` nodes.
+`create_heap(FIBONACCI_HEAP, capacity, cmp)` ignores the capacity hint and builds the pointer-based heap variant. This API adds `put_with_handle`, `decrease_key`, and `delete_node`. The handle returned by `put_with_handle` is an internal node reference. It stops being valid after `delete_node`, after a matching removal, or after `free`.
 
-The `decrease_key` operation updates a node's value and maintains the heap property through cascading cuts. When a node's value changes such that it violates the heap property with respect to its parent, the `cut` helper function removes it from its parent's child list and adds it to the root list. The `cascading_cut` function then marks the parent if it was previously unmarked, or cuts it recursively if it was already marked, ensuring the amortized O(1) time complexity for decrease-key operations.
-
-The `delete_node` operation removes an arbitrary node by cutting it from its parent (triggering cascading cuts as needed), making it the minimum, and then extracting it via the standard pop operation.
-
-Inserts remain amortized constant time, decrease-key is amortized constant time, and popping the minimum costs amortized logarithmic time because consolidation processes only a logarithmic number of roots. Destruction walks the circular sibling lists recursively to reclaim children before freeing the heap wrapper.
+The current priority queue wrapper always uses the binary heap. If you need `decrease_key`, use the heap API directly.
 
 ## Stacks
-Stack abstractions reuse the list implementations. Array-backed stacks push and pop at the tail of the array list, and linked stacks update the head of a linked list. Both variants expose `top`, `is_empty`, `size`, and `free` in alignment with the list contract.
+
+`create_stack(ARRAY_STACK)` wraps an array list. Push and pop operate at the tail. `create_stack(LINKED_STACK)` wraps a linked list and operates at the head. Both expose `push`, `pop`, `top`, `is_empty`, `size`, and `free`.
 
 ## Maps
-### Structure
-The hash map relies on separate chaining with `map_entry` nodes that store `key`, `data`, and a `next` pointer. `buckets` points to an array whose initial capacity never falls below twenty. During creation, `create_hash_map` installs function pointers for `put`, `get`, `remove`, and `free`, while wiring either a caller-supplied hash routine or the default `bernstein_hash`. When the caller requests a thread-safe map, the factory allocates a `pthread_mutex_t` and wraps all lookups and mutations with coarse-grained locking. Single-threaded instances omit the mutex entirely to avoid overhead.
 
-### Collision handling and resizing
-Insertion acquires the optional lock, recomputes the load factor as `size / capacity`, and calls `resize_and_rehash` when the ratio exceeds 0.75. Resizing doubles capacity, allocates a new bucket array, and reuses existing nodes after recalculating their indices. Collisions chain new nodes at the head of the bucket list. Updating an existing key overwrites the stored `data` pointer without reallocating the node. Lookup hashes the key—treating NULL as bucket zero—walks the chain, and returns the stored pointer. Removal stitches the singly linked list back together before freeing the node and decrementing size. Destruction iterates every bucket, frees each node, destroys the optional mutex, and then releases the table itself.
+`create_map` selects between `HASH_MAP` and `HASH_TABLE`. Both use separate chaining with `map_entry` nodes. `HASH_TABLE` adds one mutex. `HASH_MAP` does not.
 
-### Built-in hash functions
-#### Bernstein (djb2)
-The Bernstein implementation multiplies the accumulator by thirty-three and adds each byte, providing good distribution for short ASCII keys with minimal arithmetic.
+The function signature is:
 
-#### FNV-1a
-FNV-1a XORs each byte into the hash and multiplies by the prime 16777619, trading a slightly higher cost for stronger avalanche properties on structured binary inputs.
+```c
+map *create_map(map_type type, int capacity, int (*hash_func)(void *, int), comparator compare);
+```
 
-#### XOR folding
-XOR folding mixes left and right shifts with byte addition to decorrelate simple patterns, making it a pragmatic choice when inputs exhibit local repetition.
+Three details matter in practice.
 
-#### Rotational
-The rotational variant combines bit rotations and XOR to balance dispersion with execution cost on variable-length strings.
+The first is capacity. Values below `INITIAL_CAPACITY` are raised to `20`.
 
-#### Additive
-The additive approach simply sums bytes. It is the fastest option but yields the weakest distribution, suitable only for tiny key sets where collisions remain tolerable.
+The second is hashing. Passing `NULL` selects `bernstein_hash`. The header also exports `fnv1a_hash`, `xor_hash`, `rotational_hash`, and `additive_hash`.
 
-All functions short-circuit when `key == NULL`, ensuring sentinel entries always hash to bucket zero and remain retrievable.
+The third is equality. The map stores the comparator pointer and uses it when traversing collisions. A non-`NULL` comparator is the safe path for all keyed lookups except pointer-identity-only scenarios.
 
-## Deques
-A deque (double-ended queue) permits insertion and removal at both the front and back with O(1) amortized time. The implementation uses a circular buffer backed by a dynamic array that resizes when capacity is exhausted. Pushes and pops at either end operate in constant amortized time because only one boundary moves. Random access through `deque_get` remains constant time by translating a logical index into a physical position in the circular layout.
+When the load factor exceeds `0.75`, the table doubles and rehashes existing nodes.
 
-When the deque fills, `deque_resize` allocates a buffer twice the current capacity, copies elements in logical order starting from index zero, and resets the front pointer. This reorganization ensures all subsequent operations reference correct positions without tracking wrap points. Peek operations return element pointers without removing them, and size queries reflect the current count. Destruction frees the buffer but never touches element pointers, as ownership remains with the caller.
+## Deque
+
+`create_deque(capacity)` builds a circular buffer. Non-positive capacities fall back to `16`. `deque_push_front`, `deque_push_back`, `deque_pop_front`, and `deque_pop_back` all operate at the ends of the buffer. `deque_get` provides indexed reads relative to the logical front. Growth doubles the backing array and rewrites elements in logical order.
