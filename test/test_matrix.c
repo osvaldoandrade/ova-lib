@@ -5,7 +5,11 @@
 #define FLOAT_TOL 0.0001
 
 static void set_matrix_value(matrix *m, int row, int col, double value) {
-    assert(m->set(m, row, col, value) == 0);
+    int rc = m->set(m, row, col, value);
+    if (rc != 0) {
+        fprintf(stderr, "matrix set failed at (%d, %d)\n", row, col);
+        abort();
+    }
 }
 
 static int compare_matrices(matrix *m1, matrix *m2) {
