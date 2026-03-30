@@ -85,7 +85,6 @@ struct queue {
     int (*size)(const queue *self);
 
     /**
-     * @fn void (*)(queue *) free
      * @brief Frees the memory used by the given queue.
      *
      * This function frees the memory used by the given queue, including all the elements in the queue.

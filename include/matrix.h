@@ -1,6 +1,14 @@
 #ifndef LINEAR_H
 #define LINEAR_H
 
+/**
+ * @file matrix.h
+ * @brief Matrix and vector data structures with linear algebra operations.
+ *
+ * Provides matrix operations including addition, subtraction, multiplication,
+ * determinant, transpose, and inverse. Also provides a vector type.
+ */
+
 #include "types.h"
 #include <stddef.h>
 
@@ -119,17 +127,42 @@ typedef struct matrix {
     */
     int (*resize)(struct matrix *self, int newRows, int newCols);
 
+    /**
+     * @brief Creates a deep copy of the matrix.
+     *
+     * @param self The matrix to copy.
+     * @return A new matrix that is a copy of @p self, or NULL on failure.
+     */
     struct matrix* (*copy)(struct matrix *self);
 } matrix;
 
 /**
- * @struct The struct represents a vector.
+ * @brief The struct represents a vector.
  */
 typedef struct vector {
-    double *data;
-    int size;
+    double *data;   /**< Pointer to the vector element array. */
+    int size;       /**< Number of elements in the vector. */
+
+    /**
+     * @brief Resizes the vector to the specified number of elements.
+     *
+     * @param self The vector to resize.
+     * @param newRows The new size.
+     */
     void (*resize)(struct vector *self, int newRows);
+
+    /**
+     * @brief Prints the vector contents to standard output.
+     *
+     * @param self The vector to print.
+     */
     void (*print)(const struct vector *self);
+
+    /**
+     * @brief Frees all memory allocated for the vector.
+     *
+     * @param self The vector to destroy.
+     */
     void (*destroy)(struct vector *self);
 } vector;
 

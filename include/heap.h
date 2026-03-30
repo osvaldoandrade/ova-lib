@@ -1,6 +1,14 @@
 #ifndef HEAP_H
 #define HEAP_H
 
+/**
+ * @file heap.h
+ * @brief Heap data structure with binary and Fibonacci heap implementations.
+ *
+ * Provides a common heap interface with pluggable implementations including
+ * binary heap and Fibonacci heap. Operations are accessed via function pointers.
+ */
+
 #include "types.h"
 
 typedef enum {
@@ -108,7 +116,9 @@ typedef struct heap {
  *
  * This function creates a new heap based on the specified heap type.
  *
- * @param type The type of heap to be created (e.g., BINARY_HEAP, FIBONACCI_HEAP, BINOMIAL_HEAP).
+ * @param type The type of heap to be created (e.g., BINARY_HEAP, FIBONACCI_HEAP).
+ * @param capacity Initial capacity (used by binary heaps, ignored by Fibonacci heaps).
+ * @param compare_function Comparator function used to order heap elements.
  * @return A pointer to the newly created heap.
  *         If the specified heap type is invalid, NULL is returned.
  */

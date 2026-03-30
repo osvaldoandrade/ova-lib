@@ -1,0 +1,63 @@
+# Doxyfile configuration for ova-lib
+
+#---------------------------------------------------------------------------
+# Project related configuration options
+#---------------------------------------------------------------------------
+PROJECT_NAME           = "ova-lib"
+PROJECT_NUMBER         = 0.0.1
+PROJECT_BRIEF          = "A compact toolkit offering data structures in ANSI C"
+OUTPUT_DIRECTORY       = docs
+CREATE_SUBDIRS         = NO
+OPTIMIZE_OUTPUT_FOR_C  = YES
+
+#---------------------------------------------------------------------------
+# Build related configuration options
+#---------------------------------------------------------------------------
+EXTRACT_ALL            = NO
+EXTRACT_STATIC         = NO
+HIDE_UNDOC_MEMBERS     = YES
+HIDE_UNDOC_CLASSES     = YES
+
+#---------------------------------------------------------------------------
+# Input related configuration options
+#---------------------------------------------------------------------------
+INPUT                  = include/ \
+                         src/
+FILE_PATTERNS          = *.h *.c
+RECURSIVE              = YES
+EXCLUDE_PATTERNS       = */test/*
+
+#---------------------------------------------------------------------------
+# Source browsing options
+#---------------------------------------------------------------------------
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+
+#---------------------------------------------------------------------------
+# Output related configuration options
+#---------------------------------------------------------------------------
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+GENERATE_LATEX         = NO
+GENERATE_MAN           = NO
+GENERATE_XML           = NO
+
+#---------------------------------------------------------------------------
+# Preprocessor related options
+#---------------------------------------------------------------------------
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = NO
+
+#---------------------------------------------------------------------------
+# Warnings
+#---------------------------------------------------------------------------
+WARN_IF_UNDOCUMENTED   = YES
+WARN_NO_PARAMDOC       = YES
+WARN_AS_ERROR          = FAIL_ON_WARNINGS
+
+#---------------------------------------------------------------------------
+# Dot / Graphs
+#---------------------------------------------------------------------------
+HAVE_DOT               = NO

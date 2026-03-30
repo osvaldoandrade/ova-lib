@@ -1,6 +1,14 @@
 #ifndef SET_H
 #define SET_H
 
+/**
+ * @file set.h
+ * @brief Set data structure with hash-based and tree-based implementations.
+ *
+ * Provides set operations including add, remove, contains, union, intersection,
+ * difference, and subset checking.
+ */
+
 #include "list.h"
 #include "types.h"
 
@@ -31,17 +39,94 @@ set *create_set(set_type type, comparator cmp, hash_func_t hash);
  * @brief Free the set and all internal allocations.
  *
  * This function does not free user-provided elements.
+ *
+ * @param s The set to free.
  */
 void set_free(set *s);
 
+/**
+ * @brief Adds an element to the set.
+ *
+ * If the element already exists (as determined by the comparator), the set is unchanged.
+ *
+ * @param s The set.
+ * @param element Pointer to the element to add.
+ * @return true if the element was added, false if it was already present.
+ */
 bool set_add(set *s, void *element);
+
+/**
+ * @brief Checks whether an element is in the set.
+ *
+ * @param s The set.
+ * @param element Pointer to the element to search for.
+ * @return true if the element is found, false otherwise.
+ */
 bool set_contains(const set *s, void *element);
+
+/**
+ * @brief Removes an element from the set.
+ *
+ * @param s The set.
+ * @param element Pointer to the element to remove.
+ * @return true if the element was found and removed, false otherwise.
+ */
 bool set_remove(set *s, void *element);
+
+/**
+ * @brief Returns the number of elements in the set.
+ *
+ * @param s The set.
+ * @return The element count.
+ */
 int set_size(const set *s);
 
+/**
+ * @brief Returns a new set containing all elements from both sets.
+ *
+ * The caller owns the returned set and must free it with set_free().
+ *
+ * @param a The first set.
+ * @param b The second set.
+ * @return A new set representing A ∪ B.
+ *
+ * @see set_intersection, set_difference
+ */
 set *set_union(const set *a, const set *b);
+
+/**
+ * @brief Returns a new set containing elements present in both sets.
+ *
+ * The caller owns the returned set and must free it with set_free().
+ *
+ * @param a The first set.
+ * @param b The second set.
+ * @return A new set representing A ∩ B.
+ *
+ * @see set_union, set_difference
+ */
 set *set_intersection(const set *a, const set *b);
+
+/**
+ * @brief Returns a new set containing elements in @p a but not in @p b.
+ *
+ * The caller owns the returned set and must free it with set_free().
+ *
+ * @param a The first set.
+ * @param b The second set.
+ * @return A new set representing A \\ B.
+ *
+ * @see set_union, set_intersection
+ */
 set *set_difference(const set *a, const set *b);
+
+/**
+ * @brief Checks whether @p a is a subset of @p b.
+ *
+ * @param a The potential subset.
+ * @param b The potential superset.
+ * @return true if every element of @p a is also in @p b, false otherwise.
+ */
 bool set_is_subset(const set *a, const set *b);
 
 /**
@@ -53,6 +138,9 @@ bool set_is_subset(const set *a, const set *b);
  *
  * For SET_TREE, the list is ordered by the set comparator (in-order traversal).
  * For SET_HASH, no ordering is guaranteed.
+ *
+ * @param s The set to convert.
+ * @return A list of element pointers, or NULL on failure.
  */
 list *set_to_list(const set *s);
 
