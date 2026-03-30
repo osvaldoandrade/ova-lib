@@ -3,22 +3,28 @@
 
 #include "../../include/set.h"
 
+typedef struct set_impl set_impl;
+
 typedef struct set_ops {
-    bool (*add)(set *s, void *element);
-    bool (*contains)(const set *s, void *element);
-    bool (*remove)(set *s, void *element);
-    int (*size)(const set *s);
-    list *(*to_list)(const set *s);
-    void (*destroy)(set *s);
+    bool (*add)(set_impl *state, void *element);
+    bool (*contains)(const set_impl *state, void *element);
+    bool (*remove)(set_impl *state, void *element);
+    int (*size)(const set_impl *state);
+    list *(*to_list)(const set_impl *state);
+    void (*destroy)(set_impl *state);
 } set_ops;
 
-struct set {
+struct set_impl {
     set_type type;
     comparator cmp;
     hash_func_t hash;
-    void *impl;
+    void *backend_impl;
     const set_ops *ops;
 };
+
+static inline set_impl *set_impl_from_public(const set *s) {
+    return s ? (set_impl *)s->impl : NULL;
+}
 
 int set_default_ptr_compare(const void *a, const void *b);
 int set_default_ptr_hash(void *key, int capacity);
@@ -30,4 +36,3 @@ void *tree_set_create_impl(comparator cmp);
 extern const set_ops tree_set_ops;
 
 #endif // SET_INTERNAL_H
-

@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-static list *ensure_adj_list(graph *g, int vertex) {
+static list *ensure_adj_list(graph_impl *g, int vertex) {
     if (!g || !g->adj_lists) {
         return NULL;
     }
@@ -35,7 +35,7 @@ static graph_edge *find_edge(list *adj, int to, int *out_index) {
     return NULL;
 }
 
-static void add_one_edge(graph *g, int from, int to, double weight) {
+static void add_one_edge(graph_impl *g, int from, int to, double weight) {
     list *adj = ensure_adj_list(g, from);
     if (!adj) {
         return;
@@ -47,17 +47,16 @@ static void add_one_edge(graph *g, int from, int to, double weight) {
         return;
     }
 
-    graph_edge *e = malloc(sizeof(graph_edge));
+    graph_edge *e = (graph_edge *)malloc(sizeof(graph_edge));
     if (!e) {
         return;
     }
     e->to = to;
     e->weight = weight;
-
     adj->insert(adj, e, adj->size(adj));
 }
 
-static void remove_one_edge(graph *g, int from, int to) {
+static void remove_one_edge(graph_impl *g, int from, int to) {
     if (!g || !g->adj_lists) {
         return;
     }
@@ -77,7 +76,7 @@ static void remove_one_edge(graph *g, int from, int to) {
     adj->remove(adj, idx);
 }
 
-void graph_adj_list_add_edge(graph *g, int from, int to, double weight) {
+void graph_adj_list_add_edge(graph_impl *g, int from, int to, double weight) {
     if (!g) {
         return;
     }
@@ -88,7 +87,7 @@ void graph_adj_list_add_edge(graph *g, int from, int to, double weight) {
     }
 }
 
-void graph_adj_list_remove_edge(graph *g, int from, int to) {
+void graph_adj_list_remove_edge(graph_impl *g, int from, int to) {
     if (!g) {
         return;
     }
@@ -99,7 +98,7 @@ void graph_adj_list_remove_edge(graph *g, int from, int to) {
     }
 }
 
-bool graph_adj_list_has_edge(const graph *g, int from, int to) {
+bool graph_adj_list_has_edge(const graph_impl *g, int from, int to) {
     if (!g || !g->adj_lists) {
         return false;
     }
@@ -108,7 +107,7 @@ bool graph_adj_list_has_edge(const graph *g, int from, int to) {
     return find_edge(adj, to, NULL) != NULL;
 }
 
-double graph_adj_list_get_edge_weight(const graph *g, int from, int to) {
+double graph_adj_list_get_edge_weight(const graph_impl *g, int from, int to) {
     if (!g || !g->adj_lists) {
         return GRAPH_NO_EDGE;
     }
@@ -118,7 +117,7 @@ double graph_adj_list_get_edge_weight(const graph *g, int from, int to) {
     return e ? e->weight : GRAPH_NO_EDGE;
 }
 
-list *graph_adj_list_get_neighbors(const graph *g, int vertex) {
+list *graph_adj_list_get_neighbors(const graph_impl *g, int vertex) {
     list *neighbors = create_list(ARRAY_LIST, 4, NULL);
     if (!neighbors) {
         return NULL;
@@ -144,10 +143,11 @@ list *graph_adj_list_get_neighbors(const graph *g, int vertex) {
         }
         neighbors->insert(neighbors, g->vertex_ptrs[e->to], neighbors->size(neighbors));
     }
+
     return neighbors;
 }
 
-void graph_adj_list_free_edges(graph *g) {
+void graph_adj_list_free_edges(graph_impl *g) {
     if (!g || !g->adj_lists) {
         return;
     }
@@ -166,4 +166,3 @@ void graph_adj_list_free_edges(graph *g) {
         g->adj_lists[v] = NULL;
     }
 }
-

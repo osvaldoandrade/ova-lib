@@ -11,18 +11,18 @@ typedef struct trie_node {
     struct trie_node *children[TRIE_ALPHABET_SIZE];
     bool is_end;
     void *value;
-
-    /* Number of words that end in this node's subtree (including this node). */
     size_t subtree_words;
-
-    /* Number of non-NULL children; helps efficient deletion cleanup. */
     unsigned int child_count;
 } trie_node;
 
-struct trie {
+typedef struct trie_impl {
     trie_node *root;
     size_t word_count;
-};
+} trie_impl;
+
+static trie_impl *trie_impl_from_self(const trie *self) {
+    return self ? (trie_impl *)self->impl : NULL;
+}
 
 static trie_node *trie_node_create(void) {
     return (trie_node *)calloc(1, sizeof(trie_node));
@@ -42,37 +42,13 @@ static void trie_node_free(trie_node *node) {
     free(node);
 }
 
-trie *create_trie(void) {
-    trie *t = (trie *)calloc(1, sizeof(trie));
-    if (!t) {
+static trie_node *trie_walk(const trie *self, const char *s) {
+    trie_impl *impl = trie_impl_from_self(self);
+    if (!impl || !impl->root || !s) {
         return NULL;
     }
 
-    t->root = trie_node_create();
-    if (!t->root) {
-        free(t);
-        return NULL;
-    }
-
-    t->word_count = 0;
-    return t;
-}
-
-void trie_free(trie *t) {
-    if (!t) {
-        return;
-    }
-    trie_node_free(t->root);
-    t->root = NULL;
-    free(t);
-}
-
-static trie_node *trie_walk(const trie *t, const char *s) {
-    if (!t || !t->root || !s) {
-        return NULL;
-    }
-
-    trie_node *node = t->root;
+    trie_node *node = impl->root;
     const unsigned char *p = (const unsigned char *)s;
     while (*p) {
         trie_node *child = node->children[*p];
@@ -85,12 +61,13 @@ static trie_node *trie_walk(const trie *t, const char *s) {
     return node;
 }
 
-void trie_insert(trie *t, const char *word, void *value) {
-    if (!t || !t->root || !word) {
+static void trie_insert_method(trie *self, const char *word, void *value) {
+    trie_impl *impl = trie_impl_from_self(self);
+    if (!impl || !impl->root || !word) {
         return;
     }
 
-    trie_node *node = t->root;
+    trie_node *node = impl->root;
     const unsigned char *p = (const unsigned char *)word;
     while (*p) {
         unsigned char c = *p;
@@ -113,10 +90,9 @@ void trie_insert(trie *t, const char *word, void *value) {
 
     node->is_end = true;
     node->value = value;
-    t->word_count++;
+    impl->word_count++;
 
-    /* Update subtree word counts along the path (including root). */
-    node = t->root;
+    node = impl->root;
     node->subtree_words++;
     p = (const unsigned char *)word;
     while (*p) {
@@ -129,35 +105,27 @@ void trie_insert(trie *t, const char *word, void *value) {
     }
 }
 
-void *trie_search(const trie *t, const char *word) {
-    trie_node *node = trie_walk(t, word);
+static void *trie_search_method(const trie *self, const char *word) {
+    trie_node *node = trie_walk(self, word);
     if (!node || !node->is_end) {
         return NULL;
     }
     return node->value;
 }
 
-bool trie_starts_with(const trie *t, const char *prefix) {
-    trie_node *node = trie_walk(t, prefix);
-    if (!node) {
-        return false;
-    }
-    return node->subtree_words > 0;
+static bool trie_starts_with_method(const trie *self, const char *prefix) {
+    trie_node *node = trie_walk(self, prefix);
+    return node ? (node->subtree_words > 0) : false;
 }
 
-int trie_count_words(const trie *t) {
-    if (!t) {
-        return 0;
-    }
-    return (int)t->word_count;
+static int trie_count_words_method(const trie *self) {
+    trie_impl *impl = trie_impl_from_self(self);
+    return impl ? (int)impl->word_count : 0;
 }
 
-int trie_count_prefixes(const trie *t, const char *prefix) {
-    trie_node *node = trie_walk(t, prefix);
-    if (!node) {
-        return 0;
-    }
-    return (int)node->subtree_words;
+static int trie_count_prefixes_method(const trie *self, const char *prefix) {
+    trie_node *node = trie_walk(self, prefix);
+    return node ? (int)node->subtree_words : 0;
 }
 
 static void trie_collect_words(trie_node *node, char **buffer, size_t *cap, size_t len, list *out) {
@@ -198,12 +166,13 @@ static void trie_collect_words(trie_node *node, char **buffer, size_t *cap, size
     }
 }
 
-list *trie_get_words_with_prefix(const trie *t, const char *prefix) {
-    if (!t || !t->root || !prefix) {
+static list *trie_get_words_with_prefix_method(const trie *self, const char *prefix) {
+    trie_impl *impl = trie_impl_from_self(self);
+    if (!impl || !impl->root || !prefix) {
         return NULL;
     }
 
-    trie_node *node = trie_walk(t, prefix);
+    trie_node *node = trie_walk(self, prefix);
     int count = node ? (int)node->subtree_words : 0;
     list *out = create_list(ARRAY_LIST, count > 0 ? count : 4, NULL);
     if (!out) {
@@ -219,6 +188,7 @@ list *trie_get_words_with_prefix(const trie *t, const char *prefix) {
     if (cap < 64) {
         cap = 64;
     }
+
     char *buffer = (char *)malloc(cap);
     if (!buffer) {
         out->free(out);
@@ -227,7 +197,6 @@ list *trie_get_words_with_prefix(const trie *t, const char *prefix) {
 
     memcpy(buffer, prefix, prefix_len);
     trie_collect_words(node, &buffer, &cap, prefix_len, out);
-
     free(buffer);
     return out;
 }
@@ -280,16 +249,66 @@ static bool trie_delete_recursive(trie_node *node,
     return (!is_root && !node->is_end && node->child_count == 0);
 }
 
-bool trie_delete(trie *t, const char *word) {
-    if (!t || !t->root || !word) {
+static bool trie_delete_method(trie *self, const char *word) {
+    trie_impl *impl = trie_impl_from_self(self);
+    if (!impl || !impl->root || !word) {
         return false;
     }
 
     bool removed = false;
-    (void)trie_delete_recursive(t->root, (const unsigned char *)word, 0, &removed, true);
-    if (removed && t->word_count > 0) {
-        t->word_count--;
+    (void)trie_delete_recursive(impl->root, (const unsigned char *)word, 0, &removed, true);
+    if (removed && impl->word_count > 0) {
+        impl->word_count--;
     }
     return removed;
 }
 
+static void trie_free_method(trie *self) {
+    if (!self) {
+        return;
+    }
+
+    trie_impl *impl = trie_impl_from_self(self);
+    if (impl) {
+        trie_node_free(impl->root);
+        impl->root = NULL;
+        free(impl);
+        self->impl = NULL;
+    }
+
+    free(self);
+}
+
+trie *create_trie(void) {
+    trie *out = (trie *)calloc(1, sizeof(trie));
+    if (!out) {
+        return NULL;
+    }
+
+    trie_impl *impl = (trie_impl *)calloc(1, sizeof(trie_impl));
+    if (!impl) {
+        free(out);
+        return NULL;
+    }
+
+    impl->root = trie_node_create();
+    if (!impl->root) {
+        free(impl);
+        free(out);
+        return NULL;
+    }
+
+    impl->word_count = 0;
+
+    out->impl = impl;
+    out->insert = trie_insert_method;
+    out->search = trie_search_method;
+    out->starts_with = trie_starts_with_method;
+    out->get_words_with_prefix = trie_get_words_with_prefix_method;
+    out->delete = trie_delete_method;
+    out->count_words = trie_count_words_method;
+    out->count_prefixes = trie_count_prefixes_method;
+    out->free = trie_free_method;
+
+    return out;
+}

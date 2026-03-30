@@ -1,19 +1,17 @@
-#include "../../include/graph.h"
-#include "graph_internal.h"
-
 #include "../../include/heap.h"
-#include "../../include/matrix.h"
 #include "../../include/queue.h"
 #include "../../include/stack.h"
+#include "graph_internal.h"
+#include "../matrix/matrix_internal.h"
 
 #include <stdint.h>
 #include <stdlib.h>
 
-static int graph_is_valid_vertex(const graph *g, int v) {
+static int graph_is_valid_vertex(const graph_impl *g, int v) {
     return g && v >= 0 && v < g->vertex_capacity && g->present && g->present[v];
 }
 
-static int graph_first_vertex(const graph *g) {
+static int graph_first_vertex(const graph_impl *g) {
     if (!g) {
         return -1;
     }
@@ -25,12 +23,12 @@ static int graph_first_vertex(const graph *g) {
     return -1;
 }
 
-static list *create_vertex_list(const graph *g) {
+static list *create_vertex_list(const graph_impl *g) {
     int cap = (g && g->vertex_count > 0) ? g->vertex_count : 4;
     return create_list(ARRAY_LIST, cap, NULL);
 }
 
-list *graph_bfs(const graph *g, int start_vertex) {
+list *graph_bfs_impl(const graph_impl *g, int start_vertex) {
     list *order = create_vertex_list(g);
     if (!order) {
         return NULL;
@@ -40,7 +38,7 @@ list *graph_bfs(const graph *g, int start_vertex) {
         return order;
     }
 
-    bool *visited = calloc((size_t)g->vertex_capacity, sizeof(bool));
+    bool *visited = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
     queue *q = create_queue(QUEUE_TYPE_NORMAL, 0, NULL);
     if (!visited || !q) {
         free(visited);
@@ -63,13 +61,11 @@ list *graph_bfs(const graph *g, int start_vertex) {
             int n = adj ? adj->size(adj) : 0;
             for (int i = 0; i < n; i++) {
                 graph_edge *e = (graph_edge *)adj->get(adj, i);
-                if (!e || !graph_is_valid_vertex(g, e->to)) {
+                if (!e || !graph_is_valid_vertex(g, e->to) || visited[e->to]) {
                     continue;
                 }
-                if (!visited[e->to]) {
-                    visited[e->to] = true;
-                    q->enqueue(q, (void *)(intptr_t)e->to);
-                }
+                visited[e->to] = true;
+                q->enqueue(q, (void *)(intptr_t)e->to);
             }
         } else {
             for (int to = 0; to < g->vertex_capacity; to++) {
@@ -90,7 +86,7 @@ list *graph_bfs(const graph *g, int start_vertex) {
     return order;
 }
 
-list *graph_dfs_iterative(const graph *g, int start_vertex) {
+list *graph_dfs_iterative_impl(const graph_impl *g, int start_vertex) {
     list *order = create_vertex_list(g);
     if (!order) {
         return NULL;
@@ -100,7 +96,7 @@ list *graph_dfs_iterative(const graph *g, int start_vertex) {
         return order;
     }
 
-    bool *visited = calloc((size_t)g->vertex_capacity, sizeof(bool));
+    bool *visited = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
     stack *st = create_stack(ARRAY_STACK);
     if (!visited || !st) {
         free(visited);
@@ -149,7 +145,7 @@ list *graph_dfs_iterative(const graph *g, int start_vertex) {
     return order;
 }
 
-static void dfs_recursive_visit(const graph *g, int v, bool *visited, list *order) {
+static void dfs_recursive_visit(const graph_impl *g, int v, bool *visited, list *order) {
     visited[v] = true;
     order->insert(order, g->vertex_ptrs[v], order->size(order));
 
@@ -176,7 +172,7 @@ static void dfs_recursive_visit(const graph *g, int v, bool *visited, list *orde
     }
 }
 
-list *graph_dfs_recursive(const graph *g, int start_vertex) {
+list *graph_dfs_recursive_impl(const graph_impl *g, int start_vertex) {
     list *order = create_vertex_list(g);
     if (!order) {
         return NULL;
@@ -186,14 +182,13 @@ list *graph_dfs_recursive(const graph *g, int start_vertex) {
         return order;
     }
 
-    bool *visited = calloc((size_t)g->vertex_capacity, sizeof(bool));
+    bool *visited = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
     if (!visited) {
         order->free(order);
         return NULL;
     }
 
     dfs_recursive_visit(g, start_vertex, visited, order);
-
     free(visited);
     return order;
 }
@@ -206,40 +201,40 @@ typedef struct {
 static int pq_node_cmp(const void *a, const void *b) {
     const pq_node *pa = (const pq_node *)a;
     const pq_node *pb = (const pq_node *)b;
-
     if (pa->dist < pb->dist) return 1;
     if (pa->dist > pb->dist) return -1;
     return 0;
 }
 
-int graph_dijkstra(const graph *g, int start_vertex, vector **out_dist) {
+int graph_dijkstra_impl(const graph_impl *g, int start_vertex, vector **out_dist) {
     if (out_dist) {
         *out_dist = NULL;
     }
-
     if (!g || !out_dist || !graph_is_valid_vertex(g, start_vertex)) {
         return 0;
     }
 
     vector *dist = create_vector(g->vertex_capacity);
-    if (!dist) {
+    vector_impl *dist_impl = vector_impl_from_vector(dist);
+    if (!dist_impl) {
         return 0;
     }
-    for (int i = 0; i < dist->size; i++) {
-        dist->data[i] = GRAPH_NO_EDGE;
+
+    for (int i = 0; i < dist_impl->size; i++) {
+        dist_impl->data[i] = GRAPH_NO_EDGE;
     }
-    dist->data[start_vertex] = 0.0;
+    dist_impl->data[start_vertex] = 0.0;
 
     heap *pq = create_heap(BINARY_HEAP, g->vertex_count > 0 ? g->vertex_count : 4, pq_node_cmp);
     if (!pq) {
-        dist->destroy(dist);
+        dist->free(dist);
         return 0;
     }
 
-    pq_node *start = malloc(sizeof(pq_node));
+    pq_node *start = (pq_node *)malloc(sizeof(pq_node));
     if (!start) {
         pq->free(pq);
-        dist->destroy(dist);
+        dist->free(dist);
         return 0;
     }
     start->vertex = start_vertex;
@@ -256,7 +251,7 @@ int graph_dijkstra(const graph *g, int start_vertex, vector **out_dist) {
         double d = cur->dist;
         free(cur);
 
-        if (d > dist->data[v]) {
+        if (d > dist_impl->data[v]) {
             continue;
         }
 
@@ -268,10 +263,10 @@ int graph_dijkstra(const graph *g, int start_vertex, vector **out_dist) {
                 if (!e || !graph_is_valid_vertex(g, e->to)) {
                     continue;
                 }
-                double nd = dist->data[v] + e->weight;
-                if (nd < dist->data[e->to]) {
-                    dist->data[e->to] = nd;
-                    pq_node *next = malloc(sizeof(pq_node));
+                double nd = dist_impl->data[v] + e->weight;
+                if (nd < dist_impl->data[e->to]) {
+                    dist_impl->data[e->to] = nd;
+                    pq_node *next = (pq_node *)malloc(sizeof(pq_node));
                     if (!next) {
                         continue;
                     }
@@ -289,10 +284,10 @@ int graph_dijkstra(const graph *g, int start_vertex, vector **out_dist) {
                 if (w == GRAPH_NO_EDGE) {
                     continue;
                 }
-                double nd = dist->data[v] + w;
-                if (nd < dist->data[to]) {
-                    dist->data[to] = nd;
-                    pq_node *next = malloc(sizeof(pq_node));
+                double nd = dist_impl->data[v] + w;
+                if (nd < dist_impl->data[to]) {
+                    dist_impl->data[to] = nd;
+                    pq_node *next = (pq_node *)malloc(sizeof(pq_node));
                     if (!next) {
                         continue;
                     }
@@ -313,30 +308,30 @@ int graph_dijkstra(const graph *g, int start_vertex, vector **out_dist) {
     return 1;
 }
 
-int graph_bellman_ford(const graph *g, int start_vertex, vector **out_dist) {
+int graph_bellman_ford_impl(const graph_impl *g, int start_vertex, vector **out_dist) {
     if (out_dist) {
         *out_dist = NULL;
     }
-
     if (!g || !out_dist || !graph_is_valid_vertex(g, start_vertex)) {
         return 0;
     }
 
     vector *dist = create_vector(g->vertex_capacity);
-    if (!dist) {
+    vector_impl *dist_impl = vector_impl_from_vector(dist);
+    if (!dist_impl) {
         return 0;
     }
-    for (int i = 0; i < dist->size; i++) {
-        dist->data[i] = GRAPH_NO_EDGE;
+
+    for (int i = 0; i < dist_impl->size; i++) {
+        dist_impl->data[i] = GRAPH_NO_EDGE;
     }
-    dist->data[start_vertex] = 0.0;
+    dist_impl->data[start_vertex] = 0.0;
 
     int V = g->vertex_count;
     for (int iter = 0; iter < V - 1; iter++) {
         int updated = 0;
-
         for (int from = 0; from < g->vertex_capacity; from++) {
-            if (!graph_is_valid_vertex(g, from) || dist->data[from] == GRAPH_NO_EDGE) {
+            if (!graph_is_valid_vertex(g, from) || dist_impl->data[from] == GRAPH_NO_EDGE) {
                 continue;
             }
 
@@ -348,9 +343,9 @@ int graph_bellman_ford(const graph *g, int start_vertex, vector **out_dist) {
                     if (!e || !graph_is_valid_vertex(g, e->to)) {
                         continue;
                     }
-                    double nd = dist->data[from] + e->weight;
-                    if (nd < dist->data[e->to]) {
-                        dist->data[e->to] = nd;
+                    double nd = dist_impl->data[from] + e->weight;
+                    if (nd < dist_impl->data[e->to]) {
+                        dist_impl->data[e->to] = nd;
                         updated = 1;
                     }
                 }
@@ -363,9 +358,9 @@ int graph_bellman_ford(const graph *g, int start_vertex, vector **out_dist) {
                     if (w == GRAPH_NO_EDGE) {
                         continue;
                     }
-                    double nd = dist->data[from] + w;
-                    if (nd < dist->data[to]) {
-                        dist->data[to] = nd;
+                    double nd = dist_impl->data[from] + w;
+                    if (nd < dist_impl->data[to]) {
+                        dist_impl->data[to] = nd;
                         updated = 1;
                     }
                 }
@@ -377,9 +372,8 @@ int graph_bellman_ford(const graph *g, int start_vertex, vector **out_dist) {
         }
     }
 
-    /* Detect negative cycles reachable from start */
     for (int from = 0; from < g->vertex_capacity; from++) {
-        if (!graph_is_valid_vertex(g, from) || dist->data[from] == GRAPH_NO_EDGE) {
+        if (!graph_is_valid_vertex(g, from) || dist_impl->data[from] == GRAPH_NO_EDGE) {
             continue;
         }
 
@@ -391,8 +385,8 @@ int graph_bellman_ford(const graph *g, int start_vertex, vector **out_dist) {
                 if (!e || !graph_is_valid_vertex(g, e->to)) {
                     continue;
                 }
-                if (dist->data[from] + e->weight < dist->data[e->to]) {
-                    dist->destroy(dist);
+                if (dist_impl->data[from] + e->weight < dist_impl->data[e->to]) {
+                    dist->free(dist);
                     return 0;
                 }
             }
@@ -405,8 +399,8 @@ int graph_bellman_ford(const graph *g, int start_vertex, vector **out_dist) {
                 if (w == GRAPH_NO_EDGE) {
                     continue;
                 }
-                if (dist->data[from] + w < dist->data[to]) {
-                    dist->destroy(dist);
+                if (dist_impl->data[from] + w < dist_impl->data[to]) {
+                    dist->free(dist);
                     return 0;
                 }
             }
@@ -417,25 +411,26 @@ int graph_bellman_ford(const graph *g, int start_vertex, vector **out_dist) {
     return 1;
 }
 
-matrix *graph_floyd_warshall(const graph *g) {
+matrix *graph_floyd_warshall_impl(const graph_impl *g) {
     if (!g || g->vertex_capacity <= 0) {
         return NULL;
     }
 
     matrix *dist = create_matrix(g->vertex_capacity, g->vertex_capacity);
-    if (!dist) {
+    matrix_impl *dist_impl = matrix_impl_from_matrix(dist);
+    if (!dist_impl) {
         return NULL;
     }
 
     for (int i = 0; i < g->vertex_capacity; i++) {
         for (int j = 0; j < g->vertex_capacity; j++) {
-            dist->data[i][j] = GRAPH_NO_EDGE;
+            dist_impl->data[i][j] = GRAPH_NO_EDGE;
         }
     }
 
     for (int v = 0; v < g->vertex_capacity; v++) {
         if (graph_is_valid_vertex(g, v)) {
-            dist->data[v][v] = 0.0;
+            dist_impl->data[v][v] = 0.0;
         }
     }
 
@@ -452,8 +447,8 @@ matrix *graph_floyd_warshall(const graph *g) {
                 if (!e || !graph_is_valid_vertex(g, e->to)) {
                     continue;
                 }
-                if (e->weight < dist->data[from][e->to]) {
-                    dist->data[from][e->to] = e->weight;
+                if (e->weight < dist_impl->data[from][e->to]) {
+                    dist_impl->data[from][e->to] = e->weight;
                 }
             }
         } else {
@@ -465,8 +460,8 @@ matrix *graph_floyd_warshall(const graph *g) {
                 if (w == GRAPH_NO_EDGE) {
                     continue;
                 }
-                if (w < dist->data[from][to]) {
-                    dist->data[from][to] = w;
+                if (w < dist_impl->data[from][to]) {
+                    dist_impl->data[from][to] = w;
                 }
             }
         }
@@ -477,16 +472,16 @@ matrix *graph_floyd_warshall(const graph *g) {
             continue;
         }
         for (int i = 0; i < g->vertex_capacity; i++) {
-            if (!graph_is_valid_vertex(g, i) || dist->data[i][k] == GRAPH_NO_EDGE) {
+            if (!graph_is_valid_vertex(g, i) || dist_impl->data[i][k] == GRAPH_NO_EDGE) {
                 continue;
             }
             for (int j = 0; j < g->vertex_capacity; j++) {
-                if (!graph_is_valid_vertex(g, j) || dist->data[k][j] == GRAPH_NO_EDGE) {
+                if (!graph_is_valid_vertex(g, j) || dist_impl->data[k][j] == GRAPH_NO_EDGE) {
                     continue;
                 }
-                double nd = dist->data[i][k] + dist->data[k][j];
-                if (nd < dist->data[i][j]) {
-                    dist->data[i][j] = nd;
+                double nd = dist_impl->data[i][k] + dist_impl->data[k][j];
+                if (nd < dist_impl->data[i][j]) {
+                    dist_impl->data[i][j] = nd;
                 }
             }
         }
@@ -498,13 +493,17 @@ matrix *graph_floyd_warshall(const graph *g) {
 static int edge_min_heap_cmp(const void *a, const void *b) {
     const graph_weighted_edge *ea = (const graph_weighted_edge *)a;
     const graph_weighted_edge *eb = (const graph_weighted_edge *)b;
-
-    if (ea->weight < eb->weight) return 1;
-    if (ea->weight > eb->weight) return -1;
+    graph_weighted_edge_impl *lhs = graph_weighted_edge_impl_from_public(ea);
+    graph_weighted_edge_impl *rhs = graph_weighted_edge_impl_from_public(eb);
+    if (!lhs || !rhs) {
+        return 0;
+    }
+    if (lhs->weight < rhs->weight) return 1;
+    if (lhs->weight > rhs->weight) return -1;
     return 0;
 }
 
-static void prim_push_edges(const graph *g, int from, const bool *in_mst, heap *pq) {
+static void prim_push_edges(const graph_impl *g, int from, const bool *in_mst, heap *pq) {
     if (!g || !pq || !in_mst) {
         return;
     }
@@ -517,14 +516,10 @@ static void prim_push_edges(const graph *g, int from, const bool *in_mst, heap *
             if (!e || !graph_is_valid_vertex(g, e->to) || in_mst[e->to]) {
                 continue;
             }
-            graph_weighted_edge *we = malloc(sizeof(graph_weighted_edge));
-            if (!we) {
-                continue;
+            graph_weighted_edge *we = graph_create_weighted_edge(from, e->to, e->weight);
+            if (we) {
+                pq->put(pq, we);
             }
-            we->from = from;
-            we->to = e->to;
-            we->weight = e->weight;
-            pq->put(pq, we);
         }
         return;
     }
@@ -537,18 +532,14 @@ static void prim_push_edges(const graph *g, int from, const bool *in_mst, heap *
         if (w == GRAPH_NO_EDGE) {
             continue;
         }
-        graph_weighted_edge *we = malloc(sizeof(graph_weighted_edge));
-        if (!we) {
-            continue;
+        graph_weighted_edge *we = graph_create_weighted_edge(from, to, w);
+        if (we) {
+            pq->put(pq, we);
         }
-        we->from = from;
-        we->to = to;
-        we->weight = w;
-        pq->put(pq, we);
     }
 }
 
-list *graph_mst_prim(const graph *g, int start_vertex) {
+list *graph_mst_prim_impl(const graph_impl *g, int start_vertex) {
     if (!g || g->type != GRAPH_UNDIRECTED) {
         return NULL;
     }
@@ -557,7 +548,6 @@ list *graph_mst_prim(const graph *g, int start_vertex) {
     if (!mst) {
         return NULL;
     }
-
     if (g->vertex_count == 0) {
         return mst;
     }
@@ -567,7 +557,7 @@ list *graph_mst_prim(const graph *g, int start_vertex) {
         return mst;
     }
 
-    bool *in_mst = calloc((size_t)g->vertex_capacity, sizeof(bool));
+    bool *in_mst = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
     heap *pq = create_heap(BINARY_HEAP, g->vertex_count > 0 ? g->vertex_count : 4, edge_min_heap_cmp);
     if (!in_mst || !pq) {
         free(in_mst);
@@ -583,21 +573,25 @@ list *graph_mst_prim(const graph *g, int start_vertex) {
 
     while (pq->size(pq) > 0 && mst->size(mst) < g->vertex_count - 1) {
         graph_weighted_edge *e = (graph_weighted_edge *)pq->pop(pq);
-        if (!e) {
+        graph_weighted_edge_impl *edge = graph_weighted_edge_impl_from_public(e);
+        if (!e || !edge) {
             break;
         }
-        if (in_mst[e->to]) {
-            free(e);
+        if (in_mst[edge->to]) {
+            e->free(e);
             continue;
         }
 
         mst->insert(mst, e, mst->size(mst));
-        in_mst[e->to] = true;
-        prim_push_edges(g, e->to, in_mst, pq);
+        in_mst[edge->to] = true;
+        prim_push_edges(g, edge->to, in_mst, pq);
     }
 
     while (pq->size(pq) > 0) {
-        free(pq->pop(pq));
+        graph_weighted_edge *e = (graph_weighted_edge *)pq->pop(pq);
+        if (e) {
+            e->free(e);
+        }
     }
 
     pq->free(pq);
@@ -617,7 +611,8 @@ static int edge_vec_push(edge_vec *v, graph_weighted_edge *e) {
     }
     if (v->size >= v->cap) {
         int new_cap = v->cap > 0 ? v->cap * 2 : 16;
-        graph_weighted_edge **n = realloc(v->items, (size_t)new_cap * sizeof(graph_weighted_edge *));
+        graph_weighted_edge **n =
+            (graph_weighted_edge **)realloc(v->items, (size_t)new_cap * sizeof(graph_weighted_edge *));
         if (!n) {
             return 0;
         }
@@ -631,8 +626,13 @@ static int edge_vec_push(edge_vec *v, graph_weighted_edge *e) {
 static int edge_cmp_qsort(const void *a, const void *b) {
     const graph_weighted_edge *ea = *(graph_weighted_edge *const *)a;
     const graph_weighted_edge *eb = *(graph_weighted_edge *const *)b;
-    if (ea->weight < eb->weight) return -1;
-    if (ea->weight > eb->weight) return 1;
+    graph_weighted_edge_impl *lhs = graph_weighted_edge_impl_from_public(ea);
+    graph_weighted_edge_impl *rhs = graph_weighted_edge_impl_from_public(eb);
+    if (!lhs || !rhs) {
+        return 0;
+    }
+    if (lhs->weight < rhs->weight) return -1;
+    if (lhs->weight > rhs->weight) return 1;
     return 0;
 }
 
@@ -660,7 +660,7 @@ static void uf_union(int *parent, int *rank, int a, int b) {
     }
 }
 
-list *graph_mst_kruskal(const graph *g) {
+list *graph_mst_kruskal_impl(const graph_impl *g) {
     if (!g || g->type != GRAPH_UNDIRECTED) {
         return NULL;
     }
@@ -671,7 +671,6 @@ list *graph_mst_kruskal(const graph *g) {
     }
 
     edge_vec edges = {0};
-
     for (int from = 0; from < g->vertex_capacity; from++) {
         if (!graph_is_valid_vertex(g, from)) {
             continue;
@@ -682,21 +681,12 @@ list *graph_mst_kruskal(const graph *g) {
             int n = adj ? adj->size(adj) : 0;
             for (int i = 0; i < n; i++) {
                 graph_edge *e = (graph_edge *)adj->get(adj, i);
-                if (!e || !graph_is_valid_vertex(g, e->to)) {
+                if (!e || !graph_is_valid_vertex(g, e->to) || from >= e->to) {
                     continue;
                 }
-                if (from >= e->to) {
-                    continue;
-                }
-                graph_weighted_edge *we = malloc(sizeof(graph_weighted_edge));
-                if (!we) {
-                    continue;
-                }
-                we->from = from;
-                we->to = e->to;
-                we->weight = e->weight;
-                if (!edge_vec_push(&edges, we)) {
-                    free(we);
+                graph_weighted_edge *we = graph_create_weighted_edge(from, e->to, e->weight);
+                if (we && !edge_vec_push(&edges, we)) {
+                    we->free(we);
                 }
             }
         } else {
@@ -708,15 +698,9 @@ list *graph_mst_kruskal(const graph *g) {
                 if (w == GRAPH_NO_EDGE) {
                     continue;
                 }
-                graph_weighted_edge *we = malloc(sizeof(graph_weighted_edge));
-                if (!we) {
-                    continue;
-                }
-                we->from = from;
-                we->to = to;
-                we->weight = w;
-                if (!edge_vec_push(&edges, we)) {
-                    free(we);
+                graph_weighted_edge *we = graph_create_weighted_edge(from, to, w);
+                if (we && !edge_vec_push(&edges, we)) {
+                    we->free(we);
                 }
             }
         }
@@ -724,13 +708,15 @@ list *graph_mst_kruskal(const graph *g) {
 
     qsort(edges.items, (size_t)edges.size, sizeof(graph_weighted_edge *), edge_cmp_qsort);
 
-    int *parent = malloc((size_t)g->vertex_capacity * sizeof(int));
-    int *rank = calloc((size_t)g->vertex_capacity, sizeof(int));
+    int *parent = (int *)malloc((size_t)g->vertex_capacity * sizeof(int));
+    int *rank = (int *)calloc((size_t)g->vertex_capacity, sizeof(int));
     if (!parent || !rank) {
         free(parent);
         free(rank);
         for (int i = 0; i < edges.size; i++) {
-            free(edges.items[i]);
+            if (edges.items[i]) {
+                edges.items[i]->free(edges.items[i]);
+            }
         }
         free(edges.items);
         mst->free(mst);
@@ -743,19 +729,26 @@ list *graph_mst_kruskal(const graph *g) {
 
     for (int i = 0; i < edges.size && mst->size(mst) < g->vertex_count - 1; i++) {
         graph_weighted_edge *e = edges.items[i];
-        int ra = uf_find(parent, e->from);
-        int rb = uf_find(parent, e->to);
+        graph_weighted_edge_impl *edge = graph_weighted_edge_impl_from_public(e);
+        if (!edge) {
+            continue;
+        }
+        int ra = uf_find(parent, edge->from);
+        int rb = uf_find(parent, edge->to);
         if (ra != rb) {
             uf_union(parent, rank, ra, rb);
             mst->insert(mst, e, mst->size(mst));
+            edges.items[i] = NULL;
         } else {
-            free(e);
+            e->free(e);
+            edges.items[i] = NULL;
         }
-        edges.items[i] = NULL;
     }
 
     for (int i = 0; i < edges.size; i++) {
-        free(edges.items[i]);
+        if (edges.items[i]) {
+            edges.items[i]->free(edges.items[i]);
+        }
     }
     free(edges.items);
     free(parent);
@@ -764,7 +757,7 @@ list *graph_mst_kruskal(const graph *g) {
     return mst;
 }
 
-list *graph_connected_components(const graph *g) {
+list *graph_connected_components_impl(const graph_impl *g) {
     if (!g || g->type != GRAPH_UNDIRECTED) {
         return NULL;
     }
@@ -774,7 +767,7 @@ list *graph_connected_components(const graph *g) {
         return NULL;
     }
 
-    bool *visited = calloc((size_t)g->vertex_capacity, sizeof(bool));
+    bool *visited = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
     queue *q = create_queue(QUEUE_TYPE_NORMAL, 0, NULL);
     if (!visited || !q) {
         free(visited);
@@ -807,13 +800,11 @@ list *graph_connected_components(const graph *g) {
                 int n = adj ? adj->size(adj) : 0;
                 for (int i = 0; i < n; i++) {
                     graph_edge *e = (graph_edge *)adj->get(adj, i);
-                    if (!e || !graph_is_valid_vertex(g, e->to)) {
+                    if (!e || !graph_is_valid_vertex(g, e->to) || visited[e->to]) {
                         continue;
                     }
-                    if (!visited[e->to]) {
-                        visited[e->to] = true;
-                        q->enqueue(q, (void *)(intptr_t)e->to);
-                    }
+                    visited[e->to] = true;
+                    q->enqueue(q, (void *)(intptr_t)e->to);
                 }
             } else {
                 for (int to = 0; to < g->vertex_capacity; to++) {
@@ -837,7 +828,7 @@ list *graph_connected_components(const graph *g) {
     return components;
 }
 
-static void tarjan_dfs(const graph *g,
+static void tarjan_dfs(const graph_impl *g,
                        int v,
                        int *index_counter,
                        int *index,
@@ -867,10 +858,8 @@ static void tarjan_dfs(const graph *g,
                 if (lowlink[to] < lowlink[v]) {
                     lowlink[v] = lowlink[to];
                 }
-            } else if (on_stack[to]) {
-                if (index[to] < lowlink[v]) {
-                    lowlink[v] = index[to];
-                }
+            } else if (on_stack[to] && index[to] < lowlink[v]) {
+                lowlink[v] = index[to];
             }
         }
     } else {
@@ -887,10 +876,8 @@ static void tarjan_dfs(const graph *g,
                 if (lowlink[to] < lowlink[v]) {
                     lowlink[v] = lowlink[to];
                 }
-            } else if (on_stack[to]) {
-                if (index[to] < lowlink[v]) {
-                    lowlink[v] = index[to];
-                }
+            } else if (on_stack[to] && index[to] < lowlink[v]) {
+                lowlink[v] = index[to];
             }
         }
     }
@@ -914,7 +901,7 @@ static void tarjan_dfs(const graph *g,
     }
 }
 
-list *graph_strongly_connected_components(const graph *g) {
+list *graph_strongly_connected_components_impl(const graph_impl *g) {
     if (!g || g->type != GRAPH_DIRECTED) {
         return NULL;
     }
@@ -924,9 +911,9 @@ list *graph_strongly_connected_components(const graph *g) {
         return NULL;
     }
 
-    int *index = malloc((size_t)g->vertex_capacity * sizeof(int));
-    int *lowlink = malloc((size_t)g->vertex_capacity * sizeof(int));
-    bool *on_stack = calloc((size_t)g->vertex_capacity, sizeof(bool));
+    int *index = (int *)malloc((size_t)g->vertex_capacity * sizeof(int));
+    int *lowlink = (int *)malloc((size_t)g->vertex_capacity * sizeof(int));
+    bool *on_stack = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
     stack *st = create_stack(ARRAY_STACK);
     if (!index || !lowlink || !on_stack || !st) {
         free(index);
@@ -959,12 +946,12 @@ list *graph_strongly_connected_components(const graph *g) {
     return components;
 }
 
-list *graph_topological_sort(const graph *g) {
+list *graph_topological_sort_impl(const graph_impl *g) {
     if (!g || g->type != GRAPH_DIRECTED) {
         return NULL;
     }
 
-    int *indegree = calloc((size_t)g->vertex_capacity, sizeof(int));
+    int *indegree = (int *)calloc((size_t)g->vertex_capacity, sizeof(int));
     queue *q = create_queue(QUEUE_TYPE_NORMAL, 0, NULL);
     list *order = create_vertex_list(g);
     if (!indegree || !q || !order) {
@@ -988,20 +975,18 @@ list *graph_topological_sort(const graph *g) {
             int n = adj ? adj->size(adj) : 0;
             for (int i = 0; i < n; i++) {
                 graph_edge *e = (graph_edge *)adj->get(adj, i);
-                if (!e || !graph_is_valid_vertex(g, e->to)) {
-                    continue;
+                if (e && graph_is_valid_vertex(g, e->to)) {
+                    indegree[e->to]++;
                 }
-                indegree[e->to]++;
             }
         } else {
             for (int to = 0; to < g->vertex_capacity; to++) {
                 if (!graph_is_valid_vertex(g, to)) {
                     continue;
                 }
-                if (g->adj_matrix[from * g->vertex_capacity + to] == GRAPH_NO_EDGE) {
-                    continue;
+                if (g->adj_matrix[from * g->vertex_capacity + to] != GRAPH_NO_EDGE) {
+                    indegree[to]++;
                 }
-                indegree[to]++;
             }
         }
     }
@@ -1046,7 +1031,6 @@ list *graph_topological_sort(const graph *g) {
     }
 
     int ok = (order->size(order) == g->vertex_count);
-
     q->free(q);
     free(indegree);
 
@@ -1057,7 +1041,7 @@ list *graph_topological_sort(const graph *g) {
     return order;
 }
 
-static bool has_cycle_directed_dfs(const graph *g, int v, unsigned char *color) {
+static bool has_cycle_directed_dfs(const graph_impl *g, int v, unsigned char *color) {
     color[v] = 1;
 
     if (g->rep == GRAPH_ADJACENCY_LIST) {
@@ -1097,7 +1081,7 @@ static bool has_cycle_directed_dfs(const graph *g, int v, unsigned char *color) 
     return false;
 }
 
-static bool has_cycle_undirected_dfs(const graph *g, int v, int parent, bool *visited) {
+static bool has_cycle_undirected_dfs(const graph_impl *g, int v, int parent, bool *visited) {
     visited[v] = true;
 
     if (g->rep == GRAPH_ADJACENCY_LIST) {
@@ -1138,13 +1122,13 @@ static bool has_cycle_undirected_dfs(const graph *g, int v, int parent, bool *vi
     return false;
 }
 
-bool graph_has_cycle(const graph *g) {
+bool graph_has_cycle_impl(const graph_impl *g) {
     if (!g) {
         return false;
     }
 
     if (g->type == GRAPH_DIRECTED) {
-        unsigned char *color = calloc((size_t)g->vertex_capacity, sizeof(unsigned char));
+        unsigned char *color = (unsigned char *)calloc((size_t)g->vertex_capacity, sizeof(unsigned char));
         if (!color) {
             return false;
         }
@@ -1161,7 +1145,7 @@ bool graph_has_cycle(const graph *g) {
         return false;
     }
 
-    bool *visited = calloc((size_t)g->vertex_capacity, sizeof(bool));
+    bool *visited = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
     if (!visited) {
         return false;
     }
@@ -1177,4 +1161,3 @@ bool graph_has_cycle(const graph *g) {
     free(visited);
     return false;
 }
-

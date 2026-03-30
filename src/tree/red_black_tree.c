@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-static void rb_left_rotate(tree *t, tree_node *x) {
+static void rb_left_rotate(tree_impl *t, tree_node *x) {
     tree_node *y = x->right;
 
     x->right = y->left;
@@ -23,7 +23,7 @@ static void rb_left_rotate(tree *t, tree_node *x) {
     x->parent = y;
 }
 
-static void rb_right_rotate(tree *t, tree_node *y) {
+static void rb_right_rotate(tree_impl *t, tree_node *y) {
     tree_node *x = y->left;
 
     y->left = x->right;
@@ -44,7 +44,7 @@ static void rb_right_rotate(tree *t, tree_node *y) {
     y->parent = x;
 }
 
-static void rb_insert_fixup(tree *t, tree_node *z) {
+static void rb_insert_fixup(tree_impl *t, tree_node *z) {
     while (z->parent->color == RB_RED) {
         if (z->parent == z->parent->parent->left) {
             tree_node *y = z->parent->parent->right;
@@ -83,7 +83,7 @@ static void rb_insert_fixup(tree *t, tree_node *z) {
     t->root->color = RB_BLACK;
 }
 
-static tree_node *rb_search_node(const tree *t, void *key) {
+static tree_node *rb_search_node(const tree_impl *t, void *key) {
     tree_node *cur = t->root;
     while (cur != t->nil) {
         int cmp = t->cmp(key, cur->key);
@@ -95,7 +95,7 @@ static tree_node *rb_search_node(const tree *t, void *key) {
     return t->nil;
 }
 
-static void rb_transplant(tree *t, tree_node *u, tree_node *v) {
+static void rb_transplant(tree_impl *t, tree_node *u, tree_node *v) {
     if (u->parent == t->nil) {
         t->root = v;
     } else if (u == u->parent->left) {
@@ -106,14 +106,14 @@ static void rb_transplant(tree *t, tree_node *u, tree_node *v) {
     v->parent = u->parent;
 }
 
-static tree_node *rb_minimum(tree *t, tree_node *x) {
+static tree_node *rb_minimum(tree_impl *t, tree_node *x) {
     while (x->left != t->nil) {
         x = x->left;
     }
     return x;
 }
 
-static void rb_delete_fixup(tree *t, tree_node *x) {
+static void rb_delete_fixup(tree_impl *t, tree_node *x) {
     while (x != t->root && x->color == RB_BLACK) {
         if (x == x->parent->left) {
             tree_node *w = x->parent->right;
@@ -168,7 +168,7 @@ static void rb_delete_fixup(tree *t, tree_node *x) {
     x->color = RB_BLACK;
 }
 
-void rb_tree_insert(tree *t, void *key, void *value) {
+void rb_tree_insert(tree_impl *t, void *key, void *value) {
     if (!t || !t->cmp || !t->nil || !key) {
         return;
     }
@@ -211,7 +211,7 @@ void rb_tree_insert(tree *t, void *key, void *value) {
     rb_insert_fixup(t, z);
 }
 
-void rb_tree_delete(tree *t, void *key) {
+void rb_tree_delete(tree_impl *t, void *key) {
     if (!t || !t->cmp || !t->nil || !key) {
         return;
     }
@@ -257,4 +257,3 @@ void rb_tree_delete(tree *t, void *key) {
         rb_delete_fixup(t, x);
     }
 }
-

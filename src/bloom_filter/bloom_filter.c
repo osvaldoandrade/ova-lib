@@ -5,16 +5,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct bloom_filter {
+typedef struct bloom_filter_impl {
     size_t m_bits;
     size_t k_hashes;
     uint8_t *bits;
-
     size_t expected_elements;
     double target_fpp;
-
     size_t items_added;
-};
+} bloom_filter_impl;
+
+static bloom_filter_impl *bloom_filter_impl_from_self(const bloom_filter *self) {
+    return self ? (bloom_filter_impl *)self->impl : NULL;
+}
 
 static uint64_t fnv1a64_seeded(const void *data, size_t len, uint64_t seed) {
     const uint8_t *bytes = (const uint8_t *)data;
@@ -71,13 +73,7 @@ static int bloom_compute_params(int expected_elements,
         k = 1.0;
     }
 
-    /* Check that m is finite and within range before casting to size_t */
-    if (!isfinite(m)) {
-        return 0;
-    }
-    /* Ensure m won't overflow when cast to size_t via ceil().
-     * Use >= to account for potential floating-point precision issues. */
-    if (m >= (double)SIZE_MAX) {
+    if (!isfinite(m) || m >= (double)SIZE_MAX) {
         return 0;
     }
 
@@ -87,7 +83,6 @@ static int bloom_compute_params(int expected_elements,
         k_hashes = 1;
     }
 
-    /* Guard against overflow in byte allocation (m_bits -> bytes). */
     size_t bytes = (m_bits + 7u) / 8u;
     if (bytes == 0 || bytes > (SIZE_MAX / sizeof(uint8_t))) {
         return 0;
@@ -98,45 +93,9 @@ static int bloom_compute_params(int expected_elements,
     return 1;
 }
 
-bloom_filter *create_bloom_filter(int expected_elements, double false_positive_rate) {
-    size_t m_bits = 0;
-    size_t k_hashes = 0;
-    if (!bloom_compute_params(expected_elements, false_positive_rate, &m_bits, &k_hashes)) {
-        return NULL;
-    }
-
-    bloom_filter *bf = (bloom_filter *)calloc(1, sizeof(bloom_filter));
-    if (!bf) {
-        return NULL;
-    }
-
-    size_t bytes = (m_bits + 7u) / 8u;
-    bf->bits = (uint8_t *)calloc(bytes, 1);
-    if (!bf->bits) {
-        free(bf);
-        return NULL;
-    }
-
-    bf->m_bits = m_bits;
-    bf->k_hashes = k_hashes;
-    bf->expected_elements = (size_t)expected_elements;
-    bf->target_fpp = false_positive_rate;
-    bf->items_added = 0;
-
-    return bf;
-}
-
-void bloom_filter_free(bloom_filter *bf) {
-    if (!bf) {
-        return;
-    }
-    free(bf->bits);
-    bf->bits = NULL;
-    free(bf);
-}
-
-void bloom_filter_add(bloom_filter *bf, const void *element, size_t len) {
-    if (!bf || !bf->bits || bf->m_bits == 0 || bf->k_hashes == 0) {
+static void bloom_filter_add_method(bloom_filter *self, const void *element, size_t len) {
+    bloom_filter_impl *impl = bloom_filter_impl_from_self(self);
+    if (!impl || !impl->bits || impl->m_bits == 0 || impl->k_hashes == 0) {
         return;
     }
     if (len > 0 && !element) {
@@ -149,16 +108,17 @@ void bloom_filter_add(bloom_filter *bf, const void *element, size_t len) {
         h2 = 0x27d4eb2f165667c5ULL;
     }
 
-    for (size_t i = 0; i < bf->k_hashes; i++) {
-        size_t idx = bloom_index(h1, h2, i, bf->m_bits);
-        bloom_set_bit(bf->bits, idx);
+    for (size_t i = 0; i < impl->k_hashes; i++) {
+        size_t idx = bloom_index(h1, h2, i, impl->m_bits);
+        bloom_set_bit(impl->bits, idx);
     }
 
-    bf->items_added++;
+    impl->items_added++;
 }
 
-bool bloom_filter_might_contain(const bloom_filter *bf, const void *element, size_t len) {
-    if (!bf || !bf->bits || bf->m_bits == 0 || bf->k_hashes == 0) {
+static bool bloom_filter_might_contain_method(const bloom_filter *self, const void *element, size_t len) {
+    bloom_filter_impl *impl = bloom_filter_impl_from_self(self);
+    if (!impl || !impl->bits || impl->m_bits == 0 || impl->k_hashes == 0) {
         return false;
     }
     if (len > 0 && !element) {
@@ -171,37 +131,35 @@ bool bloom_filter_might_contain(const bloom_filter *bf, const void *element, siz
         h2 = 0x27d4eb2f165667c5ULL;
     }
 
-    for (size_t i = 0; i < bf->k_hashes; i++) {
-        size_t idx = bloom_index(h1, h2, i, bf->m_bits);
-        if (!bloom_get_bit(bf->bits, idx)) {
+    for (size_t i = 0; i < impl->k_hashes; i++) {
+        size_t idx = bloom_index(h1, h2, i, impl->m_bits);
+        if (!bloom_get_bit(impl->bits, idx)) {
             return false;
         }
     }
     return true;
 }
 
-void bloom_filter_clear(bloom_filter *bf) {
-    if (!bf || !bf->bits || bf->m_bits == 0) {
+static void bloom_filter_clear_method(bloom_filter *self) {
+    bloom_filter_impl *impl = bloom_filter_impl_from_self(self);
+    if (!impl || !impl->bits || impl->m_bits == 0) {
         return;
     }
 
-    size_t bytes = (bf->m_bits + 7u) / 8u;
-    memset(bf->bits, 0, bytes);
-    bf->items_added = 0;
+    size_t bytes = (impl->m_bits + 7u) / 8u;
+    memset(impl->bits, 0, bytes);
+    impl->items_added = 0;
 }
 
-double bloom_filter_current_fpp(const bloom_filter *bf) {
-    if (!bf || bf->m_bits == 0 || bf->k_hashes == 0) {
-        return 0.0;
-    }
-    if (bf->items_added == 0) {
+static double bloom_filter_current_fpp_method(const bloom_filter *self) {
+    bloom_filter_impl *impl = bloom_filter_impl_from_self(self);
+    if (!impl || impl->m_bits == 0 || impl->k_hashes == 0 || impl->items_added == 0) {
         return 0.0;
     }
 
-    const double m = (double)bf->m_bits;
-    const double k = (double)bf->k_hashes;
-    const double n = (double)bf->items_added;
-
+    const double m = (double)impl->m_bits;
+    const double k = (double)impl->k_hashes;
+    const double n = (double)impl->items_added;
     double x = -k * n / m;
     double p = pow(1.0 - exp(x), k);
 
@@ -214,3 +172,60 @@ double bloom_filter_current_fpp(const bloom_filter *bf) {
     return p;
 }
 
+static void bloom_filter_free_method(bloom_filter *self) {
+    if (!self) {
+        return;
+    }
+
+    bloom_filter_impl *impl = bloom_filter_impl_from_self(self);
+    if (impl) {
+        free(impl->bits);
+        impl->bits = NULL;
+        free(impl);
+        self->impl = NULL;
+    }
+
+    free(self);
+}
+
+bloom_filter *create_bloom_filter(int expected_elements, double false_positive_rate) {
+    size_t m_bits = 0;
+    size_t k_hashes = 0;
+    if (!bloom_compute_params(expected_elements, false_positive_rate, &m_bits, &k_hashes)) {
+        return NULL;
+    }
+
+    bloom_filter *out = (bloom_filter *)calloc(1, sizeof(bloom_filter));
+    if (!out) {
+        return NULL;
+    }
+
+    bloom_filter_impl *impl = (bloom_filter_impl *)calloc(1, sizeof(bloom_filter_impl));
+    if (!impl) {
+        free(out);
+        return NULL;
+    }
+
+    size_t bytes = (m_bits + 7u) / 8u;
+    impl->bits = (uint8_t *)calloc(bytes, 1);
+    if (!impl->bits) {
+        free(impl);
+        free(out);
+        return NULL;
+    }
+
+    impl->m_bits = m_bits;
+    impl->k_hashes = k_hashes;
+    impl->expected_elements = (size_t)expected_elements;
+    impl->target_fpp = false_positive_rate;
+    impl->items_added = 0;
+
+    out->impl = impl;
+    out->add = bloom_filter_add_method;
+    out->might_contain = bloom_filter_might_contain_method;
+    out->clear = bloom_filter_clear_method;
+    out->current_fpp = bloom_filter_current_fpp_method;
+    out->free = bloom_filter_free_method;
+
+    return out;
+}

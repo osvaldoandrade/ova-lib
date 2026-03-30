@@ -3,23 +3,35 @@
 #include "linked_list.h"
 #include "sorted_list.h"
 
+static void list_insert_bulk_impl(list *self, void **elements, int count) {
+    if (!self || !elements || count <= 0) {
+        return;
+    }
+
+    for (int i = 0; i < count; i++) {
+        self->insert(self, elements[i], self->size(self));
+    }
+}
+
 list *create_list(ListType type, int initial_capacity, comparator cmp) {
+    list *out = NULL;
+
     switch (type) {
         case ARRAY_LIST:
-            return create_array_list(initial_capacity);
+            out = create_array_list(initial_capacity);
+            break;
         case LINKED_LIST:
-            return create_linked_list();
+            out = create_linked_list();
+            break;
         case SORTED_LIST:
-            return create_sorted_list(initial_capacity, cmp);
+            out = create_sorted_list(initial_capacity, cmp);
+            break;
         default:
             return NULL;
     }
-    return NULL;
-}
 
-void list_insert_bulk(list *l, void **elements, int count) {
-    if (!l || !elements || count <= 0) return;
-    for (int i = 0; i < count; i++) {
-        l->insert(l, elements[i], l->size(l));
+    if (out) {
+        out->insert_bulk = list_insert_bulk_impl;
     }
+    return out;
 }

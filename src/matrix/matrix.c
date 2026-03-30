@@ -1,216 +1,267 @@
 #include "../../include/matrix.h"
+#include "matrix_internal.h"
 
 #include <float.h>
 #include <string.h>
 
-void vector_resize(vector *self, int newSize);
-void vector_print(const vector *self);
-void vector_destroy(vector *self);
+static double matrix_get_method(const matrix *self, int row, int col);
+static int matrix_set_method(matrix *self, int row, int col, double value);
+static int matrix_rows_method(const matrix *self);
+static int matrix_cols_method(const matrix *self);
+static matrix *matrix_add_method(matrix *self, const matrix *other);
+static matrix *matrix_subtract_method(matrix *self, const matrix *other);
+static matrix *matrix_multiply_method(matrix *self, const matrix *other);
+static double matrix_determinant_method(matrix *self, int *error);
+static matrix *matrix_transpose_method(matrix *self);
+static matrix *matrix_inverse_method(matrix *self);
+static int matrix_resize_method(matrix *self, int new_rows, int new_cols);
+static matrix *matrix_copy_method(matrix *self);
+static void matrix_print_method(const matrix *self);
+static void matrix_free_method(matrix *self);
 
-matrix *matrix_add(matrix *self, const matrix *other);
-matrix *matrix_subtract(matrix *self, const matrix *other);
-matrix *matrix_multiply(matrix *self, const matrix *other);
-double matrix_determinant(matrix *self, int *error);
-matrix *matrix_transpose(matrix *self);
-matrix *matrix_inverse(matrix *self);
-int matrix_resize(matrix *self, int newRows, int newCols);
-matrix *matrix_copy(matrix *self);
-void matrix_destroy(matrix *self);
-void matrix_print(const matrix *self);
+static double vector_get_method(const vector *self, int index);
+static int vector_set_method(vector *self, int index, double value);
+static int vector_size_method(const vector *self);
+static int vector_resize_method(vector *self, int new_size);
+static vector *vector_copy_method(const vector *self);
+static void vector_print_method(const vector *self);
+static void vector_free_method(vector *self);
+
+static matrix *allocate_matrix_object(void) {
+    matrix *out = (matrix *)calloc(1, sizeof(matrix));
+    if (!out) {
+        return NULL;
+    }
+
+    out->get = matrix_get_method;
+    out->set = matrix_set_method;
+    out->rows = matrix_rows_method;
+    out->cols = matrix_cols_method;
+    out->add = matrix_add_method;
+    out->subtract = matrix_subtract_method;
+    out->multiply = matrix_multiply_method;
+    out->determinant = matrix_determinant_method;
+    out->transpose = matrix_transpose_method;
+    out->inverse = matrix_inverse_method;
+    out->resize = matrix_resize_method;
+    out->copy = matrix_copy_method;
+    out->print = matrix_print_method;
+    out->free = matrix_free_method;
+    return out;
+}
+
+static vector *allocate_vector_object(void) {
+    vector *out = (vector *)calloc(1, sizeof(vector));
+    if (!out) {
+        return NULL;
+    }
+
+    out->get = vector_get_method;
+    out->set = vector_set_method;
+    out->size = vector_size_method;
+    out->resize = vector_resize_method;
+    out->copy = vector_copy_method;
+    out->print = vector_print_method;
+    out->free = vector_free_method;
+    return out;
+}
 
 matrix *create_matrix(int rows, int cols) {
     if (rows <= 0 || cols <= 0) {
-        return NULL;  // Handle non-positive dimensions
+        return NULL;
     }
 
-    matrix *m = malloc(sizeof(matrix));
-    if (m == NULL) {
-        return NULL;  // Handle memory allocation failure for the matrix structure
+    matrix *out = allocate_matrix_object();
+    if (!out) {
+        return NULL;
     }
 
-    m->data = calloc((size_t)rows, sizeof(double *));
-    if (m->data == NULL) {
-        free(m);  // Free the allocated structure if row allocation fails
+    matrix_impl *impl = (matrix_impl *)calloc(1, sizeof(matrix_impl));
+    if (!impl) {
+        free(out);
+        return NULL;
+    }
+
+    impl->data = (double **)calloc((size_t)rows, sizeof(double *));
+    if (!impl->data) {
+        free(impl);
+        free(out);
         return NULL;
     }
 
     for (int i = 0; i < rows; i++) {
-        m->data[i] = calloc((size_t)cols, sizeof(double));
-        if (m->data[i] == NULL) {
+        impl->data[i] = (double *)calloc((size_t)cols, sizeof(double));
+        if (!impl->data[i]) {
             for (int j = 0; j < i; j++) {
-                free(m->data[j]);  // Free previously allocated rows on failure
+                free(impl->data[j]);
             }
-            free(m->data);
-            free(m);
+            free(impl->data);
+            free(impl);
+            free(out);
             return NULL;
         }
     }
 
-    m->rows = rows;
-    m->cols = cols;
-
-    // Set the function pointers for matrix operations
-    m->add = matrix_add;
-    m->subtract = matrix_subtract;
-    m->multiply = matrix_multiply;
-    m->determinant = matrix_determinant;
-    m->transpose = matrix_transpose;
-    m->inverse = matrix_inverse;
-    m->resize = matrix_resize;
-    m->copy = matrix_copy;
-    m->print = matrix_print;
-    m->destroy = matrix_destroy;
-
-    return m;
+    impl->rows = rows;
+    impl->cols = cols;
+    out->impl = impl;
+    return out;
 }
 
 vector *create_vector(int size) {
-  vector *v = malloc(sizeof(vector));
-  if (v == NULL) {
-    return NULL; // Memory allocation failed
-  }
-
-  v->data = calloc((size_t)size, sizeof(double)); // Use calloc to initialize elements to 0
-  if (v->data == NULL) {
-    free(v); // Clean up vector allocation if data allocation fails
-    return NULL;
-  }
-
-  v->size = size;
-  v->resize = vector_resize;
-  v->print = vector_print;
-  v->destroy = vector_destroy;
-
-  return v;
-}
-
-void vector_resize(vector *self, int newSize) {
-  if (self == NULL) return;
-
-  double *newData = realloc(self->data, (size_t)newSize * sizeof(double));
-  if (newData == NULL) return; // Handle realloc failure
-
-  // Initialize new elements to zero if size is increased
-  if (newSize > self->size) {
-    for (int i = self->size; i < newSize; i++) {
-      newData[i] = 0.0;
-    }
-  }
-
-  self->data = newData;
-  self->size = newSize;
-}
-
-void vector_print(const vector *self) {
-  if (self == NULL) {
-    printf("Vector is NULL\n");
-    return;
-  }
-
-  printf("[");
-  for (int i = 0; i < self->size; i++) {
-    printf("%f", self->data[i]);
-    if (i < self->size - 1) printf(", ");
-  }
-  printf("]\n");
-}
-
-void vector_destroy(vector *self) {
-  if (self != NULL) {
-    free(self->data); // Free the data array
-    free(self); // Free the vector structure
-  }
-}
-
-matrix *matrix_add(matrix *self, const matrix *other) {
-    if (self == NULL || other == NULL || self->rows != other->rows || self->cols != other->cols) {
+    if (size <= 0) {
         return NULL;
     }
 
-    matrix *result = create_matrix(self->rows, self->cols);
-    if (result == NULL) {
+    vector *out = allocate_vector_object();
+    if (!out) {
         return NULL;
     }
 
-    for (int i = 0; i < self->rows; i++) {
-        for (int j = 0; j < self->cols; j++) {
-            result->data[i][j] = self->data[i][j] + other->data[i][j];
-        }
+    vector_impl *impl = (vector_impl *)calloc(1, sizeof(vector_impl));
+    if (!impl) {
+        free(out);
+        return NULL;
     }
 
+    impl->data = (double *)calloc((size_t)size, sizeof(double));
+    if (!impl->data) {
+        free(impl);
+        free(out);
+        return NULL;
+    }
+
+    impl->size = size;
+    out->impl = impl;
+    return out;
+}
+
+static double matrix_get_method(const matrix *self, int row, int col) {
+    matrix_impl *impl = matrix_impl_from_matrix(self);
+    if (!impl || row < 0 || col < 0 || row >= impl->rows || col >= impl->cols) {
+        return 0.0;
+    }
+    return impl->data[row][col];
+}
+
+static int matrix_set_method(matrix *self, int row, int col, double value) {
+    matrix_impl *impl = matrix_impl_from_matrix(self);
+    if (!impl || row < 0 || col < 0 || row >= impl->rows || col >= impl->cols) {
+        return -1;
+    }
+    impl->data[row][col] = value;
+    return 0;
+}
+
+static int matrix_rows_method(const matrix *self) {
+    matrix_impl *impl = matrix_impl_from_matrix(self);
+    return impl ? impl->rows : 0;
+}
+
+static int matrix_cols_method(const matrix *self) {
+    matrix_impl *impl = matrix_impl_from_matrix(self);
+    return impl ? impl->cols : 0;
+}
+
+static matrix *matrix_add_method(matrix *self, const matrix *other) {
+    matrix_impl *lhs = matrix_impl_from_matrix(self);
+    matrix_impl *rhs = matrix_impl_from_matrix(other);
+    if (!lhs || !rhs || lhs->rows != rhs->rows || lhs->cols != rhs->cols) {
+        return NULL;
+    }
+
+    matrix *result = create_matrix(lhs->rows, lhs->cols);
+    matrix_impl *out = matrix_impl_from_matrix(result);
+    if (!out) {
+        return NULL;
+    }
+
+    for (int i = 0; i < lhs->rows; i++) {
+        for (int j = 0; j < lhs->cols; j++) {
+            out->data[i][j] = lhs->data[i][j] + rhs->data[i][j];
+        }
+    }
     return result;
 }
 
-matrix *matrix_subtract(matrix *self, const matrix *other) {
-    if (self == NULL || other == NULL || self->rows != other->rows || self->cols != other->cols) {
-        return NULL; // Error handling for invalid input or size mismatch
+static matrix *matrix_subtract_method(matrix *self, const matrix *other) {
+    matrix_impl *lhs = matrix_impl_from_matrix(self);
+    matrix_impl *rhs = matrix_impl_from_matrix(other);
+    if (!lhs || !rhs || lhs->rows != rhs->rows || lhs->cols != rhs->cols) {
+        return NULL;
     }
 
-    matrix *result = create_matrix(self->rows, self->cols);
-    if (result == NULL) {
-        return NULL; // Error handling for memory allocation failure
+    matrix *result = create_matrix(lhs->rows, lhs->cols);
+    matrix_impl *out = matrix_impl_from_matrix(result);
+    if (!out) {
+        return NULL;
     }
 
-    for (int i = 0; i < self->rows; i++) {
-        for (int j = 0; j < self->cols; j++) {
-            result->data[i][j] = self->data[i][j] - other->data[i][j];
+    for (int i = 0; i < lhs->rows; i++) {
+        for (int j = 0; j < lhs->cols; j++) {
+            out->data[i][j] = lhs->data[i][j] - rhs->data[i][j];
         }
     }
-
     return result;
 }
 
-matrix *matrix_multiply(matrix *self, const matrix *other) {
-    if (self == NULL || other == NULL || self->cols != other->rows) {
-        return NULL; // Error handling for invalid input or size mismatch
+static matrix *matrix_multiply_method(matrix *self, const matrix *other) {
+    matrix_impl *lhs = matrix_impl_from_matrix(self);
+    matrix_impl *rhs = matrix_impl_from_matrix(other);
+    if (!lhs || !rhs || lhs->cols != rhs->rows) {
+        return NULL;
     }
 
-    matrix *result = create_matrix(self->rows, other->cols);
-    if (result == NULL) {
-        return NULL; // Error handling for memory allocation failure
+    matrix *result = create_matrix(lhs->rows, rhs->cols);
+    matrix_impl *out = matrix_impl_from_matrix(result);
+    if (!out) {
+        return NULL;
     }
 
-    for (int i = 0; i < self->rows; i++) {
-        for (int j = 0; j < other->cols; j++) {
-            result->data[i][j] = 0; // Initialize element
-            for (int k = 0; k < self->cols; k++) {
-                result->data[i][j] += self->data[i][k] * other->data[k][j];
+    for (int i = 0; i < lhs->rows; i++) {
+        for (int j = 0; j < rhs->cols; j++) {
+            out->data[i][j] = 0.0;
+            for (int k = 0; k < lhs->cols; k++) {
+                out->data[i][j] += lhs->data[i][k] * rhs->data[k][j];
             }
         }
     }
-
     return result;
 }
 
-double matrix_determinant(matrix *self, int *error) {
-    if (self == NULL || self->rows != self->cols) {
-        if (error) *error = 1;  // Set error flag
-        return 0;  // Return zero or an appropriate error value
+static double matrix_determinant_method(matrix *self, int *error) {
+    matrix_impl *impl = matrix_impl_from_matrix(self);
+    if (!impl || impl->rows != impl->cols) {
+        if (error) {
+            *error = 1;
+        }
+        return 0.0;
     }
 
-    int n = self->rows;
+    int n = impl->rows;
     double det = 1.0;
     matrix *temp = create_matrix(n, n);
-    if (!temp) {
-        if (error) *error = 1;
-        return 0;
-    }
-
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            temp->data[i][j] = self->data[i][j];
+    matrix_impl *tmp = matrix_impl_from_matrix(temp);
+    if (!tmp) {
+        if (error) {
+            *error = 1;
         }
+        return 0.0;
     }
 
     for (int i = 0; i < n; i++) {
-        if (temp->data[i][i] == 0) {
+        memcpy(tmp->data[i], impl->data[i], (size_t)n * sizeof(double));
+    }
+
+    for (int i = 0; i < n; i++) {
+        if (tmp->data[i][i] == 0) {
             int row_swapped = 0;
             for (int k = i + 1; k < n; k++) {
-                if (temp->data[k][i] != 0) {
+                if (tmp->data[k][i] != 0) {
                     for (int j = 0; j < n; j++) {
-                        double swap = temp->data[i][j];
-                        temp->data[i][j] = temp->data[k][j];
-                        temp->data[k][j] = swap;
+                        double swap = tmp->data[i][j];
+                        tmp->data[i][j] = tmp->data[k][j];
+                        tmp->data[k][j] = swap;
                     }
                     det *= -1;
                     row_swapped = 1;
@@ -224,219 +275,325 @@ double matrix_determinant(matrix *self, int *error) {
         }
 
         for (int k = i + 1; k < n; k++) {
-            double factor = temp->data[k][i] / temp->data[i][i];
+            double factor = tmp->data[k][i] / tmp->data[i][i];
             for (int j = i; j < n; j++) {
-                temp->data[k][j] -= temp->data[i][j] * factor;
+                tmp->data[k][j] -= tmp->data[i][j] * factor;
             }
         }
 
-        det *= temp->data[i][i];
+        det *= tmp->data[i][i];
     }
 
-  matrix_destroy(temp);
-    if (error) *error = 0;  // Reset error flag
+    temp->free(temp);
+    if (error) {
+        *error = 0;
+    }
     return det;
 }
 
-matrix *matrix_transpose(matrix *self) {
-    if (self == NULL) {
-        return NULL;  // Error handling for NULL input
+static matrix *matrix_transpose_method(matrix *self) {
+    matrix_impl *impl = matrix_impl_from_matrix(self);
+    if (!impl) {
+        return NULL;
     }
 
-    // Create a new matrix with flipped dimensions
-    matrix *result = create_matrix(self->cols, self->rows);
-    if (result == NULL) {
-        return NULL;  // Error handling for memory allocation failure
+    matrix *result = create_matrix(impl->cols, impl->rows);
+    matrix_impl *out = matrix_impl_from_matrix(result);
+    if (!out) {
+        return NULL;
     }
 
-    // Assign values to the new matrix based on transpose rules
-    for (int i = 0; i < self->rows; i++) {
-        for (int j = 0; j < self->cols; j++) {
-            result->data[j][i] = self->data[i][j];
+    for (int i = 0; i < impl->rows; i++) {
+        for (int j = 0; j < impl->cols; j++) {
+            out->data[j][i] = impl->data[i][j];
         }
     }
-
     return result;
 }
 
-matrix *matrix_inverse(matrix *self) {
-    if (self == NULL || self->rows != self->cols) {
-        return NULL;  // Error handling for invalid input
+static matrix *matrix_inverse_method(matrix *self) {
+    matrix_impl *impl = matrix_impl_from_matrix(self);
+    if (!impl || impl->rows != impl->cols) {
+        return NULL;
     }
 
-    int n = self->rows;
+    int n = impl->rows;
     matrix *inverse = create_matrix(n, n);
     matrix *augmented = create_matrix(n, n * 2);
-
-    if (inverse == NULL || augmented == NULL) {
-      matrix_destroy(inverse);
-      matrix_destroy(augmented);
-        return NULL;  // Memory allocation failure
+    matrix_impl *inv_impl = matrix_impl_from_matrix(inverse);
+    matrix_impl *aug_impl = matrix_impl_from_matrix(augmented);
+    if (!inv_impl || !aug_impl) {
+        if (inverse) {
+            inverse->free(inverse);
+        }
+        if (augmented) {
+            augmented->free(augmented);
+        }
+        return NULL;
     }
 
-    // Initialize the augmented matrix [self | I]
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            augmented->data[i][j] = self->data[i][j];
-            augmented->data[i][j + n] = (i == j) ? 1.0 : 0.0;
+            aug_impl->data[i][j] = impl->data[i][j];
+            aug_impl->data[i][j + n] = (i == j) ? 1.0 : 0.0;
         }
     }
 
-    // Perform Gaussian elimination to get the form [I | self^-1]
     for (int i = 0; i < n; i++) {
-        // Ensure the pivot is non-zero
-        if (augmented->data[i][i] == 0) {
-            // Try to find a non-zero pivot and swap rows
+        if (aug_impl->data[i][i] == 0) {
             int found = 0;
             for (int k = i + 1; k < n; k++) {
-                if (augmented->data[k][i] != 0) {
-                    // Swap rows
+                if (aug_impl->data[k][i] != 0) {
                     for (int j = 0; j < 2 * n; j++) {
-                        double temp = augmented->data[i][j];
-                        augmented->data[i][j] = augmented->data[k][j];
-                        augmented->data[k][j] = temp;
+                        double temp = aug_impl->data[i][j];
+                        aug_impl->data[i][j] = aug_impl->data[k][j];
+                        aug_impl->data[k][j] = temp;
                     }
                     found = 1;
                     break;
                 }
             }
             if (!found) {
-              matrix_destroy(inverse);
-              matrix_destroy(augmented);
-                return NULL;  // Matrix is singular, no inverse exists
+                inverse->free(inverse);
+                augmented->free(augmented);
+                return NULL;
             }
         }
 
-        // Scale the pivot row to make the pivot element 1
-        double pivot = augmented->data[i][i];
+        double pivot = aug_impl->data[i][i];
         for (int j = 0; j < 2 * n; j++) {
-            augmented->data[i][j] /= pivot;
+            aug_impl->data[i][j] /= pivot;
         }
 
-        // Eliminate all other entries in the current column
         for (int k = 0; k < n; k++) {
             if (k != i) {
-                double factor = augmented->data[k][i];
+                double factor = aug_impl->data[k][i];
                 for (int j = 0; j < 2 * n; j++) {
-                    augmented->data[k][j] -= factor * augmented->data[i][j];
+                    aug_impl->data[k][j] -= factor * aug_impl->data[i][j];
                 }
             }
         }
     }
 
-    // Extract the inverse from the augmented matrix
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            inverse->data[i][j] = augmented->data[i][j + n];
+            inv_impl->data[i][j] = aug_impl->data[i][j + n];
         }
     }
 
-  matrix_destroy(augmented);
+    augmented->free(augmented);
     return inverse;
 }
 
-int matrix_resize(matrix *self, int newRows, int newCols) {
-  if (self == NULL || newRows <= 0 || newCols <= 0) {
-    return -1;
-  }
+static int matrix_resize_method(matrix *self, int new_rows, int new_cols) {
+    matrix_impl *impl = matrix_impl_from_matrix(self);
+    if (!impl || new_rows <= 0 || new_cols <= 0) {
+        return -1;
+    }
 
-  if (self->rows == newRows && self->cols == newCols) {
+    if (impl->rows == new_rows && impl->cols == new_cols) {
+        return 0;
+    }
+
+    double **old_data = impl->data;
+    int old_rows = impl->rows;
+    int old_cols = impl->cols;
+    int min_rows = old_rows < new_rows ? old_rows : new_rows;
+    int copy_cols = old_cols < new_cols ? old_cols : new_cols;
+
+    double **new_data = (double **)malloc((size_t)new_rows * sizeof(double *));
+    if (!new_data) {
+        return -1;
+    }
+
+    for (int i = 0; i < new_rows; i++) {
+        new_data[i] = NULL;
+    }
+
+    for (int i = 0; i < min_rows; i++) {
+        double *new_row = (double *)malloc((size_t)new_cols * sizeof(double));
+        if (!new_row) {
+            goto resize_failure;
+        }
+
+        if (copy_cols > 0) {
+            memcpy(new_row, old_data[i], (size_t)copy_cols * sizeof(double));
+        }
+        for (int j = copy_cols; j < new_cols; j++) {
+            new_row[j] = 0.0;
+        }
+
+        new_data[i] = new_row;
+    }
+
+    for (int i = min_rows; i < new_rows; i++) {
+        new_data[i] = (double *)calloc((size_t)new_cols, sizeof(double));
+        if (!new_data[i]) {
+            goto resize_failure;
+        }
+    }
+
+    for (int i = 0; i < old_rows; i++) {
+        free(old_data[i]);
+    }
+    free(old_data);
+
+    impl->data = new_data;
+    impl->rows = new_rows;
+    impl->cols = new_cols;
     return 0;
-  }
-
-  double **oldData = self->data;
-  int oldRows = self->rows;
-  int oldCols = self->cols;
-  int minRows = oldRows < newRows ? oldRows : newRows;
-  int copyCols = oldCols < newCols ? oldCols : newCols;
-
-  double **newData = malloc((size_t)newRows * sizeof(double *));
-  if (newData == NULL) {
-    return -1;
-  }
-
-  for (int i = 0; i < newRows; i++) {
-    newData[i] = NULL;
-  }
-
-  for (int i = 0; i < minRows; i++) {
-    double *newRow = malloc((size_t)newCols * sizeof(double));
-    if (newRow == NULL) {
-      goto resize_failure;
-    }
-
-    if (copyCols > 0) {
-      memcpy(newRow, oldData[i], (size_t)copyCols * sizeof(double));
-    }
-    for (int j = copyCols; j < newCols; j++) {
-      newRow[j] = 0.0;
-    }
-
-    newData[i] = newRow;
-  }
-
-  for (int i = minRows; i < newRows; i++) {
-    double *newRow = calloc((size_t)newCols, sizeof(double));
-    if (newRow == NULL) {
-      goto resize_failure;
-    }
-    newData[i] = newRow;
-  }
-
-  for (int i = 0; i < oldRows; i++) {
-    free(oldData[i]);
-  }
-  free(oldData);
-
-  self->data = newData;
-  self->rows = newRows;
-  self->cols = newCols;
-
-  return 0;
 
 resize_failure:
-  for (int i = 0; i < newRows; i++) {
-    free(newData[i]);
-  }
-  free(newData);
-  return -1;
-}
-
-matrix *matrix_copy(matrix *self) {
-  if (!self) return NULL;
-
-  matrix* copy = create_matrix(self->rows, self->cols);
-  if (!copy) return NULL;
-
-  for (int i = 0; i < self->rows; i++) {
-    memcpy(copy->data[i], self->data[i], (size_t)self->cols * sizeof(double));
-  }
-
-  return copy;
-}
-
-void matrix_destroy(matrix *self) {
-    if (self != NULL) {
-        if (self->data != NULL) {
-            for (int i = 0; i < self->rows; i++) {
-                free(self->data[i]);  // Free each row
-            }
-            free(self->data);
-        }
-        free(self);
+    for (int i = 0; i < new_rows; i++) {
+        free(new_data[i]);
     }
+    free(new_data);
+    return -1;
 }
 
-void matrix_print(const matrix *self) {
-    if (self == NULL) {
+static matrix *matrix_copy_method(matrix *self) {
+    matrix_impl *impl = matrix_impl_from_matrix(self);
+    if (!impl) {
+        return NULL;
+    }
+
+    matrix *copy = create_matrix(impl->rows, impl->cols);
+    matrix_impl *out = matrix_impl_from_matrix(copy);
+    if (!out) {
+        return NULL;
+    }
+
+    for (int i = 0; i < impl->rows; i++) {
+        memcpy(out->data[i], impl->data[i], (size_t)impl->cols * sizeof(double));
+    }
+
+    return copy;
+}
+
+static void matrix_free_method(matrix *self) {
+    if (!self) {
+        return;
+    }
+
+    matrix_impl *impl = matrix_impl_from_matrix(self);
+    if (impl) {
+        if (impl->data) {
+            for (int i = 0; i < impl->rows; i++) {
+                free(impl->data[i]);
+            }
+            free(impl->data);
+        }
+        free(impl);
+        self->impl = NULL;
+    }
+
+    free(self);
+}
+
+static void matrix_print_method(const matrix *self) {
+    matrix_impl *impl = matrix_impl_from_matrix(self);
+    if (!impl) {
         printf("Matrix is NULL\n");
         return;
     }
-    for (int i = 0; i < self->rows; i++) {
-        for (int j = 0; j < self->cols; j++) {
-            printf("%9.3f ", self->data[i][j]);  // Adjust formatting as necessary
+
+    for (int i = 0; i < impl->rows; i++) {
+        for (int j = 0; j < impl->cols; j++) {
+            printf("%9.3f ", impl->data[i][j]);
         }
         printf("\n");
     }
 }
 
+static double vector_get_method(const vector *self, int index) {
+    vector_impl *impl = vector_impl_from_vector(self);
+    if (!impl || index < 0 || index >= impl->size) {
+        return 0.0;
+    }
+    return impl->data[index];
+}
+
+static int vector_set_method(vector *self, int index, double value) {
+    vector_impl *impl = vector_impl_from_vector(self);
+    if (!impl || index < 0 || index >= impl->size) {
+        return -1;
+    }
+    impl->data[index] = value;
+    return 0;
+}
+
+static int vector_size_method(const vector *self) {
+    vector_impl *impl = vector_impl_from_vector(self);
+    return impl ? impl->size : 0;
+}
+
+static int vector_resize_method(vector *self, int new_size) {
+    vector_impl *impl = vector_impl_from_vector(self);
+    if (!impl || new_size <= 0) {
+        return -1;
+    }
+
+    double *new_data = (double *)realloc(impl->data, (size_t)new_size * sizeof(double));
+    if (!new_data) {
+        return -1;
+    }
+
+    if (new_size > impl->size) {
+        for (int i = impl->size; i < new_size; i++) {
+            new_data[i] = 0.0;
+        }
+    }
+
+    impl->data = new_data;
+    impl->size = new_size;
+    return 0;
+}
+
+static vector *vector_copy_method(const vector *self) {
+    vector_impl *impl = vector_impl_from_vector(self);
+    if (!impl) {
+        return NULL;
+    }
+
+    vector *copy = create_vector(impl->size);
+    vector_impl *out = vector_impl_from_vector(copy);
+    if (!out) {
+        return NULL;
+    }
+
+    memcpy(out->data, impl->data, (size_t)impl->size * sizeof(double));
+    return copy;
+}
+
+static void vector_print_method(const vector *self) {
+    vector_impl *impl = vector_impl_from_vector(self);
+    if (!impl) {
+        printf("Vector is NULL\n");
+        return;
+    }
+
+    printf("[");
+    for (int i = 0; i < impl->size; i++) {
+        printf("%f", impl->data[i]);
+        if (i < impl->size - 1) {
+            printf(", ");
+        }
+    }
+    printf("]\n");
+}
+
+static void vector_free_method(vector *self) {
+    if (!self) {
+        return;
+    }
+
+    vector_impl *impl = vector_impl_from_vector(self);
+    if (impl) {
+        free(impl->data);
+        impl->data = NULL;
+        free(impl);
+        self->impl = NULL;
+    }
+
+    free(self);
+}

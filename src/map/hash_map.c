@@ -1,223 +1,270 @@
 #include "hash_map.h"
 #include "../utils/capacity_utils.h"
+
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
-void hash_insert(map *self, void *key, void *data);
-void *hash_get(map *self, void *key);
-void *hash_remove(map *self, void *key);
-void hash_free(map *self);
-
-map *create_hash_map(int capacity, int (*hash_func)(void *, int), comparator key_compare, int thread_safe) {
-    if (capacity < INITIAL_CAPACITY) {
-        capacity = INITIAL_CAPACITY;
+static int map_keys_equal(map_impl *impl, void *lhs, void *rhs) {
+    if (lhs == rhs) {
+        return 1;
     }
-    map *table = (map *) malloc(sizeof(map));
-    if (table) {
-        table->buckets = (map_entry **) calloc((size_t)capacity, sizeof(map_entry *));
-        if (!table->buckets) {
-            free(table);
-            return NULL;
-        }
-        table->capacity = capacity;
-        table->size = 0;
-        table->hash_func = hash_func ? hash_func : bernstein_hash;
-        table->key_compare = key_compare;
-        table->put = hash_insert;
-        table->get = hash_get;
-        table->remove = hash_remove;
-        table->free = hash_free;
-
-        if (thread_safe) {
-            table->lock = malloc(sizeof(pthread_mutex_t));
-            if (table->lock) {
-                pthread_mutex_init(table->lock, NULL);
-            } else {
-                free(table->buckets);
-                free(table);
-                return NULL;
-            }
-        } else {
-            table->lock = NULL;
-        }
+    if (!impl || !impl->key_compare || lhs == NULL || rhs == NULL) {
+        return 0;
     }
-    return table;
+    return impl->key_compare(lhs, rhs) == 0;
 }
 
-/**
- * @brief Resizes and rehashes the map table.
- *
- * This function resizes the map table by doubling its capacity and rehashes
- * all the entries. It allocates new memory for the expanded buckets and moves
- * the entries to the new buckets according to their new index.
- *
- * @param ht Pointer to the map table.
- */
-void resize_and_rehash(map *ht) {
-    int old_capacity = ht->capacity;
+static int map_bucket_index(map_impl *impl, void *key) {
+    if (!impl || impl->capacity <= 0) {
+        return 0;
+    }
+    if (key == NULL) {
+        return 0;
+    }
+    return impl->hash_func(key, impl->capacity);
+}
+
+static void resize_and_rehash(map_impl *impl) {
+    int old_capacity = impl->capacity;
     int new_capacity = safe_double_capacity(old_capacity);
     if (new_capacity == old_capacity) {
-        return; // Already at maximum capacity
+        return;
     }
-    map_entry **new_buckets = calloc((size_t)new_capacity, sizeof(map_entry*));
 
+    map_entry **new_buckets = calloc((size_t)new_capacity, sizeof(map_entry *));
     if (!new_buckets) {
         return;
     }
 
     for (int i = 0; i < old_capacity; i++) {
-        map_entry *node = ht->buckets[i];
+        map_entry *node = impl->buckets[i];
         while (node) {
             map_entry *next_node = node->next;
-            int new_index = ht->hash_func(node->key, new_capacity);
-
+            int new_index = node->key ? impl->hash_func(node->key, new_capacity) : 0;
             node->next = new_buckets[new_index];
             new_buckets[new_index] = node;
             node = next_node;
         }
     }
 
-    free(ht->buckets);
-    ht->buckets = new_buckets;
-    ht->capacity = new_capacity;
+    free(impl->buckets);
+    impl->buckets = new_buckets;
+    impl->capacity = new_capacity;
 }
 
-/**
- * @brief Inserts a key-value pair into the map table.
- *
- * This function inserts the given key-value pair into the map table
- * at the appropriate position based on the calculated index using the map function.
- * If the load factor of the map table exceeds the defined load factor, it is resized
- * and rehashed before insertion.
- *
- * @param self Pointer to the map table.
- * @param key Pointer to the key.
- * @param data Pointer to the data associated with the key.
- */
-void hash_insert(map *self, void *key, void *data) {
-    if (self->lock) pthread_mutex_lock(self->lock);
-
-    double load_factor = (double)self->size / (double)self->capacity;
-    if (load_factor > LOAD_FACTOR) {
-        resize_and_rehash(self);
+static void hash_insert(map *self, void *key, void *data) {
+    map_impl *impl = map_impl_from_map(self);
+    if (!impl) {
+        return;
     }
 
-    int index = self->hash_func(key, self->capacity);
-    map_entry *node = self->buckets[index];
+    if (impl->lock) {
+        pthread_mutex_lock(impl->lock);
+    }
 
+    double load_factor = (double)impl->size / (double)impl->capacity;
+    if (load_factor > LOAD_FACTOR) {
+        resize_and_rehash(impl);
+    }
+
+    int index = map_bucket_index(impl, key);
+    map_entry *node = impl->buckets[index];
     while (node) {
-        if (self->key_compare(node->key, key) == 0) {
-            node->data = data;  // Atualizar os dados se a chave já existir
-            if (self->lock) pthread_mutex_unlock(self->lock);
+        if (map_keys_equal(impl, node->key, key)) {
+            node->data = data;
+            if (impl->lock) {
+                pthread_mutex_unlock(impl->lock);
+            }
             return;
         }
         node = node->next;
     }
 
-    map_entry *new_node = malloc(sizeof(map_entry));
+    map_entry *new_node = (map_entry *)malloc(sizeof(map_entry));
     if (new_node) {
         new_node->key = key;
         new_node->data = data;
-        new_node->next = self->buckets[index];
-        self->buckets[index] = new_node;
-        self->size++;
+        new_node->next = impl->buckets[index];
+        impl->buckets[index] = new_node;
+        impl->size++;
     }
 
-    if (self->lock) pthread_mutex_unlock(self->lock);
+    if (impl->lock) {
+        pthread_mutex_unlock(impl->lock);
+    }
 }
 
-/**
- * @brief Retrieves the value associated with a given key in the map table.
- *
- * This function returns the value associated with the specified key if it exists in the map table.
- * If the key is found in the map table, the associated value is returned. Otherwise, NULL is returned.
- *
- * @param self A pointer to the map table.
- * @param key A pointer to the key to search for.
- * @return The value associated with the specified key, or NULL if the key is not found.
- */
-void *hash_get(map *self, void *key) {
-    if (self->lock) pthread_mutex_lock(self->lock);
+static void hash_put_bulk(map *self, void **keys, void **values, int count) {
+    if (!self || !keys || !values || count <= 0) {
+        return;
+    }
 
-    int index = (key == NULL) ? 0 : self->hash_func(key, self->capacity);
-    map_entry *node = self->buckets[index];
+    for (int i = 0; i < count; i++) {
+        self->put(self, keys[i], values[i]);
+    }
+}
+
+static void *hash_get(map *self, void *key) {
+    map_impl *impl = map_impl_from_map(self);
+    if (!impl) {
+        return NULL;
+    }
+
+    if (impl->lock) {
+        pthread_mutex_lock(impl->lock);
+    }
+
+    int index = map_bucket_index(impl, key);
+    map_entry *node = impl->buckets[index];
     while (node) {
-        if ((node->key == key) || (key != NULL && self->key_compare(node->key, key) == 0)) {
+        if (map_keys_equal(impl, node->key, key)) {
             void *result = node->data;
-            if (self->lock) pthread_mutex_unlock(self->lock);
+            if (impl->lock) {
+                pthread_mutex_unlock(impl->lock);
+            }
             return result;
         }
         node = node->next;
     }
 
-    if (self->lock) pthread_mutex_unlock(self->lock);
+    if (impl->lock) {
+        pthread_mutex_unlock(impl->lock);
+    }
     return NULL;
 }
 
-/**
- * Removes an entry from the map table based on the specified key.
- *
- * @param self The map table to remove the entry from.
- * @param key The key of the entry to be removed.
- * @return The data associated with the removed entry, or NULL if the entry was not found.
- */
-void *hash_remove(map *self, void *key) {
-    if (self->lock) pthread_mutex_lock(self->lock);
+static void *hash_remove(map *self, void *key) {
+    map_impl *impl = map_impl_from_map(self);
+    if (!impl) {
+        return NULL;
+    }
 
-    int index = (key == NULL) ? 0 : self->hash_func(key, self->capacity);
+    if (impl->lock) {
+        pthread_mutex_lock(impl->lock);
+    }
+
+    int index = map_bucket_index(impl, key);
     map_entry *prev = NULL;
-    map_entry *current = self->buckets[index];
-
+    map_entry *current = impl->buckets[index];
     while (current) {
-        if ((current->key == key) || (key != NULL && self->key_compare(current->key, key) == 0)) {
+        if (map_keys_equal(impl, current->key, key)) {
             void *data = current->data;
-            if (prev == NULL) {
-                self->buckets[index] = current->next;
+            if (!prev) {
+                impl->buckets[index] = current->next;
             } else {
                 prev->next = current->next;
             }
             free(current);
-            self->size--;
+            impl->size--;
 
-            if (self->lock) pthread_mutex_unlock(self->lock);
+            if (impl->lock) {
+                pthread_mutex_unlock(impl->lock);
+            }
             return data;
         }
-
         prev = current;
         current = current->next;
     }
 
-    if (self->lock) pthread_mutex_unlock(self->lock);
+    if (impl->lock) {
+        pthread_mutex_unlock(impl->lock);
+    }
     return NULL;
 }
 
-/**
- * @brief Frees the memory allocated for the map table.
- *
- * This function frees the memory allocated for the map table and its elements.
- *
- * @param self Pointer to the map table.
- */
-void hash_free(map *self) {
-    if (self->lock) {
-        pthread_mutex_lock(self->lock);
+static int hash_size(const map *self) {
+    map_impl *impl = map_impl_from_map(self);
+    return impl ? impl->size : 0;
+}
+
+static int hash_capacity(const map *self) {
+    map_impl *impl = map_impl_from_map(self);
+    return impl ? impl->capacity : 0;
+}
+
+static void hash_free(map *self) {
+    if (!self) {
+        return;
     }
 
-    for (int i = 0; i < self->capacity; i++) {
-        map_entry *node = self->buckets[i];
-        while (node) {
-            map_entry *tmp = node;
-            node = node->next;
-            free(tmp);
+    map_impl *impl = map_impl_from_map(self);
+    if (impl) {
+        if (impl->lock) {
+            pthread_mutex_lock(impl->lock);
         }
-    }
-    free(self->buckets);
 
-    if (self->lock) {
-        pthread_mutex_unlock(self->lock);
-        pthread_mutex_destroy(self->lock);
-        free(self->lock);
+        for (int i = 0; i < impl->capacity; i++) {
+            map_entry *node = impl->buckets[i];
+            while (node) {
+                map_entry *tmp = node;
+                node = node->next;
+                free(tmp);
+            }
+        }
+        free(impl->buckets);
+
+        if (impl->lock) {
+            pthread_mutex_unlock(impl->lock);
+            pthread_mutex_destroy(impl->lock);
+            free(impl->lock);
+        }
+
+        free(impl);
+        self->impl = NULL;
     }
 
     free(self);
+}
+
+map *create_hash_map(int capacity, int (*hash_func)(void *, int), comparator key_compare, int thread_safe) {
+    if (capacity < INITIAL_CAPACITY) {
+        capacity = INITIAL_CAPACITY;
+    }
+
+    map *out = (map *)calloc(1, sizeof(map));
+    if (!out) {
+        return NULL;
+    }
+
+    map_impl *impl = (map_impl *)calloc(1, sizeof(map_impl));
+    if (!impl) {
+        free(out);
+        return NULL;
+    }
+
+    impl->buckets = (map_entry **)calloc((size_t)capacity, sizeof(map_entry *));
+    if (!impl->buckets) {
+        free(impl);
+        free(out);
+        return NULL;
+    }
+
+    impl->capacity = capacity;
+    impl->size = 0;
+    impl->hash_func = hash_func ? hash_func : bernstein_hash;
+    impl->key_compare = key_compare;
+    impl->lock = NULL;
+
+    if (thread_safe) {
+        impl->lock = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+        if (!impl->lock) {
+            free(impl->buckets);
+            free(impl);
+            free(out);
+            return NULL;
+        }
+        pthread_mutex_init(impl->lock, NULL);
+    }
+
+    out->impl = impl;
+    out->put = hash_insert;
+    out->put_bulk = hash_put_bulk;
+    out->get = hash_get;
+    out->remove = hash_remove;
+    out->size = hash_size;
+    out->capacity = hash_capacity;
+    out->free = hash_free;
+
+    return out;
 }

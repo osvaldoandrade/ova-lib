@@ -1,6 +1,6 @@
 # Contributing to ova-lib
 
-This guide keeps the contribution path short: build the library, run the tests, keep the docs aligned with the headers, and send one focused pull request at a time.
+This guide keeps the contribution path short: build the library, run the tests, keep the wiki aligned with the headers, and send one focused pull request at a time.
 
 ## Build
 
@@ -33,11 +33,11 @@ If Valgrind was present when the build tree was configured, the `memcheck` targe
 cmake --build build/dev --target memcheck
 ```
 
-## Code and Docs
+## Code and Documentation
 
 Match the style already present in the touched module. Public C APIs use snake case. Enum values use upper snake case. Keep ownership rules explicit in headers and in prose.
 
-If a change touches a public function, type, or return rule, update the matching page in `docs/` in the same pull request. The repo docs are the canonical manual. The wiki is a short map into that material.
+If a change touches a public function, type, or return rule, update the matching wiki page in the same pull request. The GitHub wiki is the canonical manual.
 
 ## Tests for Changes
 
@@ -45,7 +45,7 @@ Add or update one focused test in `test/` for any behavior change. Each test fil
 
 ## Pull Requests
 
-One pull request should cover one logical change. Keep the description factual. Include the commands you ran, the docs you updated, and any gaps you left open on purpose.
+One pull request should cover one logical change. Keep the description factual. Include the commands you ran, the wiki pages you updated, and any gaps you left open on purpose.
 
 ## License
 

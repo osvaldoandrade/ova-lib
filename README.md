@@ -19,22 +19,7 @@ The current public surface groups into 8 areas.
 
 ## Documentation
 
-The repo docs are the canonical narrative. The wiki is a short map into this material.
-
-- [Architecture overview](docs/architecture.md)
-- [Usage guide](docs/best-practices.md)
-- [Containers, heaps, maps, and deque](docs/containers.md)
-- [Graphs](docs/graph.md)
-- [Matrix and vector operations](docs/matrix.md)
-- [Simplex solver](docs/solver-simplex.md)
-- [Sorting helpers](docs/sorting.md)
-- [Balanced trees](docs/trees.md)
-- [Trie](docs/trie.md)
-- [Set](docs/set.md)
-- [Bloom filter](docs/bloom_filter.md)
-- [Performance notes](docs/benchmarks.md)
-- [Documentation review, 2026-03-29](docs/recommendations.md)
-- [Review summary](docs/recommendations-summary.md)
+Project documentation now lives in the [GitHub wiki](https://github.com/osvaldoandrade/ova-lib/wiki).
 
 ## Build
 

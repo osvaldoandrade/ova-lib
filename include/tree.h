@@ -1,14 +1,6 @@
 #ifndef TREE_H
 #define TREE_H
 
-/**
- * @file tree.h
- * @brief Balanced binary search tree with AVL and Red-Black tree implementations.
- *
- * Provides a common tree interface supporting insert, search, delete, min/max,
- * predecessor/successor, range queries, and in-order traversal.
- */
-
 #include "list.h"
 #include "types.h"
 
@@ -17,133 +9,119 @@ typedef enum {
     TREE_RED_BLACK
 } tree_type;
 
-typedef struct tree tree;
+/**
+ * @brief Public balanced-tree object.
+ *
+ * Concrete storage details live in @p impl.
+ */
+typedef struct tree {
+    void *impl;
+
+    /**
+     * @brief Insert or update a key/value pair.
+     *
+     * @param self Tree instance.
+     * @param key Key pointer.
+     * @param value Value pointer.
+     */
+    void (*insert)(struct tree *self, void *key, void *value);
+
+    /**
+     * @brief Search for a key and return its value.
+     *
+     * @param self Tree instance.
+     * @param key Key pointer.
+     * @return Stored value pointer, or NULL when missing.
+     */
+    void *(*search)(struct tree *self, void *key);
+
+    /**
+     * @brief Delete a key/value pair by key.
+     *
+     * @param self Tree instance.
+     * @param key Key pointer to remove.
+     */
+    void (*delete)(struct tree *self, void *key);
+
+    /**
+     * @brief Return the value associated with the minimum key.
+     *
+     * @param self Tree instance.
+     * @return Value pointer, or NULL when empty.
+     */
+    void *(*min)(struct tree *self);
+
+    /**
+     * @brief Return the value associated with the maximum key.
+     *
+     * @param self Tree instance.
+     * @return Value pointer, or NULL when empty.
+     */
+    void *(*max)(struct tree *self);
+
+    /**
+     * @brief Return the predecessor value for the given key.
+     *
+     * @param self Tree instance.
+     * @param key Search key.
+     * @return Value pointer, or NULL when no predecessor exists.
+     */
+    void *(*predecessor)(struct tree *self, void *key);
+
+    /**
+     * @brief Return the successor value for the given key.
+     *
+     * @param self Tree instance.
+     * @param key Search key.
+     * @return Value pointer, or NULL when no successor exists.
+     */
+    void *(*successor)(struct tree *self, void *key);
+
+    /**
+     * @brief Return values whose keys fall in the inclusive range [low, high].
+     *
+     * The returned list container is owned by the caller.
+     *
+     * @param self Tree instance.
+     * @param low Inclusive lower bound.
+     * @param high Inclusive upper bound.
+     * @return New list of stored value pointers, or NULL on failure.
+     */
+    list *(*range_query)(struct tree *self, void *low, void *high);
+
+    /**
+     * @brief Traverse keys in ascending order.
+     *
+     * @param self Tree instance.
+     * @param callback Callback receiving stored key/value pointers.
+     */
+    void (*in_order_traverse)(struct tree *self, void (*callback)(void *, void *));
+
+    /**
+     * @brief Return the number of stored key/value pairs.
+     *
+     * @param self Tree instance.
+     * @return Number of stored pairs.
+     */
+    int (*size)(const struct tree *self);
+
+    /**
+     * @brief Release the tree and its internal allocations.
+     *
+     * The tree does not free user keys or values.
+     *
+     * @param self Tree instance.
+     */
+    void (*free)(struct tree *self);
+} tree;
 
 /**
- * @brief Creates a balanced binary search tree.
+ * @brief Create a balanced binary-search tree.
  *
- * The tree stores key/value pointers provided by the caller. Keys are ordered
- * using the provided comparator. Keys are considered equal when cmp(a,b) == 0.
- * If a key equal to an existing key is inserted, the tree updates the value
- * associated with that key but keeps the originally stored key pointer; the new
- * key pointer passed to tree_insert is not stored.
- *
- * @param type Balanced tree variant to use.
- * @param cmp Comparator for keys (required).
- * @return A pointer to the created tree, or NULL on allocation failure or if cmp is NULL.
+ * @param type Tree backend to construct.
+ * @param cmp Comparator for keys.
+ * @return New tree instance, or NULL on failure.
  */
 tree *create_tree(tree_type type, comparator cmp);
 
-/**
- * @brief Frees the tree and all internal node allocations.
- *
- * This function does not free user-provided keys/values.
- *
- * @param t The tree to free.
- */
-void tree_free(tree *t);
-
-/**
- * @brief Inserts a key/value pair into the tree.
- *
- * If a key equal to @p key already exists, the associated value is updated.
- *
- * @param t The tree.
- * @param key Pointer to the key.
- * @param value Pointer to the value.
- */
-void tree_insert(tree *t, void *key, void *value);
-
-/**
- * @brief Searches for a key in the tree.
- *
- * @param t The tree.
- * @param key Pointer to the key to search for.
- * @return Pointer to the associated value if found, or NULL if the key is not present.
- */
-void *tree_search(tree *t, void *key);
-
-/**
- * @brief Deletes a key and its associated value from the tree.
- *
- * If the key is not found, no action is taken.
- *
- * @param t The tree.
- * @param key Pointer to the key to delete.
- */
-void tree_delete(tree *t, void *key);
-
-/**
- * @brief Returns the value associated with the minimum key, or NULL if empty.
- *
- * @param t The tree.
- * @return Pointer to the value associated with the minimum key, or NULL.
- */
-void *tree_min(tree *t);
-
-/**
- * @brief Returns the value associated with the maximum key, or NULL if empty.
- *
- * @param t The tree.
- * @return Pointer to the value associated with the maximum key, or NULL.
- */
-void *tree_max(tree *t);
-
-/**
- * @brief Returns the value associated with the predecessor of @p key.
- *
- * The predecessor is the largest key strictly smaller than @p key. The key does
- * not need to exist in the tree.
- *
- * @param t The tree.
- * @param key Pointer to the reference key.
- * @return Pointer to the predecessor value, or NULL if no predecessor exists.
- */
-void *tree_predecessor(tree *t, void *key);
-
-/**
- * @brief Returns the value associated with the successor of @p key.
- *
- * The successor is the smallest key strictly larger than @p key. The key does
- * not need to exist in the tree.
- *
- * @param t The tree.
- * @param key Pointer to the reference key.
- * @return Pointer to the successor value, or NULL if no successor exists.
- */
-void *tree_successor(tree *t, void *key);
-
-/**
- * @brief Returns values whose keys are within the inclusive range [low, high].
- *
- * The returned list contains pointers to the values stored in the tree (it does
- * not allocate/copy keys or values). The caller owns the list container and must
- * free it with list->free(list).
- *
- * @param t The tree.
- * @param low Pointer to the lower bound key.
- * @param high Pointer to the upper bound key.
- * @return A list of value pointers in the range, or NULL on failure.
- */
-list *tree_range_query(tree *t, void *low, void *high);
-
-/**
- * @brief Traverses the tree in ascending key order.
- *
- * The callback receives (key, value) pointers as stored in the tree.
- *
- * @param t The tree.
- * @param callback Function called for each key/value pair.
- */
-void tree_in_order_traverse(tree *t, void (*callback)(void *, void *));
-
-/**
- * @brief Returns the number of key/value pairs stored in the tree.
- *
- * @param t The tree.
- * @return The number of elements in the tree.
- */
-int tree_size(const tree *t);
-
 #endif // TREE_H
-

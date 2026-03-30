@@ -1,21 +1,20 @@
 #ifndef OVA_LIB_H
 #define OVA_LIB_H
 
-/**
- * @file ova.h
- * @brief Convenience header that includes all ova-lib public headers.
- */
-
+#include "bloom_filter.h"
+#include "deque.h"
+#include "graph.h"
 #include "heap.h"
 #include "list.h"
-#include "bloom_filter.h"
 #include "map.h"
+#include "matrix.h"
 #include "queue.h"
-#include "graph.h"
+#include "set.h"
+#include "solver.h"
 #include "sort.h"
+#include "stack.h"
 #include "tree.h"
 #include "trie.h"
-#include "set.h"
 #include "types.h"
 
 #endif // OVA_LIB_H

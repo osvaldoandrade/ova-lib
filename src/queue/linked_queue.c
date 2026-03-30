@@ -1,15 +1,9 @@
+#include "linked_queue.h"
+
 #include <stdlib.h>
-#include "../../include/queue.h"
 
-static void linked_initialize(queue *self, comparator compare) {
-    (void)compare;
-    self->front = NULL;
-    self->rear = NULL;
-    self->length = 0;
-}
-
-static queue_entry* create_node(void *data) {
-    queue_entry *new_node = malloc(sizeof(queue_entry));
+static queue_entry *create_node(void *data) {
+    queue_entry *new_node = (queue_entry *)malloc(sizeof(queue_entry));
     if (new_node) {
         new_node->data = data;
         new_node->next = NULL;
@@ -18,66 +12,96 @@ static queue_entry* create_node(void *data) {
 }
 
 static int linked_enqueue(queue *self, void *data) {
+    queue_impl *impl = queue_impl_from_queue(self);
+    if (!impl) {
+        return 0;
+    }
+
     queue_entry *new_node = create_node(data);
-    if (!new_node) return 0;
-
-    if (self->rear) {
-        self->rear->next = new_node;
-    }
-    self->rear = new_node;
-
-    if (!self->front) {
-        self->front = new_node;
+    if (!new_node) {
+        return 0;
     }
 
-    self->length++;
+    if (impl->rear) {
+        impl->rear->next = new_node;
+    }
+    impl->rear = new_node;
+
+    if (!impl->front) {
+        impl->front = new_node;
+    }
+
+    impl->length++;
     return 1;
 }
 
-static void* linked_dequeue(queue *self) {
-    if (!self->front) return NULL;
+static void *linked_dequeue(queue *self) {
+    queue_impl *impl = queue_impl_from_queue(self);
+    if (!impl || !impl->front) {
+        return NULL;
+    }
 
-    queue_entry *temp = self->front;
+    queue_entry *temp = impl->front;
     void *data = temp->data;
-    self->front = self->front->next;
+    impl->front = impl->front->next;
 
-    if (!self->front) {
-        self->rear = NULL;
+    if (!impl->front) {
+        impl->rear = NULL;
     }
 
     free(temp);
-    self->length--;
+    impl->length--;
     return data;
 }
 
 static int linked_is_empty(const queue *self) {
-    return self->front == NULL;
-}
-
-static void linked_free(queue *self) {
-    while (!linked_is_empty(self)) {
-        linked_dequeue(self);
-    }
-    free(self);
+    queue_impl *impl = queue_impl_from_queue(self);
+    return (!impl || !impl->front) ? 1 : 0;
 }
 
 static int linked_size(const queue *self) {
-    return self->length;
+    queue_impl *impl = queue_impl_from_queue(self);
+    return impl ? impl->length : 0;
+}
+
+static void linked_free(queue *self) {
+    if (!self) {
+        return;
+    }
+
+    while (!linked_is_empty(self)) {
+        (void)linked_dequeue(self);
+    }
+
+    free(self->impl);
+    self->impl = NULL;
+    free(self);
 }
 
 queue *create_linked_queue(void) {
-    queue *q = malloc(sizeof(queue));
-    if (!q) return NULL;
+    queue *out = (queue *)calloc(1, sizeof(queue));
+    if (!out) {
+        return NULL;
+    }
 
-    q->p_heap = NULL;
+    queue_impl *impl = (queue_impl *)calloc(1, sizeof(queue_impl));
+    if (!impl) {
+        free(out);
+        return NULL;
+    }
 
-    q->initialize = linked_initialize;
-    q->enqueue = linked_enqueue;
-    q->dequeue = linked_dequeue;
-    q->is_empty = linked_is_empty;
-    q->free = linked_free;
-    q->size = linked_size;
+    impl->type = QUEUE_TYPE_NORMAL;
+    impl->front = NULL;
+    impl->rear = NULL;
+    impl->p_heap = NULL;
+    impl->length = 0;
 
-    q->initialize(q, NULL);
-    return q;
+    out->impl = impl;
+    out->enqueue = linked_enqueue;
+    out->dequeue = linked_dequeue;
+    out->is_empty = linked_is_empty;
+    out->size = linked_size;
+    out->free = linked_free;
+
+    return out;
 }

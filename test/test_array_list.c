@@ -175,7 +175,7 @@ void test_array_list_insert_bulk(void) {
     int items[] = {10, 20, 30, 40, 50};
     void *ptrs[] = {&items[0], &items[1], &items[2], &items[3], &items[4]};
 
-    list_insert_bulk(lst, ptrs, 5);
+    lst->insert_bulk(lst, ptrs, 5);
 
     int passed = lst->size(lst) == 5;
     for (int i = 0; i < 5 && passed; i++) {
@@ -194,13 +194,13 @@ void test_array_list_insert_bulk_empty(void) {
     int items[] = {1};
     void *ptrs[] = {&items[0]};
 
-    list_insert_bulk(lst, ptrs, 0);
+    lst->insert_bulk(lst, ptrs, 0);
     print_test_result(lst->size(lst) == 0, "Array List bulk insert with count 0 does nothing");
 
-    list_insert_bulk(lst, NULL, 3);
+    lst->insert_bulk(lst, NULL, 3);
     print_test_result(lst->size(lst) == 0, "Array List bulk insert with NULL elements does nothing");
 
-    list_insert_bulk(NULL, ptrs, 1);
+    lst->insert_bulk(NULL, ptrs, 1);
     print_test_result(1, "Array List bulk insert with NULL list does not crash");
 
     lst->free(lst);

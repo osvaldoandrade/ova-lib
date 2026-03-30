@@ -1,10 +1,10 @@
 #include "graph_internal.h"
 
-static inline double *cell(const graph *g, int from, int to) {
+static inline double *cell(const graph_impl *g, int from, int to) {
     return g ? &g->adj_matrix[from * g->vertex_capacity + to] : NULL;
 }
 
-void graph_adj_matrix_add_edge(graph *g, int from, int to, double weight) {
+void graph_adj_matrix_add_edge(graph_impl *g, int from, int to, double weight) {
     if (!g || !g->adj_matrix) {
         return;
     }
@@ -15,7 +15,7 @@ void graph_adj_matrix_add_edge(graph *g, int from, int to, double weight) {
     }
 }
 
-void graph_adj_matrix_remove_edge(graph *g, int from, int to) {
+void graph_adj_matrix_remove_edge(graph_impl *g, int from, int to) {
     if (!g || !g->adj_matrix) {
         return;
     }
@@ -26,21 +26,21 @@ void graph_adj_matrix_remove_edge(graph *g, int from, int to) {
     }
 }
 
-bool graph_adj_matrix_has_edge(const graph *g, int from, int to) {
+bool graph_adj_matrix_has_edge(const graph_impl *g, int from, int to) {
     if (!g || !g->adj_matrix) {
         return false;
     }
     return *cell(g, from, to) != GRAPH_NO_EDGE;
 }
 
-double graph_adj_matrix_get_edge_weight(const graph *g, int from, int to) {
+double graph_adj_matrix_get_edge_weight(const graph_impl *g, int from, int to) {
     if (!g || !g->adj_matrix) {
         return GRAPH_NO_EDGE;
     }
     return *cell(g, from, to);
 }
 
-list *graph_adj_matrix_get_neighbors(const graph *g, int vertex) {
+list *graph_adj_matrix_get_neighbors(const graph_impl *g, int vertex) {
     list *neighbors = create_list(ARRAY_LIST, 4, NULL);
     if (!neighbors) {
         return NULL;
@@ -62,4 +62,3 @@ list *graph_adj_matrix_get_neighbors(const graph *g, int vertex) {
 
     return neighbors;
 }
-

@@ -24,7 +24,7 @@ static void collect_key_cb(void *key, void *value) {
 
 static int assert_in_order_keys(tree *t, const int *expected, int expected_count) {
     collected_count = 0;
-    tree_in_order_traverse(t, collect_key_cb);
+    t->in_order_traverse(t, collect_key_cb);
     if (collected_count != expected_count) {
         return 0;
     }
@@ -56,40 +56,40 @@ static void test_red_black_tree_basic_ops(void) {
     const int n = (int)(sizeof(items) / sizeof(items[0]));
 
     for (int i = 0; i < n; i++) {
-        tree_insert(t, &items[i].key, &items[i].value);
+        t->insert(t, &items[i].key, &items[i].value);
     }
 
     int query = 50;
-    int *found = (int *)tree_search(t, &query);
+    int *found = (int *)t->search(t, &query);
     print_test_result(found && *found == 500, "RB tree search returns correct value");
 
     int update_key = 15;
     int update_value = 999;
-    tree_insert(t, &update_key, &update_value);
-    int *updated = (int *)tree_search(t, &update_key);
+    t->insert(t, &update_key, &update_value);
+    int *updated = (int *)t->search(t, &update_key);
     print_test_result(updated && *updated == 999, "RB tree insert updates existing key value");
 
-    int *minv = (int *)tree_min(t);
-    int *maxv = (int *)tree_max(t);
+    int *minv = (int *)t->min(t);
+    int *maxv = (int *)t->max(t);
     print_test_result(minv && *minv == 30, "RB tree min returns smallest key value");
     print_test_result(maxv && *maxv == 1000, "RB tree max returns largest key value");
 
     int pred_key = 15;
     int succ_key = 15;
-    int *pred = (int *)tree_predecessor(t, &pred_key);
-    int *succ = (int *)tree_successor(t, &succ_key);
+    int *pred = (int *)t->predecessor(t, &pred_key);
+    int *succ = (int *)t->successor(t, &succ_key);
     print_test_result(pred && *pred == 100, "RB predecessor returns correct value");
     print_test_result(succ && *succ == 200, "RB successor returns correct value");
 
     int missing_key = 16;
-    int *pred2 = (int *)tree_predecessor(t, &missing_key);
-    int *succ2 = (int *)tree_successor(t, &missing_key);
+    int *pred2 = (int *)t->predecessor(t, &missing_key);
+    int *succ2 = (int *)t->successor(t, &missing_key);
     print_test_result(pred2 && *pred2 == 999, "RB predecessor works for missing key");
     print_test_result(succ2 && *succ2 == 200, "RB successor works for missing key");
 
     int low = 10;
     int high = 50;
-    list *range = tree_range_query(t, &low, &high);
+    list *range = t->range_query(t, &low, &high);
     int range_ok = range && range->size(range) == 4;
     if (range_ok) {
         int expected_values[] = {100, 999, 200, 500};
@@ -110,26 +110,26 @@ static void test_red_black_tree_basic_ops(void) {
     print_test_result(assert_in_order_keys(t, expected_keys1, 8), "RB in-order traversal yields sorted keys");
 
     int delete_key = 3;
-    tree_delete(t, &delete_key);
-    print_test_result(tree_search(t, &delete_key) == NULL, "RB delete removes leaf node");
+    t->delete(t, &delete_key);
+    print_test_result(t->search(t, &delete_key) == NULL, "RB delete removes leaf node");
 
     int delete_key2 = 70;
-    tree_delete(t, &delete_key2);
-    print_test_result(tree_search(t, &delete_key2) == NULL, "RB delete removes internal node");
+    t->delete(t, &delete_key2);
+    print_test_result(t->search(t, &delete_key2) == NULL, "RB delete removes internal node");
 
     int delete_key3 = 20;
-    tree_delete(t, &delete_key3);
-    print_test_result(tree_search(t, &delete_key3) == NULL, "RB delete removes two-child node");
+    t->delete(t, &delete_key3);
+    print_test_result(t->search(t, &delete_key3) == NULL, "RB delete removes two-child node");
 
     int expected_keys2[] = {4, 10, 15, 50, 100};
     print_test_result(assert_in_order_keys(t, expected_keys2, 5), "RB traversal remains sorted after deletes");
-    print_test_result(tree_size(t) == 5, "RB tree_size matches remaining items");
+    print_test_result(t->size(t) == 5, "RB tree_size matches remaining items");
 
     int missing_delete = 123;
-    tree_delete(t, &missing_delete);
-    print_test_result(tree_size(t) == 5, "RB delete on missing key is a no-op");
+    t->delete(t, &missing_delete);
+    print_test_result(t->size(t) == 5, "RB delete on missing key is a no-op");
 
-    tree_free(t);
+    t->free(t);
 }
 
 int main(void) {
