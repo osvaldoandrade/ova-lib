@@ -12,7 +12,7 @@ The current public surface groups into 8 areas.
 | Priority structures | `heap.h`, `sort.h` | Binary heap, Fibonacci heap, and list-based sorting helpers |
 | Keyed storage | `map.h`, `set.h`, `tree.h`, `trie.h` | Hash table, ordered trees, sets, and prefix lookup |
 | Numeric helpers | `matrix.h`, `solver.h` | Matrix arithmetic, vectors, and a simplex solver |
-| Graphs | `graph.h` | Directed or undirected graphs with two representations |
+| Graphs | `graph.h` | Directed or undirected graphs with pluggable traversal and shortest-path strategies |
 | Probabilistic lookup | `bloom_filter.h` | Tunable false-positive membership checks |
 | Umbrella include | `ova.h` | Re-exports the main headers |
 | Shared types | `types.h` | Comparator and hash typedefs |
@@ -104,6 +104,31 @@ int main(void) {
     int *top = (int *)pq->dequeue(pq);
     pq->free(pq);
     return top && *top == 9 ? 0 : 1;
+}
+```
+
+This graph example selects traversal and shortest-path behavior at construction time while keeping the runtime API algorithm-agnostic.
+
+```c
+#include "graph.h"
+
+int main(void) {
+    graph *g = create_graph(GRAPH_DIRECTED,
+                            GRAPH_ADJACENCY_LIST,
+                            GRAPH_TRAVERSE_BFS,
+                            GRAPH_MIN_PATH_DIJKSTRA);
+    vector *dist = NULL;
+
+    g->add_edge(g, 0, 1, 1.0);
+    g->add_edge(g, 1, 2, 2.0);
+    g->min_path(g, 0, &dist);
+
+    double d = dist ? dist->get(dist, 2) : -1.0;
+    if (dist) {
+        dist->free(dist);
+    }
+    g->free(g);
+    return d == 3.0 ? 0 : 1;
 }
 ```
 
