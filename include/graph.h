@@ -15,6 +15,17 @@ typedef enum {
     GRAPH_ADJACENCY_MATRIX
 } graph_representation;
 
+typedef enum {
+    GRAPH_TRAVERSE_BFS,
+    GRAPH_TRAVERSE_DFS_ITERATIVE,
+    GRAPH_TRAVERSE_DFS_RECURSIVE
+} graph_traversal_strategy;
+
+typedef enum {
+    GRAPH_MIN_PATH_DIJKSTRA,
+    GRAPH_MIN_PATH_BELLMAN_FORD
+} graph_min_path_strategy;
+
 /**
  * @brief Public weighted-edge result object.
  *
@@ -71,12 +82,8 @@ typedef struct graph {
     int (*vertex_count)(const struct graph *self);
     bool (*has_vertex)(const struct graph *self, int vertex_id);
     double (*get_edge_weight)(const struct graph *self, int from, int to);
-    list *(*bfs)(const struct graph *self, int start_vertex);
-    list *(*dfs_iterative)(const struct graph *self, int start_vertex);
-    list *(*dfs_recursive)(const struct graph *self, int start_vertex);
-    int (*dijkstra)(const struct graph *self, int start_vertex, vector **out_dist);
-    int (*bellman_ford)(const struct graph *self, int start_vertex, vector **out_dist);
-    matrix *(*floyd_warshall)(const struct graph *self);
+    list *(*traverse)(const struct graph *self, int start_vertex);
+    int (*min_path)(const struct graph *self, int start_vertex, vector **out_dist);
     list *(*mst_prim)(const struct graph *self, int start_vertex);
     list *(*mst_kruskal)(const struct graph *self);
     list *(*connected_components)(const struct graph *self);
@@ -86,6 +93,9 @@ typedef struct graph {
     void (*free)(struct graph *self);
 } graph;
 
-graph *create_graph(graph_type type, graph_representation rep);
+graph *create_graph(graph_type type,
+                    graph_representation rep,
+                    graph_traversal_strategy traversal_strategy,
+                    graph_min_path_strategy min_path_strategy);
 
 #endif // GRAPH_H
