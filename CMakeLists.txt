@@ -30,6 +30,7 @@ if(VALGRIND_PROGRAM)
 endif()
 
 include(CTest)
+option(OVA_BUILD_FUZZERS "Build libFuzzer harnesses" OFF)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -141,6 +142,23 @@ foreach(TEST IN ITEMS test_queue test_priority_queue test_binary_heap test_fibon
     target_link_libraries(${TEST} ova_lib_static m)
     add_test(NAME ${TEST} COMMAND ${TEST})
 endforeach()
+
+if(OVA_BUILD_FUZZERS)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "OVA_BUILD_FUZZERS=ON requires Clang with libFuzzer support (set CMAKE_C_COMPILER=clang).")
+    endif()
+
+    add_executable(fuzz_hash_map fuzz/fuzz_hash_map.c)
+    add_executable(fuzz_sort fuzz/fuzz_sort.c)
+    add_executable(fuzz_matrix fuzz/fuzz_matrix.c)
+
+    set(FUZZ_TARGETS fuzz_hash_map fuzz_sort fuzz_matrix)
+    foreach(FUZZ_TARGET IN LISTS FUZZ_TARGETS)
+        target_link_libraries(${FUZZ_TARGET} PRIVATE ova_lib_static m)
+        target_compile_options(${FUZZ_TARGET} PRIVATE -fsanitize=fuzzer,address)
+        target_link_options(${FUZZ_TARGET} PRIVATE -fsanitize=fuzzer,address)
+    endforeach()
+endif()
 
 if(VALGRIND_PROGRAM)
     add_custom_target(memcheck
