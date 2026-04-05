@@ -16,7 +16,7 @@ static int list_contains_vertex(list *lst, int v) {
 }
 
 void test_graph_add_edge_implicit_vertices(graph_representation rep) {
-    graph *g = create_graph(GRAPH_DIRECTED, rep);
+    graph *g = create_graph(GRAPH_DIRECTED, rep, GRAPH_TRAVERSE_BFS, GRAPH_MIN_PATH_DIJKSTRA);
     assert_not_null(g);
 
     g->add_edge(g, 5, 6, 2.0);
@@ -28,7 +28,7 @@ void test_graph_add_edge_implicit_vertices(graph_representation rep) {
 }
 
 void test_graph_basic_undirected(graph_representation rep) {
-    graph *g = create_graph(GRAPH_UNDIRECTED, rep);
+    graph *g = create_graph(GRAPH_UNDIRECTED, rep, GRAPH_TRAVERSE_BFS, GRAPH_MIN_PATH_DIJKSTRA);
     assert_not_null(g);
 
     g->add_vertex(g, 0);
@@ -67,4 +67,3 @@ int main(void) {
     run_all_graph_tests();
     return 0;
 }
-

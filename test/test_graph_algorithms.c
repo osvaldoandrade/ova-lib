@@ -1,6 +1,5 @@
 #include "base_test.h"
 #include "../include/graph.h"
-#include "../include/matrix.h"
 
 static int list_matches(const char *label, list *lst, const int *expected, int expected_len) {
     if (!lst) {
@@ -54,8 +53,8 @@ static double mst_total_weight(list *edges) {
     return sum;
 }
 
-static graph *build_unweighted_sample(graph_representation rep) {
-    graph *g = create_graph(GRAPH_UNDIRECTED, rep);
+static graph *build_unweighted_sample(graph_representation rep, graph_traversal_strategy traversal_strategy) {
+    graph *g = create_graph(GRAPH_UNDIRECTED, rep, traversal_strategy, GRAPH_MIN_PATH_DIJKSTRA);
     if (!g) {
         return NULL;
     }
@@ -72,8 +71,8 @@ static graph *build_unweighted_sample(graph_representation rep) {
     return g;
 }
 
-static graph *build_weighted_directed_sample(graph_representation rep) {
-    graph *g = create_graph(GRAPH_DIRECTED, rep);
+static graph *build_weighted_directed_sample(graph_representation rep, graph_min_path_strategy min_path_strategy) {
+    graph *g = create_graph(GRAPH_DIRECTED, rep, GRAPH_TRAVERSE_BFS, min_path_strategy);
     if (!g) {
         return NULL;
     }
@@ -86,59 +85,53 @@ static graph *build_weighted_directed_sample(graph_representation rep) {
     return g;
 }
 
-void test_bfs_and_dfs(graph_representation rep) {
-    graph *g = build_unweighted_sample(rep);
+void test_traverse(graph_representation rep,
+                   graph_traversal_strategy traversal_strategy,
+                   const int *expected,
+                   int expected_len,
+                   const char *label) {
+    graph *g = build_unweighted_sample(rep, traversal_strategy);
     assert_not_null(g);
 
-    int bfs_expected[] = {0, 1, 2, 3, 4};
-    list *bfs = g->bfs(g, 0);
-    list_matches("BFS visit order", bfs, bfs_expected, 5);
-    bfs->free(bfs);
-
-    int dfs_expected[] = {0, 1, 3, 2, 4};
-    list *dfs_it = g->dfs_iterative(g, 0);
-    list_matches("DFS iterative visit order", dfs_it, dfs_expected, 5);
-    dfs_it->free(dfs_it);
-
-    list *dfs_rec = g->dfs_recursive(g, 0);
-    list_matches("DFS recursive visit order", dfs_rec, dfs_expected, 5);
-    dfs_rec->free(dfs_rec);
+    list *order = g->traverse(g, 0);
+    list_matches(label, order, expected, expected_len);
+    order->free(order);
 
     g->free(g);
 }
 
-void test_shortest_paths(graph_representation rep) {
-    graph *g = build_weighted_directed_sample(rep);
+void test_min_path_dijkstra(graph_representation rep) {
+    graph *g = build_weighted_directed_sample(rep, GRAPH_MIN_PATH_DIJKSTRA);
     assert_not_null(g);
 
     vector *dist = NULL;
-    print_test_result(g->dijkstra(g, 0, &dist) == 1 && dist != NULL, "Dijkstra returns distances");
+    print_test_result(g->min_path(g, 0, &dist) == 1 && dist != NULL, "min_path returns distances with Dijkstra strategy");
     if (dist) {
         print_test_result(dist->get(dist, 0) == 0.0 && dist->get(dist, 1) == 1.0 &&
                                   dist->get(dist, 2) == 3.0 && dist->get(dist, 3) == 4.0,
-                          "Dijkstra distances are correct");
+                          "min_path returns correct Dijkstra distances");
         dist->free(dist);
-    }
-
-    vector *bf = NULL;
-    print_test_result(g->bellman_ford(g, 0, &bf) == 1 && bf != NULL, "Bellman-Ford returns distances");
-    if (bf) {
-        print_test_result(bf->get(bf, 3) == 4.0, "Bellman-Ford distance to vertex 3 is correct");
-        bf->free(bf);
-    }
-
-    matrix *fw = g->floyd_warshall(g);
-    print_test_result(fw != NULL, "Floyd-Warshall returns a matrix");
-    if (fw) {
-        print_test_result(fw->get(fw, 0, 3) == 4.0, "Floyd-Warshall all-pairs distance 0->3 is correct");
-        fw->free(fw);
     }
 
     g->free(g);
 }
 
-void test_bellman_ford_negative_cycle(graph_representation rep) {
-    graph *g = create_graph(GRAPH_DIRECTED, rep);
+void test_min_path_bellman_ford(graph_representation rep) {
+    graph *g = build_weighted_directed_sample(rep, GRAPH_MIN_PATH_BELLMAN_FORD);
+    assert_not_null(g);
+
+    vector *dist = NULL;
+    print_test_result(g->min_path(g, 0, &dist) == 1 && dist != NULL, "min_path returns distances with Bellman-Ford strategy");
+    if (dist) {
+        print_test_result(dist->get(dist, 3) == 4.0, "min_path returns correct Bellman-Ford distance to vertex 3");
+        dist->free(dist);
+    }
+
+    g->free(g);
+}
+
+void test_min_path_bellman_ford_negative_cycle(graph_representation rep) {
+    graph *g = create_graph(GRAPH_DIRECTED, rep, GRAPH_TRAVERSE_BFS, GRAPH_MIN_PATH_BELLMAN_FORD);
     assert_not_null(g);
 
     g->add_edge(g, 0, 1, 1.0);
@@ -146,7 +139,7 @@ void test_bellman_ford_negative_cycle(graph_representation rep) {
     g->add_edge(g, 2, 1, -1.0); /* negative cycle reachable from 0 */
 
     vector *dist = NULL;
-    print_test_result(g->bellman_ford(g, 0, &dist) == 0, "Bellman-Ford detects reachable negative cycle");
+    print_test_result(g->min_path(g, 0, &dist) == 0, "min_path detects reachable negative cycle with Bellman-Ford strategy");
     if (dist) {
         dist->free(dist);
     }
@@ -155,7 +148,7 @@ void test_bellman_ford_negative_cycle(graph_representation rep) {
 }
 
 void test_mst(graph_representation rep) {
-    graph *g = create_graph(GRAPH_UNDIRECTED, rep);
+    graph *g = create_graph(GRAPH_UNDIRECTED, rep, GRAPH_TRAVERSE_BFS, GRAPH_MIN_PATH_DIJKSTRA);
     assert_not_null(g);
 
     g->add_edge(g, 0, 1, 1.0);
@@ -181,7 +174,7 @@ void test_mst(graph_representation rep) {
 
 void test_connectivity_and_scc(graph_representation rep) {
     /* Connected components (undirected) */
-    graph *u = create_graph(GRAPH_UNDIRECTED, rep);
+    graph *u = create_graph(GRAPH_UNDIRECTED, rep, GRAPH_TRAVERSE_BFS, GRAPH_MIN_PATH_DIJKSTRA);
     assert_not_null(u);
 
     for (int i = 0; i <= 5; i++) {
@@ -223,7 +216,7 @@ void test_connectivity_and_scc(graph_representation rep) {
     u->free(u);
 
     /* Strongly connected components (directed) */
-    graph *d = create_graph(GRAPH_DIRECTED, rep);
+    graph *d = create_graph(GRAPH_DIRECTED, rep, GRAPH_TRAVERSE_BFS, GRAPH_MIN_PATH_DIJKSTRA);
     assert_not_null(d);
 
     d->add_edge(d, 0, 1, 1.0);
@@ -250,7 +243,7 @@ void test_connectivity_and_scc(graph_representation rep) {
 }
 
 void test_toposort_and_cycles(graph_representation rep) {
-    graph *dag = create_graph(GRAPH_DIRECTED, rep);
+    graph *dag = create_graph(GRAPH_DIRECTED, rep, GRAPH_TRAVERSE_BFS, GRAPH_MIN_PATH_DIJKSTRA);
     assert_not_null(dag);
 
     dag->add_edge(dag, 0, 1, 1.0);
@@ -275,7 +268,7 @@ void test_toposort_and_cycles(graph_representation rep) {
 
     dag->free(dag);
 
-    graph *cyc = create_graph(GRAPH_DIRECTED, rep);
+    graph *cyc = create_graph(GRAPH_DIRECTED, rep, GRAPH_TRAVERSE_BFS, GRAPH_MIN_PATH_DIJKSTRA);
     assert_not_null(cyc);
     cyc->add_edge(cyc, 0, 1, 1.0);
     cyc->add_edge(cyc, 1, 2, 1.0);
@@ -290,13 +283,26 @@ void test_toposort_and_cycles(graph_representation rep) {
 }
 
 void run_all_graph_algorithm_tests(void) {
-    test_bfs_and_dfs(GRAPH_ADJACENCY_LIST);
-    test_bfs_and_dfs(GRAPH_ADJACENCY_MATRIX);
+    int bfs_expected[] = {0, 1, 2, 3, 4};
+    int dfs_expected[] = {0, 1, 3, 2, 4};
 
-    test_shortest_paths(GRAPH_ADJACENCY_LIST);
-    test_shortest_paths(GRAPH_ADJACENCY_MATRIX);
-    test_bellman_ford_negative_cycle(GRAPH_ADJACENCY_LIST);
-    test_bellman_ford_negative_cycle(GRAPH_ADJACENCY_MATRIX);
+    test_traverse(GRAPH_ADJACENCY_LIST, GRAPH_TRAVERSE_BFS, bfs_expected, 5, "traverse visit order with BFS strategy");
+    test_traverse(GRAPH_ADJACENCY_MATRIX, GRAPH_TRAVERSE_BFS, bfs_expected, 5, "traverse visit order with BFS strategy (matrix)");
+    test_traverse(GRAPH_ADJACENCY_LIST, GRAPH_TRAVERSE_DFS_ITERATIVE, dfs_expected, 5,
+                  "traverse visit order with DFS iterative strategy");
+    test_traverse(GRAPH_ADJACENCY_MATRIX, GRAPH_TRAVERSE_DFS_ITERATIVE, dfs_expected, 5,
+                  "traverse visit order with DFS iterative strategy (matrix)");
+    test_traverse(GRAPH_ADJACENCY_LIST, GRAPH_TRAVERSE_DFS_RECURSIVE, dfs_expected, 5,
+                  "traverse visit order with DFS recursive strategy");
+    test_traverse(GRAPH_ADJACENCY_MATRIX, GRAPH_TRAVERSE_DFS_RECURSIVE, dfs_expected, 5,
+                  "traverse visit order with DFS recursive strategy (matrix)");
+
+    test_min_path_dijkstra(GRAPH_ADJACENCY_LIST);
+    test_min_path_dijkstra(GRAPH_ADJACENCY_MATRIX);
+    test_min_path_bellman_ford(GRAPH_ADJACENCY_LIST);
+    test_min_path_bellman_ford(GRAPH_ADJACENCY_MATRIX);
+    test_min_path_bellman_ford_negative_cycle(GRAPH_ADJACENCY_LIST);
+    test_min_path_bellman_ford_negative_cycle(GRAPH_ADJACENCY_MATRIX);
 
     test_mst(GRAPH_ADJACENCY_LIST);
     test_mst(GRAPH_ADJACENCY_MATRIX);

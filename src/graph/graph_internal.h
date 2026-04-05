@@ -15,6 +15,8 @@ typedef struct graph_edge {
 typedef struct graph_impl {
     graph_type type;
     graph_representation rep;
+    graph_traversal_strategy traversal_strategy;
+    graph_min_path_strategy min_path_strategy;
     int vertex_capacity;
     int vertex_count;
     bool *present;

@@ -60,6 +60,25 @@ static int is_valid_vertex_id(int vertex_id) {
     return vertex_id >= 0;
 }
 
+static int is_valid_graph_type(graph_type type) {
+    return type == GRAPH_DIRECTED || type == GRAPH_UNDIRECTED;
+}
+
+static int is_valid_graph_representation(graph_representation rep) {
+    return rep == GRAPH_ADJACENCY_LIST || rep == GRAPH_ADJACENCY_MATRIX;
+}
+
+static int is_valid_traversal_strategy(graph_traversal_strategy traversal_strategy) {
+    return traversal_strategy == GRAPH_TRAVERSE_BFS ||
+           traversal_strategy == GRAPH_TRAVERSE_DFS_ITERATIVE ||
+           traversal_strategy == GRAPH_TRAVERSE_DFS_RECURSIVE;
+}
+
+static int is_valid_min_path_strategy(graph_min_path_strategy min_path_strategy) {
+    return min_path_strategy == GRAPH_MIN_PATH_DIJKSTRA ||
+           min_path_strategy == GRAPH_MIN_PATH_BELLMAN_FORD;
+}
+
 static int graph_init_storage(graph_impl *g, int initial_capacity) {
     int cap = clamp_initial_capacity(initial_capacity);
 
@@ -304,28 +323,44 @@ static double graph_get_edge_weight_method(const graph *self, int from, int to) 
     return graph_get_edge_weight_impl(graph_impl_from_graph(self), from, to);
 }
 
-static list *graph_bfs_method(const graph *self, int start_vertex) {
-    return graph_bfs_impl(graph_impl_from_graph(self), start_vertex);
+static list *graph_traverse_method(const graph *self, int start_vertex) {
+    graph_impl *impl = graph_impl_from_graph(self);
+    if (!impl) {
+        return NULL;
+    }
+
+    switch (impl->traversal_strategy) {
+        case GRAPH_TRAVERSE_BFS:
+            return graph_bfs_impl(impl, start_vertex);
+        case GRAPH_TRAVERSE_DFS_ITERATIVE:
+            return graph_dfs_iterative_impl(impl, start_vertex);
+        case GRAPH_TRAVERSE_DFS_RECURSIVE:
+            return graph_dfs_recursive_impl(impl, start_vertex);
+        default:
+            return NULL;
+    }
 }
 
-static list *graph_dfs_iterative_method(const graph *self, int start_vertex) {
-    return graph_dfs_iterative_impl(graph_impl_from_graph(self), start_vertex);
-}
+static int graph_min_path_method(const graph *self, int start_vertex, vector **out_dist) {
+    graph_impl *impl = graph_impl_from_graph(self);
+    if (!impl) {
+        if (out_dist) {
+            *out_dist = NULL;
+        }
+        return 0;
+    }
 
-static list *graph_dfs_recursive_method(const graph *self, int start_vertex) {
-    return graph_dfs_recursive_impl(graph_impl_from_graph(self), start_vertex);
-}
-
-static int graph_dijkstra_method(const graph *self, int start_vertex, vector **out_dist) {
-    return graph_dijkstra_impl(graph_impl_from_graph(self), start_vertex, out_dist);
-}
-
-static int graph_bellman_ford_method(const graph *self, int start_vertex, vector **out_dist) {
-    return graph_bellman_ford_impl(graph_impl_from_graph(self), start_vertex, out_dist);
-}
-
-static matrix *graph_floyd_warshall_method(const graph *self) {
-    return graph_floyd_warshall_impl(graph_impl_from_graph(self));
+    switch (impl->min_path_strategy) {
+        case GRAPH_MIN_PATH_DIJKSTRA:
+            return graph_dijkstra_impl(impl, start_vertex, out_dist);
+        case GRAPH_MIN_PATH_BELLMAN_FORD:
+            return graph_bellman_ford_impl(impl, start_vertex, out_dist);
+        default:
+            if (out_dist) {
+                *out_dist = NULL;
+            }
+            return 0;
+    }
 }
 
 static list *graph_mst_prim_method(const graph *self, int start_vertex) {
@@ -378,7 +413,17 @@ static void graph_free_method(graph *self) {
     free(self);
 }
 
-graph *create_graph(graph_type type, graph_representation rep) {
+graph *create_graph(graph_type type,
+                    graph_representation rep,
+                    graph_traversal_strategy traversal_strategy,
+                    graph_min_path_strategy min_path_strategy) {
+    if (!is_valid_graph_type(type) ||
+        !is_valid_graph_representation(rep) ||
+        !is_valid_traversal_strategy(traversal_strategy) ||
+        !is_valid_min_path_strategy(min_path_strategy)) {
+        return NULL;
+    }
+
     graph *out = (graph *)calloc(1, sizeof(graph));
     if (!out) {
         return NULL;
@@ -392,6 +437,8 @@ graph *create_graph(graph_type type, graph_representation rep) {
 
     impl->type = type;
     impl->rep = rep;
+    impl->traversal_strategy = traversal_strategy;
+    impl->min_path_strategy = min_path_strategy;
     impl->vertex_capacity = 0;
     impl->vertex_count = 0;
     impl->present = NULL;
@@ -414,12 +461,8 @@ graph *create_graph(graph_type type, graph_representation rep) {
     out->vertex_count = graph_vertex_count_method;
     out->has_vertex = graph_has_vertex_method;
     out->get_edge_weight = graph_get_edge_weight_method;
-    out->bfs = graph_bfs_method;
-    out->dfs_iterative = graph_dfs_iterative_method;
-    out->dfs_recursive = graph_dfs_recursive_method;
-    out->dijkstra = graph_dijkstra_method;
-    out->bellman_ford = graph_bellman_ford_method;
-    out->floyd_warshall = graph_floyd_warshall_method;
+    out->traverse = graph_traverse_method;
+    out->min_path = graph_min_path_method;
     out->mst_prim = graph_mst_prim_method;
     out->mst_kruskal = graph_mst_kruskal_method;
     out->connected_components = graph_connected_components_method;
