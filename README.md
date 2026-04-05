@@ -61,6 +61,24 @@ If Valgrind is installed when CMake configures the tree, the `memcheck` target i
 cmake --build build/dev --target memcheck
 ```
 
+## Fuzzing
+
+LibFuzzer harnesses live in `fuzz/` for the hash map (`fuzz_hash_map`), list sorter (`fuzz_sort`), and matrix module (`fuzz_matrix`). Enable them with Clang so `-fsanitize=fuzzer,address` is available:
+
+```bash
+mkdir -p build/fuzz
+cmake -S . -B build/fuzz -DCMAKE_C_COMPILER=clang -DOVA_BUILD_FUZZERS=ON
+cmake --build build/fuzz --target fuzz_hash_map fuzz_sort fuzz_matrix
+```
+
+Run any harness directly, for example:
+
+```bash
+./build/fuzz/bin/fuzz_hash_map -runs=100
+```
+
+The project currently has no parser component, so no parser fuzzer is required.
+
 ## Examples
 
 This list example uses the array-backed implementation and reads values back by index.
