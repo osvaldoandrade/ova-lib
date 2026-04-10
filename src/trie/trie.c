@@ -365,8 +365,8 @@ static list *trie_get_words_with_prefix_method(const trie *self, const char *pre
         }
     } else if (r == WALK_SSO_PREFIX) {
         if (node->is_end) {
-            size_t tail = (size_t)node->sso_len - sso_consumed;
-            size_t word_len = prefix_len + tail;
+            size_t remaining_sso = (size_t)node->sso_len - sso_consumed;
+            size_t word_len = prefix_len + remaining_sso;
             if (word_len + 1 > cap) {
                 size_t new_cap = word_len + 32;
                 char *new_buf = (char *)realloc(buffer, new_cap);
@@ -375,7 +375,7 @@ static list *trie_get_words_with_prefix_method(const trie *self, const char *pre
                     cap = new_cap;
                 }
             }
-            memcpy(buffer + prefix_len, node->sso_suffix + sso_consumed, tail);
+            memcpy(buffer + prefix_len, node->sso_suffix + sso_consumed, remaining_sso);
             char *word = (char *)malloc(word_len + 1);
             if (word) {
                 memcpy(word, buffer, word_len);
