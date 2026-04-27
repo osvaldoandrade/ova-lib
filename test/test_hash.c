@@ -162,6 +162,58 @@ void test_null_key_insertion(void) {
     ht->free(ht);
 }
 
+static int unsafe_string_compare(const void *a, const void *b) {
+    return strcmp((const char *)a, (const char *)b);
+}
+
+void test_null_key_with_unsafe_comparator(void) {
+    map *ht = create_map(HASH_MAP, 10, NULL, unsafe_string_compare);
+    char data[] = "data_for_null_key";
+    ht->put(ht, NULL, data);
+    char *retrieved_data = (char *)ht->get(ht, NULL);
+    print_test_result(retrieved_data != NULL && strcmp(retrieved_data, data) == 0,
+                      "NULL key put/get with unsafe comparator should not segfault");
+    ht->free(ht);
+}
+
+void test_null_key_lookup_with_unsafe_comparator(void) {
+    map *ht = create_map(HASH_MAP, 10, NULL, unsafe_string_compare);
+    char key[] = "real_key";
+    char data[] = "data";
+    ht->put(ht, key, data);
+    char *result = (char *)ht->get(ht, NULL);
+    print_test_result(result == NULL, "Get with NULL key should return NULL when no NULL key stored");
+    ht->free(ht);
+}
+
+void test_null_key_remove_with_unsafe_comparator(void) {
+    map *ht = create_map(HASH_MAP, 10, NULL, unsafe_string_compare);
+    char data[] = "data_for_null";
+    ht->put(ht, NULL, data);
+    char *removed = (char *)ht->remove(ht, NULL);
+    print_test_result(removed != NULL && strcmp(removed, data) == 0,
+                      "Remove with NULL key should work with unsafe comparator");
+    char *after = (char *)ht->get(ht, NULL);
+    print_test_result(after == NULL, "Get after NULL key removal returns NULL");
+    ht->free(ht);
+}
+
+void test_null_and_non_null_keys_coexist(void) {
+    map *ht = create_map(HASH_MAP, 10, NULL, unsafe_string_compare);
+    char data_null[] = "null_data";
+    char key[] = "real_key";
+    char data_key[] = "key_data";
+    ht->put(ht, NULL, data_null);
+    ht->put(ht, key, data_key);
+    char *r1 = (char *)ht->get(ht, NULL);
+    char *r2 = (char *)ht->get(ht, key);
+    print_test_result(r1 != NULL && strcmp(r1, data_null) == 0,
+                      "NULL key data retrievable alongside non-NULL keys");
+    print_test_result(r2 != NULL && strcmp(r2, data_key) == 0,
+                      "Non-NULL key data retrievable alongside NULL key");
+    ht->free(ht);
+}
+
 void test_insert_retrieve_with_null_values(void) {
     map *ht = create_map(HASH_MAP, 10, NULL, string_compare);
     char key[] = "test_key";
@@ -332,6 +384,10 @@ void run_all_tests(void) {
     test_insert_retrieve_large_number_of_items();
     test_handling_of_duplicate_keys();
     test_null_key_insertion();
+    test_null_key_with_unsafe_comparator();
+    test_null_key_lookup_with_unsafe_comparator();
+    test_null_key_remove_with_unsafe_comparator();
+    test_null_and_non_null_keys_coexist();
     test_insert_retrieve_with_null_values();
     test_map_get_empty();
     test_with_high_volume();
