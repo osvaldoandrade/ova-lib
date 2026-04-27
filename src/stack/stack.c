@@ -9,6 +9,8 @@ static void stack_clear(stack *self);
 static void *stack_top(const stack *self);
 static int stack_is_empty(const stack *self);
 static int stack_size(const stack *self);
+static stack *stack_clone_shallow(const stack *self);
+static stack *stack_clone_deep(const stack *self, element_copier copier);
 
 stack *create_stack(StackType type) {
     stack *stk = malloc(sizeof(stack));
@@ -37,6 +39,8 @@ stack *create_stack(StackType type) {
     stk->size = stack_size;
     stk->clear = stack_clear;
     stk->free = stack_free;
+    stk->clone_shallow = stack_clone_shallow;
+    stk->clone_deep = stack_clone_deep;
     stk->user_data = NULL;
 
     return stk;
@@ -71,4 +75,71 @@ void stack_free(stack *self) {
         lst->free(lst);
     }
     free(self);
+}
+
+static stack *stack_clone_shallow(const stack *self) {
+    if (!self) {
+        return NULL;
+    }
+
+    list *lst = (list *)self->impl;
+    if (!lst) {
+        return NULL;
+    }
+
+    StackType type = (self->push == array_stack_push) ? ARRAY_STACK : LINKED_STACK;
+    stack *copy = create_stack(type);
+    if (!copy) {
+        return NULL;
+    }
+
+    /* Insert elements in internal list order so the clone mirrors the
+       original stack's internal structure. */
+    int n = lst->size(lst);
+    list *copy_lst = (list *)copy->impl;
+    for (int i = 0; i < n; i++) {
+        void *elem = lst->get(lst, i);
+        ova_error_code err = copy_lst->insert(copy_lst, elem, copy_lst->size(copy_lst));
+        if (err != OVA_SUCCESS) {
+            copy->free(copy);
+            return NULL;
+        }
+    }
+    copy->user_data = self->user_data;
+    return copy;
+}
+
+static stack *stack_clone_deep(const stack *self, element_copier copier) {
+    if (!self || !copier) {
+        return NULL;
+    }
+
+    list *lst = (list *)self->impl;
+    if (!lst) {
+        return NULL;
+    }
+
+    StackType type = (self->push == array_stack_push) ? ARRAY_STACK : LINKED_STACK;
+    stack *copy = create_stack(type);
+    if (!copy) {
+        return NULL;
+    }
+
+    int n = lst->size(lst);
+    list *copy_lst = (list *)copy->impl;
+    for (int i = 0; i < n; i++) {
+        void *elem = lst->get(lst, i);
+        void *dup = copier(elem);
+        if (!dup) {
+            copy->free(copy);
+            return NULL;
+        }
+        ova_error_code err = copy_lst->insert(copy_lst, dup, copy_lst->size(copy_lst));
+        if (err != OVA_SUCCESS) {
+            copy->free(copy);
+            return NULL;
+        }
+    }
+    copy->user_data = self->user_data;
+    return copy;
 }

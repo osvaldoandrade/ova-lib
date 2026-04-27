@@ -157,6 +157,9 @@ static void deque_free_method(deque *self) {
     free(self);
 }
 
+static deque *deque_clone_shallow_method(const deque *self);
+static deque *deque_clone_deep_method(const deque *self, element_copier copier);
+
 deque *create_deque(int capacity) {
     if (capacity <= 0) {
         capacity = DEFAULT_CAPACITY;
@@ -195,6 +198,67 @@ deque *create_deque(int capacity) {
     out->size = deque_size_method;
     out->is_empty = deque_is_empty_method;
     out->free = deque_free_method;
+    out->clone_shallow = deque_clone_shallow_method;
+    out->clone_deep = deque_clone_deep_method;
 
     return out;
+}
+
+static deque *deque_clone_shallow_method(const deque *self) {
+    if (!self) {
+        return NULL;
+    }
+
+    deque_impl *impl = deque_impl_from_self(self);
+    if (!impl) {
+        return NULL;
+    }
+
+    int n = impl->size;
+    deque *copy = create_deque(n > 0 ? n : DEFAULT_CAPACITY);
+    if (!copy) {
+        return NULL;
+    }
+
+    for (int i = 0; i < n; i++) {
+        int physical_index = (impl->front + i) % impl->capacity;
+        if (copy->push_back(copy, impl->buffer[physical_index]) != OVA_SUCCESS) {
+            copy->free(copy);
+            return NULL;
+        }
+    }
+    copy->user_data = self->user_data;
+    return copy;
+}
+
+static deque *deque_clone_deep_method(const deque *self, element_copier copier) {
+    if (!self || !copier) {
+        return NULL;
+    }
+
+    deque_impl *impl = deque_impl_from_self(self);
+    if (!impl) {
+        return NULL;
+    }
+
+    int n = impl->size;
+    deque *copy = create_deque(n > 0 ? n : DEFAULT_CAPACITY);
+    if (!copy) {
+        return NULL;
+    }
+
+    for (int i = 0; i < n; i++) {
+        int physical_index = (impl->front + i) % impl->capacity;
+        void *dup = copier(impl->buffer[physical_index]);
+        if (!dup) {
+            copy->free(copy);
+            return NULL;
+        }
+        if (copy->push_back(copy, dup) != OVA_SUCCESS) {
+            copy->free(copy);
+            return NULL;
+        }
+    }
+    copy->user_data = self->user_data;
+    return copy;
 }

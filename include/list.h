@@ -19,6 +19,11 @@ typedef struct list {
     void *impl;
     void *user_data; /**< User-provided context pointer. */
 
+    /** @internal List variant used for cloning. */
+    ListType _type;
+    /** @internal Comparator used for sorted-list cloning. */
+    comparator _cmp;
+
     /**
      * @brief Insert an item at the given index.
      *
@@ -83,6 +88,27 @@ typedef struct list {
      * @param self List instance.
      */
     void (*free)(struct list *self);
+
+    /**
+     * @brief Create a shallow copy of the list.
+     *
+     * Copies the list structure but shares element pointers with the original.
+     *
+     * @param self List instance.
+     * @return New list instance, or NULL on failure.
+     */
+    struct list *(*clone_shallow)(const struct list *self);
+
+    /**
+     * @brief Create a deep copy of the list.
+     *
+     * Copies the list structure and each element using the provided copier.
+     *
+     * @param self List instance.
+     * @param copier Function used to duplicate each element.
+     * @return New list instance, or NULL on failure.
+     */
+    struct list *(*clone_deep)(const struct list *self, element_copier copier);
 } list;
 
 /**

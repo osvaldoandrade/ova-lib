@@ -116,6 +116,27 @@ typedef struct set {
      * @param self Set instance.
      */
     void (*free)(struct set *self);
+
+    /**
+     * @brief Create a shallow copy of the set.
+     *
+     * Copies the set structure but shares element pointers with the original.
+     *
+     * @param self Set instance.
+     * @return New set instance, or NULL on failure.
+     */
+    struct set *(*clone_shallow)(const struct set *self);
+
+    /**
+     * @brief Create a deep copy of the set.
+     *
+     * Copies the set structure and each element using the provided copier.
+     *
+     * @param self Set instance.
+     * @param copier Function used to duplicate each element.
+     * @return New set instance, or NULL on failure.
+     */
+    struct set *(*clone_deep)(const struct set *self, element_copier copier);
 } set;
 
 /**

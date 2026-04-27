@@ -78,6 +78,8 @@ static set *set_intersection_with_method(const set *self, const set *other);
 static set *set_difference_with_method(const set *self, const set *other);
 static bool set_is_subset_of_method(const set *self, const set *other);
 static void set_free_method(set *self);
+static set *set_clone_shallow_method(const set *self);
+static set *set_clone_deep_method(const set *self, element_copier copier);
 
 static set *create_set_with_capacity(set_type type, comparator cmp, hash_func_t hash, int capacity_hint) {
     set *out = (set *)calloc(1, sizeof(set));
@@ -141,6 +143,8 @@ static set *create_set_with_capacity(set_type type, comparator cmp, hash_func_t 
     out->difference_with = set_difference_with_method;
     out->is_subset_of = set_is_subset_of_method;
     out->free = set_free_method;
+    out->clone_shallow = set_clone_shallow_method;
+    out->clone_deep = set_clone_deep_method;
     return out;
 }
 
@@ -288,4 +292,72 @@ static void set_free_method(set *self) {
 
 set *create_set(set_type type, comparator cmp, hash_func_t hash) {
     return create_set_with_capacity(type, cmp, hash, 0);
+}
+
+static set *set_clone_shallow_method(const set *self) {
+    if (!self) {
+        return NULL;
+    }
+
+    set_impl *state = set_impl_from_public(self);
+    if (!state) {
+        return NULL;
+    }
+
+    list *items = self->to_list(self);
+    if (!items) {
+        return NULL;
+    }
+
+    int n = items->size(items);
+    set *copy = create_set_with_capacity(state->type, state->cmp, state->hash, n);
+    if (!copy) {
+        items->free(items);
+        return NULL;
+    }
+
+    for (int i = 0; i < n; i++) {
+        copy->add(copy, items->get(items, i));
+    }
+
+    items->free(items);
+    copy->user_data = self->user_data;
+    return copy;
+}
+
+static set *set_clone_deep_method(const set *self, element_copier copier) {
+    if (!self || !copier) {
+        return NULL;
+    }
+
+    set_impl *state = set_impl_from_public(self);
+    if (!state) {
+        return NULL;
+    }
+
+    list *items = self->to_list(self);
+    if (!items) {
+        return NULL;
+    }
+
+    int n = items->size(items);
+    set *copy = create_set_with_capacity(state->type, state->cmp, state->hash, n);
+    if (!copy) {
+        items->free(items);
+        return NULL;
+    }
+
+    for (int i = 0; i < n; i++) {
+        void *dup = copier(items->get(items, i));
+        if (!dup) {
+            items->free(items);
+            copy->free(copy);
+            return NULL;
+        }
+        copy->add(copy, dup);
+    }
+
+    items->free(items);
+    copy->user_data = self->user_data;
+    return copy;
 }

@@ -96,6 +96,27 @@ typedef struct deque {
      * @param self Deque instance.
      */
     void (*free)(struct deque *self);
+
+    /**
+     * @brief Create a shallow copy of the deque.
+     *
+     * Copies the deque structure but shares element pointers with the original.
+     *
+     * @param self Deque instance.
+     * @return New deque instance, or NULL on failure.
+     */
+    struct deque *(*clone_shallow)(const struct deque *self);
+
+    /**
+     * @brief Create a deep copy of the deque.
+     *
+     * Copies the deque structure and each element using the provided copier.
+     *
+     * @param self Deque instance.
+     * @param copier Function used to duplicate each element.
+     * @return New deque instance, or NULL on failure.
+     */
+    struct deque *(*clone_deep)(const struct deque *self, element_copier copier);
 } deque;
 
 /**

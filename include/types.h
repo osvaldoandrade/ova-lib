@@ -28,6 +28,17 @@ typedef int (*comparator)(const void *a, const void *b);
 typedef int (*hash_func_t)(void *key, int capacity);
 
 /**
+ * @brief Element copier function type for deep-copy operations.
+ *
+ * The function receives a pointer to an element and must return a newly
+ * allocated copy of that element. The caller owns the returned memory.
+ *
+ * @param element Pointer to the element to copy.
+ * @return A newly allocated copy, or NULL on failure.
+ */
+typedef void *(*element_copier)(void *);
+
+/**
  * @brief Consistent error codes returned by mutating operations.
  *
  * All insertion, deletion, and resize operations return one of these codes so

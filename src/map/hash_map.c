@@ -259,6 +259,9 @@ static void hash_free(map *self) {
     free(self);
 }
 
+static map *hash_clone_shallow(const map *self);
+static map *hash_clone_deep(const map *self, element_copier copier);
+
 map *create_hash_map(int capacity, int (*hash_func)(void *, int), comparator key_compare, int thread_safe) {
     if (capacity < INITIAL_CAPACITY) {
         capacity = INITIAL_CAPACITY;
@@ -314,6 +317,85 @@ map *create_hash_map(int capacity, int (*hash_func)(void *, int), comparator key
     out->capacity = hash_capacity;
     out->clear = hash_clear;
     out->free = hash_free;
+    out->clone_shallow = hash_clone_shallow;
+    out->clone_deep = hash_clone_deep;
 
     return out;
+}
+
+static map *hash_clone_shallow(const map *self) {
+    if (!self) {
+        return NULL;
+    }
+
+    map_impl *impl = map_impl_from_map(self);
+    if (!impl) {
+        return NULL;
+    }
+
+    int thread_safe = impl->lock ? 1 : 0;
+    map *copy = create_hash_map(impl->capacity, impl->hash_func,
+                                impl->key_compare, thread_safe);
+    if (!copy) {
+        return NULL;
+    }
+
+    for (int i = 0; i < impl->capacity; i++) {
+        map_entry *node = impl->buckets[i];
+        while (node) {
+            if (copy->put(copy, node->key, node->data) != OVA_SUCCESS) {
+                copy->free(copy);
+                return NULL;
+            }
+            node = node->next;
+        }
+    }
+
+    copy->user_data = self->user_data;
+    return copy;
+}
+
+static map *hash_clone_deep(const map *self, element_copier copier) {
+    if (!self || !copier) {
+        return NULL;
+    }
+
+    map_impl *impl = map_impl_from_map(self);
+    if (!impl) {
+        return NULL;
+    }
+
+    int thread_safe = impl->lock ? 1 : 0;
+    map *copy = create_hash_map(impl->capacity, impl->hash_func,
+                                impl->key_compare, thread_safe);
+    if (!copy) {
+        return NULL;
+    }
+
+    for (int i = 0; i < impl->capacity; i++) {
+        map_entry *node = impl->buckets[i];
+        while (node) {
+            void *key_dup = copier(node->key);
+            if (!key_dup) {
+                copy->free(copy);
+                return NULL;
+            }
+            void *val_dup = copier(node->data);
+            if (!val_dup) {
+                free(key_dup);
+                copy->free(copy);
+                return NULL;
+            }
+            if (copy->put(copy, key_dup, val_dup) != OVA_SUCCESS) {
+                free(key_dup);
+                free(val_dup);
+                copy->free(copy);
+                return NULL;
+            }
+            node = node->next;
+        }
+    }
+
+    copy->user_data = self->user_data;
+    return copy;
 }
