@@ -8,6 +8,7 @@
 #include "list.h"
 #include "map.h"
 #include "matrix.h"
+#include "memory_pool.h"
 #include "queue.h"
 #include "set.h"
 #include "solver.h"
