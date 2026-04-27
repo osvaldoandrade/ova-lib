@@ -72,6 +72,16 @@ typedef struct stack {
     int (*size)(const struct stack *self);
 
     /**
+     * @brief Function pointer to remove all elements without destroying the stack.
+     *
+     * The stack becomes empty but remains usable.
+     * User payloads are not freed.
+     *
+     * @param self A pointer to the stack structure.
+     */
+    void (*clear)(struct stack *self);
+
+    /**
      * @brief Function pointer to free the memory allocated for the stack.
      *
      * This function pointer is used to free the memory allocated for the stack.

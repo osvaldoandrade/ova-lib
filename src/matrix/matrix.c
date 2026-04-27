@@ -4,6 +4,8 @@
 #include <float.h>
 #include <string.h>
 
+#define STRASSEN_THRESHOLD 64
+
 static double matrix_get_method(const matrix *self, int row, int col);
 static int matrix_set_method(matrix *self, int row, int col, double value);
 static int matrix_rows_method(const matrix *self);
@@ -518,6 +520,268 @@ static void matrix_print_method(const matrix *self) {
         }
         printf("\n");
     }
+}
+
+/* ---- Strassen helpers (operate on raw double** blocks) ---- */
+
+static int strassen_next_power_of_two(int n) {
+    int p = 1;
+    while (p < n) {
+        p *= 2;
+    }
+    return p;
+}
+
+static double **strassen_alloc_block(int n) {
+    double **b = (double **)calloc((size_t)n, sizeof(double *));
+    if (!b) {
+        return NULL;
+    }
+    for (int i = 0; i < n; i++) {
+        b[i] = (double *)calloc((size_t)n, sizeof(double));
+        if (!b[i]) {
+            for (int j = 0; j < i; j++) {
+                free(b[j]);
+            }
+            free(b);
+            return NULL;
+        }
+    }
+    return b;
+}
+
+static void strassen_free_block(double **b, int n) {
+    if (!b) {
+        return;
+    }
+    for (int i = 0; i < n; i++) {
+        free(b[i]);
+    }
+    free(b);
+}
+
+static void strassen_add_block(double **a, double **b, double **result, int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            result[i][j] = a[i][j] + b[i][j];
+        }
+    }
+}
+
+static void strassen_sub_block(double **a, double **b, double **result, int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            result[i][j] = a[i][j] - b[i][j];
+        }
+    }
+}
+
+static void strassen_naive_block(double **a, double **b, double **result, int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            double sum = 0.0;
+            for (int k = 0; k < n; k++) {
+                sum += a[i][k] * b[k][j];
+            }
+            result[i][j] = sum;
+        }
+    }
+}
+
+static int strassen_recurse(double **a, double **b, double **c, int n) {
+    if (n <= STRASSEN_THRESHOLD) {
+        strassen_naive_block(a, b, c, n);
+        return 0;
+    }
+
+    int half = n / 2;
+
+    /* Allocate sub-blocks for A and B quadrants */
+    double **a11 = strassen_alloc_block(half);
+    double **a12 = strassen_alloc_block(half);
+    double **a21 = strassen_alloc_block(half);
+    double **a22 = strassen_alloc_block(half);
+    double **b11 = strassen_alloc_block(half);
+    double **b12 = strassen_alloc_block(half);
+    double **b21 = strassen_alloc_block(half);
+    double **b22 = strassen_alloc_block(half);
+
+    /* M1..M7 products and two temporaries for sums */
+    double **m1 = strassen_alloc_block(half);
+    double **m2 = strassen_alloc_block(half);
+    double **m3 = strassen_alloc_block(half);
+    double **m4 = strassen_alloc_block(half);
+    double **m5 = strassen_alloc_block(half);
+    double **m6 = strassen_alloc_block(half);
+    double **m7 = strassen_alloc_block(half);
+    double **t1 = strassen_alloc_block(half);
+    double **t2 = strassen_alloc_block(half);
+
+    if (!a11 || !a12 || !a21 || !a22 ||
+        !b11 || !b12 || !b21 || !b22 ||
+        !m1 || !m2 || !m3 || !m4 || !m5 || !m6 || !m7 ||
+        !t1 || !t2) {
+        strassen_free_block(a11, half); strassen_free_block(a12, half);
+        strassen_free_block(a21, half); strassen_free_block(a22, half);
+        strassen_free_block(b11, half); strassen_free_block(b12, half);
+        strassen_free_block(b21, half); strassen_free_block(b22, half);
+        strassen_free_block(m1, half); strassen_free_block(m2, half);
+        strassen_free_block(m3, half); strassen_free_block(m4, half);
+        strassen_free_block(m5, half); strassen_free_block(m6, half);
+        strassen_free_block(m7, half);
+        strassen_free_block(t1, half); strassen_free_block(t2, half);
+        return -1;
+    }
+
+    /* Split A and B into quadrants */
+    for (int i = 0; i < half; i++) {
+        for (int j = 0; j < half; j++) {
+            a11[i][j] = a[i][j];
+            a12[i][j] = a[i][j + half];
+            a21[i][j] = a[i + half][j];
+            a22[i][j] = a[i + half][j + half];
+            b11[i][j] = b[i][j];
+            b12[i][j] = b[i][j + half];
+            b21[i][j] = b[i + half][j];
+            b22[i][j] = b[i + half][j + half];
+        }
+    }
+
+    /* M1 = (A11 + A22) * (B11 + B22) */
+    strassen_add_block(a11, a22, t1, half);
+    strassen_add_block(b11, b22, t2, half);
+    if (strassen_recurse(t1, t2, m1, half) != 0) { goto fail; }
+
+    /* M2 = (A21 + A22) * B11 */
+    strassen_add_block(a21, a22, t1, half);
+    if (strassen_recurse(t1, b11, m2, half) != 0) { goto fail; }
+
+    /* M3 = A11 * (B12 - B22) */
+    strassen_sub_block(b12, b22, t1, half);
+    if (strassen_recurse(a11, t1, m3, half) != 0) { goto fail; }
+
+    /* M4 = A22 * (B21 - B11) */
+    strassen_sub_block(b21, b11, t1, half);
+    if (strassen_recurse(a22, t1, m4, half) != 0) { goto fail; }
+
+    /* M5 = (A11 + A12) * B22 */
+    strassen_add_block(a11, a12, t1, half);
+    if (strassen_recurse(t1, b22, m5, half) != 0) { goto fail; }
+
+    /* M6 = (A21 - A11) * (B11 + B12) */
+    strassen_sub_block(a21, a11, t1, half);
+    strassen_add_block(b11, b12, t2, half);
+    if (strassen_recurse(t1, t2, m6, half) != 0) { goto fail; }
+
+    /* M7 = (A12 - A22) * (B21 + B22) */
+    strassen_sub_block(a12, a22, t1, half);
+    strassen_add_block(b21, b22, t2, half);
+    if (strassen_recurse(t1, t2, m7, half) != 0) { goto fail; }
+
+    /* Combine into C quadrants */
+    for (int i = 0; i < half; i++) {
+        for (int j = 0; j < half; j++) {
+            /* C11 = M1 + M4 - M5 + M7 */
+            c[i][j] = m1[i][j] + m4[i][j] - m5[i][j] + m7[i][j];
+            /* C12 = M3 + M5 */
+            c[i][j + half] = m3[i][j] + m5[i][j];
+            /* C21 = M2 + M4 */
+            c[i + half][j] = m2[i][j] + m4[i][j];
+            /* C22 = M1 - M2 + M3 + M6 */
+            c[i + half][j + half] = m1[i][j] - m2[i][j] + m3[i][j] + m6[i][j];
+        }
+    }
+
+    strassen_free_block(a11, half); strassen_free_block(a12, half);
+    strassen_free_block(a21, half); strassen_free_block(a22, half);
+    strassen_free_block(b11, half); strassen_free_block(b12, half);
+    strassen_free_block(b21, half); strassen_free_block(b22, half);
+    strassen_free_block(m1, half); strassen_free_block(m2, half);
+    strassen_free_block(m3, half); strassen_free_block(m4, half);
+    strassen_free_block(m5, half); strassen_free_block(m6, half);
+    strassen_free_block(m7, half);
+    strassen_free_block(t1, half); strassen_free_block(t2, half);
+    return 0;
+
+fail:
+    strassen_free_block(a11, half); strassen_free_block(a12, half);
+    strassen_free_block(a21, half); strassen_free_block(a22, half);
+    strassen_free_block(b11, half); strassen_free_block(b12, half);
+    strassen_free_block(b21, half); strassen_free_block(b22, half);
+    strassen_free_block(m1, half); strassen_free_block(m2, half);
+    strassen_free_block(m3, half); strassen_free_block(m4, half);
+    strassen_free_block(m5, half); strassen_free_block(m6, half);
+    strassen_free_block(m7, half);
+    strassen_free_block(t1, half); strassen_free_block(t2, half);
+    return -1;
+}
+
+matrix *matrix_multiply_strassen(matrix *a, matrix *b) {
+    matrix_impl *lhs = matrix_impl_from_matrix(a);
+    matrix_impl *rhs = matrix_impl_from_matrix(b);
+    if (!lhs || !rhs) {
+        return NULL;
+    }
+    if (lhs->cols != rhs->rows) {
+        fprintf(stderr, "Matrix dimension mismatch in strassen multiply: (%d×%d) * (%d×%d)\n",
+                lhs->rows, lhs->cols, rhs->rows, rhs->cols);
+        return NULL;
+    }
+
+    int orig_m = lhs->rows;
+    int orig_n = lhs->cols;   /* == rhs->rows */
+    int orig_p = rhs->cols;
+
+    /* Determine padded size (next power of two of max dimension) */
+    int max_dim = orig_m;
+    if (orig_n > max_dim) { max_dim = orig_n; }
+    if (orig_p > max_dim) { max_dim = orig_p; }
+    int n = strassen_next_power_of_two(max_dim);
+
+    /* Allocate padded blocks (zero-initialized by calloc) */
+    double **pa = strassen_alloc_block(n);
+    double **pb = strassen_alloc_block(n);
+    double **pc = strassen_alloc_block(n);
+    if (!pa || !pb || !pc) {
+        strassen_free_block(pa, n);
+        strassen_free_block(pb, n);
+        strassen_free_block(pc, n);
+        return NULL;
+    }
+
+    /* Copy data into padded blocks */
+    for (int i = 0; i < orig_m; i++) {
+        memcpy(pa[i], lhs->data[i], (size_t)orig_n * sizeof(double));
+    }
+    for (int i = 0; i < orig_n; i++) {
+        memcpy(pb[i], rhs->data[i], (size_t)orig_p * sizeof(double));
+    }
+
+    if (strassen_recurse(pa, pb, pc, n) != 0) {
+        strassen_free_block(pa, n);
+        strassen_free_block(pb, n);
+        strassen_free_block(pc, n);
+        return NULL;
+    }
+
+    /* Extract result into a matrix object */
+    matrix *result = create_matrix(orig_m, orig_p);
+    matrix_impl *out = matrix_impl_from_matrix(result);
+    if (!out) {
+        strassen_free_block(pa, n);
+        strassen_free_block(pb, n);
+        strassen_free_block(pc, n);
+        return NULL;
+    }
+
+    for (int i = 0; i < orig_m; i++) {
+        memcpy(out->data[i], pc[i], (size_t)orig_p * sizeof(double));
+    }
+
+    strassen_free_block(pa, n);
+    strassen_free_block(pb, n);
+    strassen_free_block(pc, n);
+    return result;
 }
 
 static double vector_get_method(const vector *self, int index) {

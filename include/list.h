@@ -66,6 +66,16 @@ typedef struct list {
     int (*size)(const struct list *self);
 
     /**
+     * @brief Remove all elements without destroying the list.
+     *
+     * The list retains its allocated capacity but becomes empty.
+     * User payloads are not freed.
+     *
+     * @param self List instance.
+     */
+    void (*clear)(struct list *self);
+
+    /**
      * @brief Release the list and its internal allocations.
      *
      * The list does not free user payloads.

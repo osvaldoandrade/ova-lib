@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 static void stack_free(stack *self);
+static void stack_clear(stack *self);
 static void *stack_top(const stack *self);
 static int stack_is_empty(const stack *self);
 static int stack_size(const stack *self);
@@ -34,6 +35,7 @@ stack *create_stack(StackType type) {
     stk->top = stack_top;
     stk->is_empty = stack_is_empty;
     stk->size = stack_size;
+    stk->clear = stack_clear;
     stk->free = stack_free;
     stk->user_data = NULL;
 
@@ -54,6 +56,12 @@ static int stack_is_empty(const stack *self) {
 static int stack_size(const stack *self) {
     list *lst = (list *)self->impl;
     return lst ? lst->size(lst) : 0;
+}
+
+static void stack_clear(stack *self) {
+    if (!self || !self->impl) return;
+    list *lst = (list *)self->impl;
+    lst->clear(lst);
 }
 
 void stack_free(stack *self) {
