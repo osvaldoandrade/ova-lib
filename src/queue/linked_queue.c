@@ -78,6 +78,9 @@ static void linked_free(queue *self) {
     free(self);
 }
 
+static queue *linked_clone_shallow(const queue *self);
+static queue *linked_clone_deep(const queue *self, element_copier copier);
+
 queue *create_linked_queue(void) {
     queue *out = (queue *)calloc(1, sizeof(queue));
     if (!out) {
@@ -102,6 +105,65 @@ queue *create_linked_queue(void) {
     out->is_empty = linked_is_empty;
     out->size = linked_size;
     out->free = linked_free;
+    out->clone_shallow = linked_clone_shallow;
+    out->clone_deep = linked_clone_deep;
 
     return out;
+}
+
+static queue *linked_clone_shallow(const queue *self) {
+    if (!self) {
+        return NULL;
+    }
+
+    queue *copy = create_linked_queue();
+    if (!copy) {
+        return NULL;
+    }
+
+    queue_impl *impl = queue_impl_from_queue(self);
+    if (!impl) {
+        return copy;
+    }
+
+    queue_entry *cur = impl->front;
+    while (cur) {
+        if (copy->enqueue(copy, cur->data) != OVA_SUCCESS) {
+            copy->free(copy);
+            return NULL;
+        }
+        cur = cur->next;
+    }
+    return copy;
+}
+
+static queue *linked_clone_deep(const queue *self, element_copier copier) {
+    if (!self || !copier) {
+        return NULL;
+    }
+
+    queue *copy = create_linked_queue();
+    if (!copy) {
+        return NULL;
+    }
+
+    queue_impl *impl = queue_impl_from_queue(self);
+    if (!impl) {
+        return copy;
+    }
+
+    queue_entry *cur = impl->front;
+    while (cur) {
+        void *dup = copier(cur->data);
+        if (!dup) {
+            copy->free(copy);
+            return NULL;
+        }
+        if (copy->enqueue(copy, dup) != OVA_SUCCESS) {
+            copy->free(copy);
+            return NULL;
+        }
+        cur = cur->next;
+    }
+    return copy;
 }

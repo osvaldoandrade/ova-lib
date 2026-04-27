@@ -80,6 +80,27 @@ typedef struct stack {
      */
     void (*free)(struct stack *self);
 
+    /**
+     * @brief Create a shallow copy of the stack.
+     *
+     * Copies the stack structure but shares element pointers with the original.
+     *
+     * @param self Stack instance.
+     * @return New stack instance, or NULL on failure.
+     */
+    struct stack *(*clone_shallow)(const struct stack *self);
+
+    /**
+     * @brief Create a deep copy of the stack.
+     *
+     * Copies the stack structure and each element using the provided copier.
+     *
+     * @param self Stack instance.
+     * @param copier Function used to duplicate each element.
+     * @return New stack instance, or NULL on failure.
+     */
+    struct stack *(*clone_deep)(const struct stack *self, element_copier copier);
+
 } stack;
 
 /**

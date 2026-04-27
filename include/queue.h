@@ -58,6 +58,27 @@ typedef struct queue {
      * @param self Queue instance.
      */
     void (*free)(struct queue *self);
+
+    /**
+     * @brief Create a shallow copy of the queue.
+     *
+     * Copies the queue structure but shares element pointers with the original.
+     *
+     * @param self Queue instance.
+     * @return New queue instance, or NULL on failure.
+     */
+    struct queue *(*clone_shallow)(const struct queue *self);
+
+    /**
+     * @brief Create a deep copy of the queue.
+     *
+     * Copies the queue structure and each element using the provided copier.
+     *
+     * @param self Queue instance.
+     * @param copier Function used to duplicate each element.
+     * @return New queue instance, or NULL on failure.
+     */
+    struct queue *(*clone_deep)(const struct queue *self, element_copier copier);
 } queue;
 
 /**

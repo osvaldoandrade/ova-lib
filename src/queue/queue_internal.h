@@ -14,6 +14,8 @@ typedef struct queue_impl {
     queue_entry *rear;
     heap *p_heap;
     int length;
+    comparator cmp;
+    int initial_capacity;
 } queue_impl;
 
 static inline queue_impl *queue_impl_from_queue(const queue *q) {

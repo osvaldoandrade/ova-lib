@@ -83,6 +83,29 @@ typedef struct map {
      * @param self Map instance.
      */
     void (*free)(struct map *self);
+
+    /**
+     * @brief Create a shallow copy of the map.
+     *
+     * Copies the map structure but shares key and value pointers with the
+     * original.
+     *
+     * @param self Map instance.
+     * @return New map instance, or NULL on failure.
+     */
+    struct map *(*clone_shallow)(const struct map *self);
+
+    /**
+     * @brief Create a deep copy of the map.
+     *
+     * Copies the map structure and each key/value pair using the provided
+     * copier. The copier is called once for each key and once for each value.
+     *
+     * @param self Map instance.
+     * @param copier Function used to duplicate each key and value.
+     * @return New map instance, or NULL on failure.
+     */
+    struct map *(*clone_deep)(const struct map *self, element_copier copier);
 } map;
 
 /**
