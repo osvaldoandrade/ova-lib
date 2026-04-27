@@ -206,6 +206,54 @@ matrix *create_matrix(int rows, int cols);
 vector *create_vector(int size);
 
 /**
+ * @brief Add two vectors element-wise and return the result.
+ *
+ * Uses AVX SIMD instructions when available, otherwise falls back
+ * to scalar code.  Both vectors must have the same size.
+ *
+ * @param a First vector operand.
+ * @param b Second vector operand.
+ * @return New vector with the element-wise sum, or NULL on failure.
+ */
+vector *vector_add_simd(vector *a, vector *b);
+
+/**
+ * @brief Subtract vector @p b from vector @p a element-wise.
+ *
+ * Uses AVX SIMD instructions when available, otherwise falls back
+ * to scalar code.  Both vectors must have the same size.
+ *
+ * @param a First vector operand.
+ * @param b Second vector operand.
+ * @return New vector with the element-wise difference, or NULL on failure.
+ */
+vector *vector_subtract_simd(vector *a, vector *b);
+
+/**
+ * @brief Compute the dot product of two vectors.
+ *
+ * Uses AVX SIMD instructions when available, otherwise falls back
+ * to scalar code.  Both vectors must have the same size.
+ *
+ * @param a First vector operand.
+ * @param b Second vector operand.
+ * @return Dot product value, or 0.0 on failure.
+ */
+double vector_dot_product_simd(vector *a, vector *b);
+
+/**
+ * @brief Scale every element of a vector by a scalar and return the result.
+ *
+ * Uses AVX SIMD instructions when available, otherwise falls back
+ * to scalar code.
+ *
+ * @param v Vector operand.
+ * @param scalar Scalar multiplier.
+ * @return New scaled vector, or NULL on failure.
+ */
+vector *vector_scale_simd(vector *v, double scalar);
+
+/**
  * @brief Multiply two matrices using Strassen's algorithm.
  *
  * Uses Strassen's divide-and-conquer algorithm for large matrices

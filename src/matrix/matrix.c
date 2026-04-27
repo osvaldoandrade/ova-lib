@@ -4,6 +4,10 @@
 #include <float.h>
 #include <string.h>
 
+#ifdef __AVX__
+#include <immintrin.h>
+#endif
+
 #define STRASSEN_THRESHOLD 64
 
 static double matrix_get_method(const matrix *self, int row, int col);
@@ -875,4 +879,125 @@ static void vector_free_method(vector *self) {
     }
 
     free(self);
+}
+
+/* ------------------------------------------------------------------ */
+/*  SIMD-accelerated vector operations (AVX path + scalar fallback)   */
+/* ------------------------------------------------------------------ */
+
+vector *vector_add_simd(vector *a, vector *b) {
+    vector_impl *va = vector_impl_from_vector(a);
+    vector_impl *vb = vector_impl_from_vector(b);
+    if (!va || !vb || va->size != vb->size) {
+        return NULL;
+    }
+
+    int n = va->size;
+    vector *result = create_vector(n);
+    vector_impl *out = vector_impl_from_vector(result);
+    if (!out) {
+        return NULL;
+    }
+
+    int i = 0;
+#ifdef __AVX__
+    for (; i + 3 < n; i += 4) {
+        __m256d va4 = _mm256_loadu_pd(&va->data[i]);
+        __m256d vb4 = _mm256_loadu_pd(&vb->data[i]);
+        _mm256_storeu_pd(&out->data[i], _mm256_add_pd(va4, vb4));
+    }
+#endif
+    for (; i < n; i++) {
+        out->data[i] = va->data[i] + vb->data[i];
+    }
+
+    return result;
+}
+
+vector *vector_subtract_simd(vector *a, vector *b) {
+    vector_impl *va = vector_impl_from_vector(a);
+    vector_impl *vb = vector_impl_from_vector(b);
+    if (!va || !vb || va->size != vb->size) {
+        return NULL;
+    }
+
+    int n = va->size;
+    vector *result = create_vector(n);
+    vector_impl *out = vector_impl_from_vector(result);
+    if (!out) {
+        return NULL;
+    }
+
+    int i = 0;
+#ifdef __AVX__
+    for (; i + 3 < n; i += 4) {
+        __m256d va4 = _mm256_loadu_pd(&va->data[i]);
+        __m256d vb4 = _mm256_loadu_pd(&vb->data[i]);
+        _mm256_storeu_pd(&out->data[i], _mm256_sub_pd(va4, vb4));
+    }
+#endif
+    for (; i < n; i++) {
+        out->data[i] = va->data[i] - vb->data[i];
+    }
+
+    return result;
+}
+
+double vector_dot_product_simd(vector *a, vector *b) {
+    vector_impl *va = vector_impl_from_vector(a);
+    vector_impl *vb = vector_impl_from_vector(b);
+    if (!va || !vb || va->size != vb->size) {
+        return 0.0;
+    }
+
+    int n = va->size;
+    double sum = 0.0;
+    int i = 0;
+
+#ifdef __AVX__
+    __m256d acc = _mm256_setzero_pd();
+    for (; i + 3 < n; i += 4) {
+        __m256d va4 = _mm256_loadu_pd(&va->data[i]);
+        __m256d vb4 = _mm256_loadu_pd(&vb->data[i]);
+        acc = _mm256_add_pd(acc, _mm256_mul_pd(va4, vb4));
+    }
+    /* Horizontal sum of the 4-wide accumulator. */
+    double tmp[4];
+    _mm256_storeu_pd(tmp, acc);
+    sum = tmp[0] + tmp[1] + tmp[2] + tmp[3];
+#endif
+
+    for (; i < n; i++) {
+        sum += va->data[i] * vb->data[i];
+    }
+
+    return sum;
+}
+
+vector *vector_scale_simd(vector *v, double scalar) {
+    vector_impl *vi = vector_impl_from_vector(v);
+    if (!vi) {
+        return NULL;
+    }
+
+    int n = vi->size;
+    vector *result = create_vector(n);
+    vector_impl *out = vector_impl_from_vector(result);
+    if (!out) {
+        return NULL;
+    }
+
+    int i = 0;
+#ifdef __AVX__
+    __m256d vs = _mm256_set1_pd(scalar);
+    for (; i + 3 < n; i += 4) {
+        __m256d v4 = _mm256_loadu_pd(&vi->data[i]);
+        _mm256_storeu_pd(&out->data[i], _mm256_mul_pd(v4, vs));
+    }
+#endif
+    for (; i < n; i++) {
+        out->data[i] = vi->data[i] * scalar;
+    }
+
+    return result;
 }
