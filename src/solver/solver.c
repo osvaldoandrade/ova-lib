@@ -1,5 +1,8 @@
 #include "../../include/solver.h"
 #include "../matrix/matrix_internal.h"
+#include "branch_and_bound.h"
+#include "branch_and_cut.h"
+#include "lagrangean.h"
 #include "simplex.h"
 #include "solver_internal.h"
 
@@ -104,9 +107,13 @@ solver *create_solver(SolverType type) {
             impl->solve_fn = simplex_solver;
             break;
         case SOLVER_LAGRANGEAN_SIMPLEX:
+            impl->solve_fn = lagrangean_solver;
+            break;
         case SOLVER_BRANCH_AND_CUT:
+            impl->solve_fn = branch_and_cut_solver;
+            break;
         case SOLVER_BRANCH_AND_BOUND:
-            impl->solve_fn = NULL;
+            impl->solve_fn = branch_and_bound_solver;
             break;
         default:
             free(impl);
@@ -338,5 +345,5 @@ static int solver_ensure_constraint_capacity(lp_problem *self, int min_capacity)
 }
 
 int is_integer(double value) {
-    return fabs(value - floor(value)) < 1e-6;
+    return fabs(value - round(value)) < 1e-6;
 }

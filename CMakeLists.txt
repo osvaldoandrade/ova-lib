@@ -79,6 +79,9 @@ add_library(ova_lib_static STATIC
         src/set/tree_set.c
         src/solver/solver.c
         src/solver/simplex.c
+        src/solver/branch_and_bound.c
+        src/solver/branch_and_cut.c
+        src/solver/lagrangean.c
         src/deque/deque.c
         src/memory_pool/memory_pool.c
         src/skip_list/skip_list.c
@@ -119,6 +122,9 @@ add_library(ova_lib_shared SHARED
         src/set/tree_set.c
         src/solver/solver.c
         src/solver/simplex.c
+        src/solver/branch_and_bound.c
+        src/solver/branch_and_cut.c
+        src/solver/lagrangean.c
         src/deque/deque.c
         src/memory_pool/memory_pool.c
         src/skip_list/skip_list.c
