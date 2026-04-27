@@ -6,3 +6,7 @@ _codeql_build_dir/
 _codeql_detected_source_root
 docs/html/
 docs/latex/
+coverage.info
+coverage_html/
+*.gcno
+*.gcda
