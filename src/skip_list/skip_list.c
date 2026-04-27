@@ -242,7 +242,11 @@ skip_list *create_skip_list(int max_level, comparator cmp) {
     sl->level     = 0;
     sl->size      = 0;
     sl->cmp       = cmp;
-    sl->seed      = (unsigned int)time(NULL) ^ (unsigned int)(size_t)sl;
+    {
+        static unsigned int seed_counter;
+        sl->seed = (unsigned int)time(NULL) ^ (unsigned int)(size_t)sl
+                   ^ (++seed_counter * 2654435761u);
+    }
 
     sl->header = create_node(sl->max_level, NULL, NULL);
     if (!sl->header) {
