@@ -21,6 +21,12 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     )
 endif()
 
+option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
+if(ENABLE_ASAN)
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address)
+endif()
+
 find_program(VALGRIND_PROGRAM valgrind)
 if(VALGRIND_PROGRAM)
     # Configure CTest memcheck to use Valgrind when available.
