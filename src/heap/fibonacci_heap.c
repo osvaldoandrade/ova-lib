@@ -136,23 +136,25 @@ static void consolidate(fibonacci_heap *h) {
     }
 }
 
-static void fibonacci_heap_put(heap *self, void *data) {
+static ova_error_code fibonacci_heap_put(heap *self, void *data) {
     fibonacci_heap *h = (fibonacci_heap *)self->impl;
     fib_node *node = fib_node_create(data);
-    if (node) {
-        if (!h->min) {
-            h->min = node;
-        } else {
-            node->right = h->min->right;
-            node->right->left = node;
-            node->left = h->min;
-            h->min->right = node;
-            if (h->cmp(data, h->min->data) < 0) {
-                h->min = node;
-            }
-        }
-        h->n++;
+    if (!node) {
+        return OVA_ERROR_MEMORY;
     }
+    if (!h->min) {
+        h->min = node;
+    } else {
+        node->right = h->min->right;
+        node->right->left = node;
+        node->left = h->min;
+        h->min->right = node;
+        if (h->cmp(data, h->min->data) < 0) {
+            h->min = node;
+        }
+    }
+    h->n++;
+    return OVA_SUCCESS;
 }
 
 static void *fibonacci_heap_put_with_handle(heap *self, void *data) {
@@ -176,11 +178,11 @@ static void *fibonacci_heap_put_with_handle(heap *self, void *data) {
     return NULL;
 }
 
-static void fibonacci_heap_decrease_key(heap *self, void *node_handle, void *new_value) {
+static ova_error_code fibonacci_heap_decrease_key(heap *self, void *node_handle, void *new_value) {
     fibonacci_heap *h = (fibonacci_heap *)self->impl;
     fib_node *x = (fib_node *)node_handle;
     
-    if (!x || !new_value) return;
+    if (!x || !new_value) return OVA_ERROR_INVALID_ARG;
     
     // Update the value
     x->data = new_value;
@@ -196,13 +198,14 @@ static void fibonacci_heap_decrease_key(heap *self, void *node_handle, void *new
     if (h->cmp(x->data, h->min->data) < 0) {
         h->min = x;
     }
+    return OVA_SUCCESS;
 }
 
-static void fibonacci_heap_delete(heap *self, void *node_handle) {
+static ova_error_code fibonacci_heap_delete(heap *self, void *node_handle) {
     fibonacci_heap *h = (fibonacci_heap *)self->impl;
     fib_node *x = (fib_node *)node_handle;
     
-    if (!x) return;
+    if (!x) return OVA_ERROR_INVALID_ARG;
     
     // Move x to root list if it's not already there
     if (x->parent != NULL) {
@@ -216,6 +219,7 @@ static void fibonacci_heap_delete(heap *self, void *node_handle) {
     
     // Extract the minimum (which is x)
     fibonacci_heap_pop(self);
+    return OVA_SUCCESS;
 }
 
 static void *fibonacci_heap_pop(heap *self) {

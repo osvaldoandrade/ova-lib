@@ -23,8 +23,9 @@ typedef struct tree {
      * @param self Tree instance.
      * @param key Key pointer.
      * @param value Value pointer.
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*insert)(struct tree *self, void *key, void *value);
+    ova_error_code (*insert)(struct tree *self, void *key, void *value);
 
     /**
      * @brief Search for a key and return its value.
@@ -40,8 +41,9 @@ typedef struct tree {
      *
      * @param self Tree instance.
      * @param key Key pointer to remove.
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*delete)(struct tree *self, void *key);
+    ova_error_code (*delete)(struct tree *self, void *key);
 
     /**
      * @brief Return the value associated with the minimum key.

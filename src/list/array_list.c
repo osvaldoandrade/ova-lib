@@ -11,11 +11,11 @@ typedef struct {
 
 static size_t active_item_buffers = 0;
 
-static void array_list_insert(list *self, void *item, int index);
+static ova_error_code array_list_insert(list *self, void *item, int index);
 
 static void *array_list_get(list *self, int index);
 
-static void array_list_remove(list *self, int index);
+static ova_error_code array_list_remove(list *self, int index);
 
 static int array_list_size(const list *self);
 
@@ -65,15 +65,16 @@ static int ensure_capacity(array_list_impl *impl) {
     return 1; // Success
 }
 
-static void array_list_insert(list *self, void *item, int index) {
+static ova_error_code array_list_insert(list *self, void *item, int index) {
     array_list_impl *impl = (array_list_impl *) self->impl;
+    if (index < 0 || index > impl->size) return OVA_ERROR_INDEX_OUT_OF_BOUNDS;
     if (!ensure_capacity(impl)) {
-        return; // Failed to expand capacity
+        return OVA_ERROR_MEMORY;
     }
-    if (index < 0 || index > impl->size) return;
     memmove(&impl->items[index + 1], &impl->items[index], (size_t)(impl->size - index) * sizeof(void *));
     impl->items[index] = item;
     impl->size++;
+    return OVA_SUCCESS;
 }
 
 static void *array_list_get(list *self, int index) {
@@ -82,11 +83,12 @@ static void *array_list_get(list *self, int index) {
     return impl->items[index];
 }
 
-static void array_list_remove(list *self, int index) {
+static ova_error_code array_list_remove(list *self, int index) {
     array_list_impl *impl = (array_list_impl *) self->impl;
-    if (index < 0 || index >= impl->size) return;
+    if (index < 0 || index >= impl->size) return OVA_ERROR_INDEX_OUT_OF_BOUNDS;
     memmove(&impl->items[index], &impl->items[index + 1], (size_t)(impl->size - index - 1) * sizeof(void *));
     impl->size--;
+    return OVA_SUCCESS;
 }
 
 static int array_list_size(const list *self) {

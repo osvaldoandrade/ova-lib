@@ -17,16 +17,18 @@ typedef struct deque {
      *
      * @param self Deque instance.
      * @param element Payload pointer to insert.
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*push_front)(struct deque *self, void *element);
+    ova_error_code (*push_front)(struct deque *self, void *element);
 
     /**
      * @brief Push an item at the back.
      *
      * @param self Deque instance.
      * @param element Payload pointer to insert.
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*push_back)(struct deque *self, void *element);
+    ova_error_code (*push_back)(struct deque *self, void *element);
 
     /**
      * @brief Pop and return the front item.

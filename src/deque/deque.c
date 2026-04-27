@@ -45,34 +45,36 @@ static int deque_resize_impl(deque_impl *impl) {
     return 0;
 }
 
-static void deque_push_front_method(deque *self, void *element) {
+static ova_error_code deque_push_front_method(deque *self, void *element) {
     deque_impl *impl = deque_impl_from_self(self);
     if (!impl) {
-        return;
+        return OVA_ERROR_INVALID_ARG;
     }
 
     if (impl->size == impl->capacity && deque_resize_impl(impl) != 0) {
-        return;
+        return OVA_ERROR_MEMORY;
     }
 
     impl->front = (impl->front - 1 + impl->capacity) % impl->capacity;
     impl->buffer[impl->front] = element;
     impl->size++;
+    return OVA_SUCCESS;
 }
 
-static void deque_push_back_method(deque *self, void *element) {
+static ova_error_code deque_push_back_method(deque *self, void *element) {
     deque_impl *impl = deque_impl_from_self(self);
     if (!impl) {
-        return;
+        return OVA_ERROR_INVALID_ARG;
     }
 
     if (impl->size == impl->capacity && deque_resize_impl(impl) != 0) {
-        return;
+        return OVA_ERROR_MEMORY;
     }
 
     int back = (impl->front + impl->size) % impl->capacity;
     impl->buffer[back] = element;
     impl->size++;
+    return OVA_SUCCESS;
 }
 
 static void *deque_pop_front_method(deque *self) {

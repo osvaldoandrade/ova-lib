@@ -86,10 +86,10 @@ static void tree_range_query_node(tree_impl *impl, tree_node *node, void *low, v
     }
 }
 
-static void tree_insert_method(tree *self, void *key, void *value) {
+static ova_error_code tree_insert_method(tree *self, void *key, void *value) {
     tree_impl *impl = tree_impl_from_tree(self);
     if (!impl || !impl->cmp || !key) {
-        return;
+        return OVA_ERROR_INVALID_ARG;
     }
 
     if (impl->type == TREE_AVL) {
@@ -97,6 +97,7 @@ static void tree_insert_method(tree *self, void *key, void *value) {
     } else if (impl->type == TREE_RED_BLACK) {
         rb_tree_insert(impl, key, value);
     }
+    return OVA_SUCCESS;
 }
 
 static void *tree_search_method(tree *self, void *key) {
@@ -112,10 +113,10 @@ static void *tree_search_method(tree *self, void *key) {
     return node->value;
 }
 
-static void tree_delete_method(tree *self, void *key) {
+static ova_error_code tree_delete_method(tree *self, void *key) {
     tree_impl *impl = tree_impl_from_tree(self);
     if (!impl || !impl->cmp || !key) {
-        return;
+        return OVA_ERROR_INVALID_ARG;
     }
 
     if (impl->type == TREE_AVL) {
@@ -123,6 +124,7 @@ static void tree_delete_method(tree *self, void *key) {
     } else if (impl->type == TREE_RED_BLACK) {
         rb_tree_delete(impl, key);
     }
+    return OVA_SUCCESS;
 }
 
 static void *tree_min_method(tree *self) {

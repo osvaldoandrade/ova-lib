@@ -3,14 +3,18 @@
 #include "linked_list.h"
 #include "sorted_list.h"
 
-static void list_insert_bulk_impl(list *self, void **elements, int count) {
+static ova_error_code list_insert_bulk_impl(list *self, void **elements, int count) {
     if (!self || !elements || count <= 0) {
-        return;
+        return OVA_ERROR_INVALID_ARG;
     }
 
     for (int i = 0; i < count; i++) {
-        self->insert(self, elements[i], self->size(self));
+        ova_error_code err = self->insert(self, elements[i], self->size(self));
+        if (err != OVA_SUCCESS) {
+            return err;
+        }
     }
+    return OVA_SUCCESS;
 }
 
 list *create_list(ListType type, int initial_capacity, comparator cmp) {

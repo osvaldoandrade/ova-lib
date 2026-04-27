@@ -26,8 +26,9 @@ typedef struct stack {
      *
      * @param self A pointer to the stack structure.
      * @param item A pointer to the item to be pushed.
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*push)(struct stack *self, void *item);
+    ova_error_code (*push)(struct stack *self, void *item);
 
     /**
      * @brief Function pointer to pop the top item from the stack.

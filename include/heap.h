@@ -27,8 +27,9 @@ typedef struct heap {
      *
      * @param self A pointer to the heap structure.
      * @param item A pointer to the item to be inserted.
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*put)(struct heap *self, void *item);
+    ova_error_code (*put)(struct heap *self, void *item);
 
     /**
      * @brief Put an item into the heap and return a handle to it.
@@ -55,8 +56,9 @@ typedef struct heap {
      * @param self A pointer to the heap structure.
      * @param node_handle An opaque handle to the node (returned by put_with_handle).
      * @param new_value A pointer to the new value for the node (must increase priority).
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*decrease_key)(struct heap *self, void *node_handle, void *new_value);
+    ova_error_code (*decrease_key)(struct heap *self, void *node_handle, void *new_value);
 
     /**
      * @brief Delete a node from the heap.
@@ -66,8 +68,9 @@ typedef struct heap {
      *
      * @param self A pointer to the heap structure.
      * @param node_handle An opaque handle to the node (returned by put_with_handle).
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*delete_node)(struct heap *self, void *node_handle);
+    ova_error_code (*delete_node)(struct heap *self, void *node_handle);
 
     /**
      * @brief Extract the top element from the heap.
