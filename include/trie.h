@@ -11,6 +11,7 @@
  */
 typedef struct trie {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Insert or update a word/value pair.

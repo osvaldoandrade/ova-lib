@@ -18,6 +18,7 @@ typedef enum {
 
 typedef struct stack {
     void *impl;  // Implementação interna da pilha, detalhes abstratos
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Function pointer to push an item onto the stack.

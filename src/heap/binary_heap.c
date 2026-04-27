@@ -95,6 +95,7 @@ heap *create_binary_heap(int initial_capacity, comparator compare_function) {
     h->size = binary_heap_size;
     h->clear = binary_heap_clear;
     h->free = binary_heap_free;
+    h->user_data = NULL;
     return h;
 }
 

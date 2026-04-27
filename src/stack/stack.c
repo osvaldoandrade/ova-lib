@@ -41,6 +41,7 @@ stack *create_stack(StackType type) {
     stk->free = stack_free;
     stk->clone_shallow = stack_clone_shallow;
     stk->clone_deep = stack_clone_deep;
+    stk->user_data = NULL;
 
     return stk;
 }
@@ -104,6 +105,7 @@ static stack *stack_clone_shallow(const stack *self) {
             return NULL;
         }
     }
+    copy->user_data = self->user_data;
     return copy;
 }
 
@@ -138,5 +140,6 @@ static stack *stack_clone_deep(const stack *self, element_copier copier) {
             return NULL;
         }
     }
+    copy->user_data = self->user_data;
     return copy;
 }

@@ -137,6 +137,7 @@ static queue *priority_clone_shallow(const queue *self) {
         free(elems);
     }
 
+    copy->user_data = self->user_data;
     return copy;
 }
 
@@ -181,5 +182,6 @@ static queue *priority_clone_deep(const queue *self, element_copier copier) {
         free(elems);
     }
 
+    copy->user_data = self->user_data;
     return copy;
 }

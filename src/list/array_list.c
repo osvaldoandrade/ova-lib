@@ -39,6 +39,7 @@ list *create_array_list(int initial_capacity) {
         lst->size = array_list_size;
         lst->clear = array_list_clear;
         lst->free = array_list_free;
+        lst->user_data = NULL;
         return lst;
     }
 

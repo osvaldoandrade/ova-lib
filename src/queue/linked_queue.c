@@ -145,6 +145,7 @@ static queue *linked_clone_shallow(const queue *self) {
         }
         cur = cur->next;
     }
+    copy->user_data = self->user_data;
     return copy;
 }
 
@@ -176,5 +177,6 @@ static queue *linked_clone_deep(const queue *self, element_copier copier) {
         }
         cur = cur->next;
     }
+    copy->user_data = self->user_data;
     return copy;
 }

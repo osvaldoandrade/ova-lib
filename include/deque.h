@@ -11,6 +11,7 @@
  */
 typedef struct deque {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Push an item at the front.

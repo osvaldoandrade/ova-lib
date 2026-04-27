@@ -206,6 +206,94 @@ void test_matrix_multiply_dimension_mismatch(void) {
     m2->free(m2);
 }
 
+void test_strassen_small_square(void) {
+    matrix *m1 = create_matrix(2, 3);
+    matrix *m2 = create_matrix(3, 2);
+
+    set_matrix_value(m1, 0, 0, 1);
+    set_matrix_value(m1, 0, 1, 2);
+    set_matrix_value(m1, 0, 2, 3);
+    set_matrix_value(m1, 1, 0, 4);
+    set_matrix_value(m1, 1, 1, 5);
+    set_matrix_value(m1, 1, 2, 6);
+
+    set_matrix_value(m2, 0, 0, 7);
+    set_matrix_value(m2, 0, 1, 8);
+    set_matrix_value(m2, 1, 0, 9);
+    set_matrix_value(m2, 1, 1, 10);
+    set_matrix_value(m2, 2, 0, 11);
+    set_matrix_value(m2, 2, 1, 12);
+
+    matrix *expected = create_matrix(2, 2);
+    set_matrix_value(expected, 0, 0, 58);
+    set_matrix_value(expected, 0, 1, 64);
+    set_matrix_value(expected, 1, 0, 139);
+    set_matrix_value(expected, 1, 1, 154);
+
+    matrix *result = matrix_multiply_strassen(m1, m2);
+
+    print_test_result(result != NULL && compare_matrices(result, expected),
+                      "strassen multiply matches naive for non-square input");
+
+    m1->free(m1);
+    m2->free(m2);
+    if (result) { result->free(result); }
+    expected->free(expected);
+}
+
+void test_strassen_identity(void) {
+    const int N = 4;
+    matrix *a = create_matrix(N, N);
+    matrix *eye = create_matrix(N, N);
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            set_matrix_value(a, i, j, (double)(i * N + j + 1));
+        }
+        set_matrix_value(eye, i, i, 1.0);
+    }
+
+    matrix *result = matrix_multiply_strassen(a, eye);
+    print_test_result(result != NULL && compare_matrices(result, a),
+                      "strassen A*I == A");
+
+    if (result) { result->free(result); }
+    a->free(a);
+    eye->free(eye);
+}
+
+void test_strassen_large_matches_naive(void) {
+    const int N = 100;
+    matrix *a = create_matrix(N, N);
+    matrix *b = create_matrix(N, N);
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            set_matrix_value(a, i, j, (double)(i - j));
+            set_matrix_value(b, i, j, (double)(i + j));
+        }
+    }
+
+    matrix *naive  = a->multiply(a, b);
+    matrix *strass = matrix_multiply_strassen(a, b);
+
+    print_test_result(naive != NULL && strass != NULL && compare_matrices(naive, strass),
+                      "strassen matches naive for 100x100 matrices");
+
+    if (naive) { naive->free(naive); }
+    if (strass) { strass->free(strass); }
+    a->free(a);
+    b->free(b);
+}
+
+void test_strassen_dimension_mismatch(void) {
+    matrix *m1 = create_matrix(2, 3);
+    matrix *m2 = create_matrix(2, 2);
+    matrix *result = matrix_multiply_strassen(m1, m2);
+    print_test_result(result == NULL,
+                      "strassen should return NULL when cols != rows");
+    m1->free(m1);
+    m2->free(m2);
+}
+
 void run_all_tests(void) {
     test_create_matrix_invalid();
     test_matrix_resize();
@@ -219,6 +307,10 @@ void run_all_tests(void) {
     test_matrix_add_dimension_mismatch();
     test_matrix_subtract_dimension_mismatch();
     test_matrix_multiply_dimension_mismatch();
+    test_strassen_small_square();
+    test_strassen_identity();
+    test_strassen_large_matches_naive();
+    test_strassen_dimension_mismatch();
 }
 
 int main(void) {

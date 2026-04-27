@@ -11,6 +11,7 @@
  */
 typedef struct sorter {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Sort a list in place.
@@ -108,5 +109,17 @@ typedef struct sorter {
  * @return New sorter instance, or NULL on failure.
  */
 sorter *create_sorter(comparator cmp);
+
+/**
+ * @brief Create a new sorter that uses cache-oblivious merge sort.
+ *
+ * The merge sort variant provides O(n log n) worst-case time complexity
+ * and better cache utilization compared to quicksort on certain input
+ * patterns.  No tuning parameters are needed.
+ *
+ * @param cmp Comparator used by the sorting operations.
+ * @return New sorter instance, or NULL on failure.
+ */
+sorter *create_merge_sorter(comparator cmp);
 
 #endif // SORT_H

@@ -321,6 +321,7 @@ static set *set_clone_shallow_method(const set *self) {
     }
 
     items->free(items);
+    copy->user_data = self->user_data;
     return copy;
 }
 
@@ -357,5 +358,6 @@ static set *set_clone_deep_method(const set *self, element_copier copier) {
     }
 
     items->free(items);
+    copy->user_data = self->user_data;
     return copy;
 }

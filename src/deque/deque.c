@@ -227,6 +227,7 @@ static deque *deque_clone_shallow_method(const deque *self) {
             return NULL;
         }
     }
+    copy->user_data = self->user_data;
     return copy;
 }
 
@@ -258,5 +259,6 @@ static deque *deque_clone_deep_method(const deque *self, element_copier copier) 
             return NULL;
         }
     }
+    copy->user_data = self->user_data;
     return copy;
 }

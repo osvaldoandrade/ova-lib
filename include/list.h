@@ -17,6 +17,7 @@ typedef enum {
  */
 typedef struct list {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /** @internal List variant used for cloning. */
     ListType _type;

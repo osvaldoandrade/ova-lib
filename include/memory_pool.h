@@ -70,4 +70,20 @@ size_t memory_pool_active_count(const memory_pool *pool);
  */
 void memory_pool_destroy(memory_pool *pool);
 
+/**
+ * @brief Set the user-provided context pointer on the pool.
+ *
+ * @param pool Memory pool instance.
+ * @param user_data User context pointer to store.
+ */
+void memory_pool_set_user_data(memory_pool *pool, void *user_data);
+
+/**
+ * @brief Get the user-provided context pointer from the pool.
+ *
+ * @param pool Memory pool instance.
+ * @return Stored user context pointer, or NULL when pool is NULL.
+ */
+void *memory_pool_get_user_data(const memory_pool *pool);
+
 #endif /* MEMORY_POOL_H */

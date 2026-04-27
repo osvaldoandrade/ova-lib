@@ -351,6 +351,7 @@ static map *hash_clone_shallow(const map *self) {
         }
     }
 
+    copy->user_data = self->user_data;
     return copy;
 }
 
@@ -395,5 +396,6 @@ static map *hash_clone_deep(const map *self, element_copier copier) {
         }
     }
 
+    copy->user_data = self->user_data;
     return copy;
 }
