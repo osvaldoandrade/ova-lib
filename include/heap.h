@@ -104,6 +104,16 @@ typedef struct heap {
     int (*size)(const struct heap *self);
 
     /**
+     * @brief Remove all elements without destroying the heap.
+     *
+     * The heap becomes empty but retains its allocated capacity.
+     * User payloads are not freed.
+     *
+     * @param self A pointer to the heap structure.
+     */
+    void (*clear)(struct heap *self);
+
+    /**
      * @brief Free the memory allocated for the heap.
      *
      * This function pointer is used to free all the memory allocated for the heap, including the heap structure itself.

@@ -76,6 +76,16 @@ typedef struct map {
     int (*capacity)(const struct map *self);
 
     /**
+     * @brief Remove all key/value pairs without destroying the map.
+     *
+     * The map becomes empty but retains its bucket capacity.
+     * User keys and values are not freed.
+     *
+     * @param self Map instance.
+     */
+    void (*clear)(struct map *self);
+
+    /**
      * @brief Release the map and its internal allocations.
      *
      * The map does not free user keys or values.
