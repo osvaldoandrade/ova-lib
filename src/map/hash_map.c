@@ -195,6 +195,36 @@ static int hash_capacity(const map *self) {
     return impl ? impl->capacity : 0;
 }
 
+static void hash_clear(map *self) {
+    if (!self) {
+        return;
+    }
+
+    map_impl *impl = map_impl_from_map(self);
+    if (!impl) {
+        return;
+    }
+
+    if (impl->lock) {
+        pthread_mutex_lock(impl->lock);
+    }
+
+    for (int i = 0; i < impl->capacity; i++) {
+        map_entry *node = impl->buckets[i];
+        while (node) {
+            map_entry *tmp = node;
+            node = node->next;
+            free(tmp);
+        }
+        impl->buckets[i] = NULL;
+    }
+    impl->size = 0;
+
+    if (impl->lock) {
+        pthread_mutex_unlock(impl->lock);
+    }
+}
+
 static void hash_free(map *self) {
     if (!self) {
         return;
@@ -285,6 +315,7 @@ map *create_hash_map(int capacity, int (*hash_func)(void *, int), comparator key
     out->remove = hash_remove;
     out->size = hash_size;
     out->capacity = hash_capacity;
+    out->clear = hash_clear;
     out->free = hash_free;
     out->clone_shallow = hash_clone_shallow;
     out->clone_deep = hash_clone_deep;

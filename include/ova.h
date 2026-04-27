@@ -10,6 +10,7 @@
 #include "matrix.h"
 #include "memory_pool.h"
 #include "queue.h"
+#include "skip_list.h"
 #include "set.h"
 #include "solver.h"
 #include "sort.h"

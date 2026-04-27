@@ -64,6 +64,16 @@ static int linked_size(const queue *self) {
     return impl ? impl->length : 0;
 }
 
+static void linked_clear(queue *self) {
+    if (!self) {
+        return;
+    }
+
+    while (!linked_is_empty(self)) {
+        (void)linked_dequeue(self);
+    }
+}
+
 static void linked_free(queue *self) {
     if (!self) {
         return;
@@ -104,6 +114,7 @@ queue *create_linked_queue(void) {
     out->dequeue = linked_dequeue;
     out->is_empty = linked_is_empty;
     out->size = linked_size;
+    out->clear = linked_clear;
     out->free = linked_free;
     out->clone_shallow = linked_clone_shallow;
     out->clone_deep = linked_clone_deep;

@@ -48,6 +48,17 @@ void priority_free(queue *self) {
     free(self);
 }
 
+void priority_clear(queue *self) {
+    if (!self) {
+        return;
+    }
+
+    queue_impl *impl = queue_impl_from_queue(self);
+    if (impl && impl->p_heap && impl->p_heap->clear) {
+        impl->p_heap->clear(impl->p_heap);
+    }
+}
+
 int priority_size(const queue *self) {
     queue_impl *impl = queue_impl_from_queue(self);
     return (impl && impl->p_heap) ? impl->p_heap->size(impl->p_heap) : 0;
@@ -80,6 +91,7 @@ queue *create_heap_queue(int capacity, comparator compare) {
     out->dequeue = priority_dequeue;
     out->is_empty = priority_is_empty;
     out->size = priority_size;
+    out->clear = priority_clear;
     out->free = priority_free;
     out->clone_shallow = priority_clone_shallow;
     out->clone_deep = priority_clone_deep;
