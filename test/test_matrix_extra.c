@@ -164,6 +164,48 @@ void test_vector_resize(void) {
     v->free(v);
 }
 
+void test_matrix_add_dimension_mismatch(void) {
+    matrix *m1 = create_matrix(2, 2);
+    matrix *m2 = create_matrix(3, 2);
+    matrix *result = m1->add(m1, m2);
+    print_test_result(result == NULL, "matrix_add should return NULL on row mismatch");
+    m1->free(m1);
+    m2->free(m2);
+
+    matrix *m3 = create_matrix(2, 2);
+    matrix *m4 = create_matrix(2, 3);
+    matrix *result2 = m3->add(m3, m4);
+    print_test_result(result2 == NULL, "matrix_add should return NULL on col mismatch");
+    m3->free(m3);
+    m4->free(m4);
+}
+
+void test_matrix_subtract_dimension_mismatch(void) {
+    matrix *m1 = create_matrix(2, 2);
+    matrix *m2 = create_matrix(3, 2);
+    matrix *result = m1->subtract(m1, m2);
+    print_test_result(result == NULL, "matrix_subtract should return NULL on row mismatch");
+    m1->free(m1);
+    m2->free(m2);
+
+    matrix *m3 = create_matrix(2, 2);
+    matrix *m4 = create_matrix(2, 3);
+    matrix *result2 = m3->subtract(m3, m4);
+    print_test_result(result2 == NULL, "matrix_subtract should return NULL on col mismatch");
+    m3->free(m3);
+    m4->free(m4);
+}
+
+void test_matrix_multiply_dimension_mismatch(void) {
+    matrix *m1 = create_matrix(2, 3);
+    matrix *m2 = create_matrix(2, 2);
+    matrix *result = m1->multiply(m1, m2);
+    print_test_result(result == NULL,
+                      "matrix_multiply should return NULL when cols != rows");
+    m1->free(m1);
+    m2->free(m2);
+}
+
 void run_all_tests(void) {
     test_create_matrix_invalid();
     test_matrix_resize();
@@ -174,6 +216,9 @@ void run_all_tests(void) {
     test_matrix_determinant_non_square();
     test_large_matrix_multiply();
     test_vector_resize();
+    test_matrix_add_dimension_mismatch();
+    test_matrix_subtract_dimension_mismatch();
+    test_matrix_multiply_dimension_mismatch();
 }
 
 int main(void) {
