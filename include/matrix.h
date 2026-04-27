@@ -203,4 +203,18 @@ typedef struct vector {
 matrix *create_matrix(int rows, int cols);
 vector *create_vector(int size);
 
+/**
+ * @brief Multiply two matrices using Strassen's algorithm.
+ *
+ * Uses Strassen's divide-and-conquer algorithm for large matrices
+ * (dimensions greater than @c STRASSEN_THRESHOLD, default 64) and
+ * falls back to the naive O(n³) method for smaller sub-problems.
+ * Non-square or non-power-of-two matrices are padded internally.
+ *
+ * @param a Left-hand matrix.
+ * @param b Right-hand matrix.
+ * @return New matrix holding the product, or NULL on failure.
+ */
+matrix *matrix_multiply_strassen(matrix *a, matrix *b);
+
 #endif // MATRIX_H
