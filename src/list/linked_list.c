@@ -34,6 +34,7 @@ list *create_linked_list(void) {
         lst->remove = linked_list_remove;
         lst->size = linked_list_size;
         lst->free = linked_list_free;
+        lst->user_data = NULL;
         return lst;
     }
 

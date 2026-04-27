@@ -35,6 +35,7 @@ stack *create_stack(StackType type) {
     stk->is_empty = stack_is_empty;
     stk->size = stack_size;
     stk->free = stack_free;
+    stk->user_data = NULL;
 
     return stk;
 }

@@ -16,6 +16,7 @@ typedef enum {
  */
 typedef struct set {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Add an element to the set.

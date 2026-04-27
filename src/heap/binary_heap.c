@@ -89,6 +89,7 @@ heap *create_binary_heap(int initial_capacity, comparator compare_function) {
     h->peek = binary_heap_peek;
     h->size = binary_heap_size;
     h->free = binary_heap_free;
+    h->user_data = NULL;
     return h;
 }
 

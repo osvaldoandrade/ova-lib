@@ -17,6 +17,7 @@ typedef enum {
  */
 typedef struct list {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Insert an item at the given index.

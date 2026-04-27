@@ -16,6 +16,7 @@ typedef enum {
  */
 typedef struct queue {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Enqueue an item.

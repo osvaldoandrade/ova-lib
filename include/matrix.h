@@ -10,6 +10,7 @@
  */
 typedef struct matrix {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Read a matrix element.
@@ -140,6 +141,7 @@ typedef struct matrix {
  */
 typedef struct vector {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Read a vector element.

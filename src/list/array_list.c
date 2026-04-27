@@ -36,6 +36,7 @@ list *create_array_list(int initial_capacity) {
         lst->remove = array_list_remove;
         lst->size = array_list_size;
         lst->free = array_list_free;
+        lst->user_data = NULL;
         return lst;
     }
 
