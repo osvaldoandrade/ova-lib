@@ -350,10 +350,13 @@ static map *hash_clone_deep(const map *self, element_copier copier) {
             }
             void *val_dup = copier(node->data);
             if (!val_dup) {
+                free(key_dup);
                 copy->free(copy);
                 return NULL;
             }
             if (copy->put(copy, key_dup, val_dup) != OVA_SUCCESS) {
+                free(key_dup);
+                free(val_dup);
                 copy->free(copy);
                 return NULL;
             }
