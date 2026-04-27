@@ -5,14 +5,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+static bool safe_key_equals(void *k1, void *k2, comparator cmp) {
+    if (k1 == NULL && k2 == NULL) return true;
+    if (k1 == NULL || k2 == NULL) return false;
+    return cmp(k1, k2) == 0;
+}
+
 static int map_keys_equal(map_impl *impl, void *lhs, void *rhs) {
-    if (lhs == rhs) {
-        return 1;
+    if (!impl || !impl->key_compare) {
+        return (lhs == rhs) ? 1 : 0;
     }
-    if (!impl || !impl->key_compare || lhs == NULL || rhs == NULL) {
-        return 0;
-    }
-    return impl->key_compare(lhs, rhs) == 0;
+    return safe_key_equals(lhs, rhs, impl->key_compare) ? 1 : 0;
 }
 
 static int map_bucket_index(map_impl *impl, void *key) {
