@@ -105,8 +105,8 @@ static queue *priority_clone_shallow(const queue *self) {
         return NULL;
     }
 
-    /* Collect elements, then re-insert into both original & copy.
-       We pop from a temp copy of the heap to enumerate elements. */
+    /* Collect elements by popping from the heap, then re-insert into
+       both original and copy to preserve heap ordering. */
     void **elems = NULL;
     if (n > 0) {
         elems = (void **)malloc((size_t)n * sizeof(void *));
@@ -114,19 +114,10 @@ static queue *priority_clone_shallow(const queue *self) {
             copy->free(copy);
             return NULL;
         }
-        /* Pop all elements from a temporary working clone.
-           Since we can't iterate the heap directly, we create a
-           temporary queue, pop from it, and re-enqueue into the copy. */
-        /* Actually, the simplest approach: create a temp heap, pop all,
-           then re-insert into both original and copy. But we shouldn't
-           modify the original. Instead, let's create a temp heap by
-           re-inserting all popped elements. */
         heap *orig_heap = impl->p_heap;
-        /* Pop all from original */
         for (int i = 0; i < n; i++) {
             elems[i] = orig_heap->pop(orig_heap);
         }
-        /* Re-insert into original and copy */
         for (int i = 0; i < n; i++) {
             orig_heap->put(orig_heap, elems[i]);
             copy->enqueue(copy, elems[i]);
