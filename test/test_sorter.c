@@ -204,6 +204,106 @@ void test_sorter_min_max(void) {
     s->free(s);
 }
 
+void test_merge_sorter_sort(void) {
+    list *lst = create_list(ARRAY_LIST, 10, NULL);
+    int items[] = {50, 40, 30, 20, 10};
+    for (int i = 0; i < 5; i++) {
+        lst->insert(lst, &items[i], i);
+    }
+
+    sorter *s = create_merge_sorter(int_compare);
+    s->sort(s, lst);
+
+    int passed = 1;
+    for (int i = 1; i < lst->size(lst); i++) {
+        int *prev = (int *)lst->get(lst, i - 1);
+        int *current = (int *)lst->get(lst, i);
+        if (*prev > *current) {
+            passed = 0;
+            break;
+        }
+    }
+    print_test_result(passed, "Merge sorter sort operation ensures list is sorted");
+
+    lst->free(lst);
+    s->free(s);
+}
+
+void test_merge_sort_empty_list(void) {
+    list *lst = create_list(ARRAY_LIST, 1, NULL);
+    sorter *s = create_merge_sorter(int_compare);
+    s->sort(s, lst);
+    print_test_result(lst->size(lst) == 0, "Merge sort on empty list safe");
+    lst->free(lst);
+    s->free(s);
+}
+
+void test_merge_sort_single_element(void) {
+    list *lst = create_list(ARRAY_LIST, 1, NULL);
+    int item = 42;
+    lst->insert(lst, &item, 0);
+
+    sorter *s = create_merge_sorter(int_compare);
+    s->sort(s, lst);
+
+    int *result = (int *)lst->get(lst, 0);
+    print_test_result(*result == 42, "Merge sort on single element");
+    lst->free(lst);
+    s->free(s);
+}
+
+void test_merge_sort_already_sorted(void) {
+    list *lst = create_list(ARRAY_LIST, 5, NULL);
+    int items[] = {10, 20, 30, 40, 50};
+    for (int i = 0; i < 5; i++) {
+        lst->insert(lst, &items[i], i);
+    }
+
+    sorter *s = create_merge_sorter(int_compare);
+    s->sort(s, lst);
+
+    int passed = 1;
+    for (int i = 0; i < 5; i++) {
+        int *val = (int *)lst->get(lst, i);
+        if (*val != items[i]) {
+            passed = 0;
+            break;
+        }
+    }
+    print_test_result(passed, "Merge sort on already sorted list");
+    lst->free(lst);
+    s->free(s);
+}
+
+void test_merge_sort_large(void) {
+    const int MAX = 1000;
+    list *lst = create_list(ARRAY_LIST, MAX, NULL);
+    int *values = malloc((size_t)MAX * sizeof(int));
+    if (values == NULL) {
+        print_test_result(0, "Merge sort large within time limit");
+        lst->free(lst);
+        return;
+    }
+    for (int i = 0; i < MAX; i++) {
+        values[i] = MAX - 1 - i;
+        lst->insert(lst, &values[i], i);
+    }
+    sorter *s = create_merge_sorter(int_compare);
+    clock_t start = clock();
+    s->sort(s, lst);
+    double elapsed_ms = ((double)(clock() - start) / CLOCKS_PER_SEC) * 1000.0;
+    int sorted = 1;
+    for (int i = 1; i < lst->size(lst); i++) {
+        int *prev = lst->get(lst, i - 1);
+        int *cur = lst->get(lst, i);
+        if (*prev > *cur) { sorted = 0; break; }
+    }
+    print_test_result(sorted && elapsed_ms < 1500.0, "Merge sort large within time limit");
+    lst->free(lst);
+    free(values);
+    s->free(s);
+}
+
 void run_all_tests(void) {
     test_sorter_sort();
     test_sorter_shuffle();
@@ -213,6 +313,11 @@ void run_all_tests(void) {
     test_sorter_large_sort();
     test_sorter_copy();
     test_sorter_min_max();
+    test_merge_sorter_sort();
+    test_merge_sort_empty_list();
+    test_merge_sort_single_element();
+    test_merge_sort_already_sorted();
+    test_merge_sort_large();
 }
 
 int main(void) {
