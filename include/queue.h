@@ -22,9 +22,9 @@ typedef struct queue {
      *
      * @param self Queue instance.
      * @param data Payload pointer to enqueue.
-     * @return 1 on success, 0 on failure.
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    int (*enqueue)(struct queue *self, void *data);
+    ova_error_code (*enqueue)(struct queue *self, void *data);
 
     /**
      * @brief Dequeue and return the next item.

@@ -11,15 +11,15 @@ static queue_entry *create_node(void *data) {
     return new_node;
 }
 
-static int linked_enqueue(queue *self, void *data) {
+static ova_error_code linked_enqueue(queue *self, void *data) {
     queue_impl *impl = queue_impl_from_queue(self);
     if (!impl) {
-        return 0;
+        return OVA_ERROR_INVALID_ARG;
     }
 
     queue_entry *new_node = create_node(data);
     if (!new_node) {
-        return 0;
+        return OVA_ERROR_MEMORY;
     }
 
     if (impl->rear) {
@@ -32,7 +32,7 @@ static int linked_enqueue(queue *self, void *data) {
     }
 
     impl->length++;
-    return 1;
+    return OVA_SUCCESS;
 }
 
 static void *linked_dequeue(queue *self) {

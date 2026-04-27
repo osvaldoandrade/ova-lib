@@ -9,9 +9,9 @@ typedef struct {
     comparator cmp;
 } sorted_list_impl;
 
-static void sorted_list_insert(list *self, void *item, int index);
+static ova_error_code sorted_list_insert(list *self, void *item, int index);
 static void *sorted_list_get(list *self, int index);
-static void sorted_list_remove(list *self, int index);
+static ova_error_code sorted_list_remove(list *self, int index);
 static int sorted_list_size(const list *self);
 static void sorted_list_free(list *self);
 
@@ -88,15 +88,15 @@ static int find_insert_position(sorted_list_impl *impl, void *item) {
     return left;
 }
 
-static void sorted_list_insert(list *self, void *item, int index) {
+static ova_error_code sorted_list_insert(list *self, void *item, int index) {
     (void)index; // Index is ignored to keep the list sorted
     sorted_list_impl *impl = get_impl(self);
     if (!impl) {
-        return;
+        return OVA_ERROR_INVALID_ARG;
     }
 
     if (!ensure_capacity(impl)) {
-        return; // Failed to expand capacity
+        return OVA_ERROR_MEMORY;
     }
 
     int insert_pos = find_insert_position(impl, item);
@@ -104,6 +104,7 @@ static void sorted_list_insert(list *self, void *item, int index) {
             (size_t)(impl->size - insert_pos) * sizeof(void *));
     impl->items[insert_pos] = item;
     impl->size++;
+    return OVA_SUCCESS;
 }
 
 static void *sorted_list_get(list *self, int index) {
@@ -114,15 +115,19 @@ static void *sorted_list_get(list *self, int index) {
     return impl->items[index];
 }
 
-static void sorted_list_remove(list *self, int index) {
+static ova_error_code sorted_list_remove(list *self, int index) {
     sorted_list_impl *impl = get_impl(self);
-    if (!impl || index < 0 || index >= impl->size) {
-        return;
+    if (!impl) {
+        return OVA_ERROR_INVALID_ARG;
+    }
+    if (index < 0 || index >= impl->size) {
+        return OVA_ERROR_INDEX_OUT_OF_BOUNDS;
     }
 
     memmove(&impl->items[index], &impl->items[index + 1],
             (size_t)(impl->size - index - 1) * sizeof(void *));
     impl->size--;
+    return OVA_SUCCESS;
 }
 
 static int sorted_list_size(const list *self) {

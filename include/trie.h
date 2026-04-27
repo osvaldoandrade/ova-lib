@@ -18,8 +18,9 @@ typedef struct trie {
      * @param self Trie instance.
      * @param word NUL-terminated key string.
      * @param value Value pointer to store.
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*insert)(struct trie *self, const char *word, void *value);
+    ova_error_code (*insert)(struct trie *self, const char *word, void *value);
 
     /**
      * @brief Search for a word and return its value.

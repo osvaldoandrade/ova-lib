@@ -26,8 +26,9 @@ typedef struct map {
      * @param self Map instance.
      * @param key Key pointer.
      * @param data Value pointer.
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*put)(struct map *self, void *key, void *data);
+    ova_error_code (*put)(struct map *self, void *key, void *data);
 
     /**
      * @brief Insert multiple key/value pairs.
@@ -36,8 +37,9 @@ typedef struct map {
      * @param keys Array of key pointers.
      * @param values Array of value pointers.
      * @param count Number of pairs to insert.
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*put_bulk)(struct map *self, void **keys, void **values, int count);
+    ova_error_code (*put_bulk)(struct map *self, void **keys, void **values, int count);
 
     /**
      * @brief Retrieve the value associated with a key.

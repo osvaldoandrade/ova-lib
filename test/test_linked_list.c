@@ -140,6 +140,33 @@ void test_high_volume_linked_list_insertions(void) {
     free(values);
 }
 
+void test_linked_list_insert_error_codes(void) {
+    list *lst = create_list(LINKED_LIST, 0, NULL);
+    int val = 42;
+
+    print_test_result(lst->insert(lst, &val, 0) == OVA_SUCCESS,
+                      "Linked List insert at valid index returns OVA_SUCCESS");
+    print_test_result(lst->insert(lst, &val, -1) == OVA_ERROR_INDEX_OUT_OF_BOUNDS,
+                      "Linked List insert at negative index returns OVA_ERROR_INDEX_OUT_OF_BOUNDS");
+    print_test_result(lst->insert(lst, &val, 100) == OVA_ERROR_INDEX_OUT_OF_BOUNDS,
+                      "Linked List insert beyond size returns OVA_ERROR_INDEX_OUT_OF_BOUNDS");
+
+    lst->free(lst);
+}
+
+void test_linked_list_remove_error_codes(void) {
+    list *lst = create_list(LINKED_LIST, 0, NULL);
+    int val = 42;
+    lst->insert(lst, &val, 0);
+
+    print_test_result(lst->remove(lst, 0) == OVA_SUCCESS,
+                      "Linked List remove at valid index returns OVA_SUCCESS");
+    print_test_result(lst->remove(lst, 0) == OVA_ERROR_INDEX_OUT_OF_BOUNDS,
+                      "Linked List remove from empty returns OVA_ERROR_INDEX_OUT_OF_BOUNDS");
+
+    lst->free(lst);
+}
+
 void run_all_tests(void) {
     test_linked_list_insert_and_get();
     test_linked_list_remove();
@@ -149,6 +176,8 @@ void run_all_tests(void) {
     test_invalid_index_insertion();
     test_list_clear();
     test_high_volume_linked_list_insertions();
+    test_linked_list_insert_error_codes();
+    test_linked_list_remove_error_codes();
 }
 
 int main(void) {

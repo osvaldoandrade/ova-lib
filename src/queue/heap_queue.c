@@ -2,14 +2,13 @@
 
 #include <stdlib.h>
 
-int priority_enqueue(queue *self, void *data) {
+ova_error_code priority_enqueue(queue *self, void *data) {
     queue_impl *impl = queue_impl_from_queue(self);
     if (!impl || !impl->p_heap) {
-        return 0;
+        return OVA_ERROR_INVALID_ARG;
     }
 
-    impl->p_heap->put(impl->p_heap, data);
-    return 1;
+    return impl->p_heap->put(impl->p_heap, data);
 }
 
 void *priority_dequeue(queue *self) {

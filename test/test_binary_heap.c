@@ -70,6 +70,16 @@ void test_safe_double_capacity_for_binary_heap(void) {
     print_test_result(safe_double_capacity(INT_MAX) == INT_MAX, "Heap safe_double_capacity(INT_MAX) stays INT_MAX");
 }
 
+void test_heap_put_error_codes(void) {
+    heap *h = create_heap(BINARY_HEAP, 4, int_compare);
+    int val = 42;
+
+    print_test_result(h->put(h, &val) == OVA_SUCCESS,
+                      "Binary heap put returns OVA_SUCCESS");
+
+    h->free(h);
+}
+
 void run_all_heap_tests(void) {
     test_safe_double_capacity_for_binary_heap();
     test_heap_insert_and_extract_max();
@@ -77,6 +87,7 @@ void run_all_heap_tests(void) {
     test_heap_empty_check();
     test_heap_pop_empty();
     test_heap_high_volume();
+    test_heap_put_error_codes();
 }
 
 int main(void) {

@@ -2,9 +2,9 @@
 #include "list.h"
 #include <stdlib.h>
 
-void linked_stack_push(stack *self, void *item) {
+ova_error_code linked_stack_push(stack *self, void *item) {
     list *lst = (list *)self->impl;
-    lst->insert(lst, item, 0);
+    return lst->insert(lst, item, 0);
 }
 
 void *linked_stack_pop(stack *self) {

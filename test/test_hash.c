@@ -320,6 +320,23 @@ void test_safe_double_capacity_for_hash_map(void) {
     print_test_result(safe_double_capacity(INT_MAX) == INT_MAX, "Hash map safe_double_capacity(INT_MAX) stays INT_MAX");
 }
 
+void test_map_put_error_codes(void) {
+    map *m = create_map(HASH_MAP, 10, NULL, string_compare);
+    char key[] = "test_key";
+    char data[] = "test_data";
+
+    print_test_result(m->put(m, key, data) == OVA_SUCCESS,
+                      "Map put returns OVA_SUCCESS on valid insert");
+
+    print_test_result(m->put(m, key, data) == OVA_SUCCESS,
+                      "Map put returns OVA_SUCCESS on update");
+
+    print_test_result(m->put_bulk(m, NULL, NULL, 3) == OVA_ERROR_INVALID_ARG,
+                      "Map put_bulk with NULL returns OVA_ERROR_INVALID_ARG");
+
+    m->free(m);
+}
+
 void run_all_tests(void) {
     test_safe_double_capacity_for_hash_map();
     test_insert_and_retrieve_single_item();
@@ -339,6 +356,7 @@ void run_all_tests(void) {
     test_map_put_bulk();
     test_map_put_bulk_with_duplicate_keys();
     test_map_put_bulk_edge_cases();
+    test_map_put_error_codes();
 }
 
 int main(void) {

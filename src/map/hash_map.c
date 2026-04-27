@@ -53,10 +53,10 @@ static void resize_and_rehash(map_impl *impl) {
     impl->capacity = new_capacity;
 }
 
-static void hash_insert(map *self, void *key, void *data) {
+static ova_error_code hash_insert(map *self, void *key, void *data) {
     map_impl *impl = map_impl_from_map(self);
     if (!impl) {
-        return;
+        return OVA_ERROR_INVALID_ARG;
     }
 
     if (impl->lock) {
@@ -76,33 +76,42 @@ static void hash_insert(map *self, void *key, void *data) {
             if (impl->lock) {
                 pthread_mutex_unlock(impl->lock);
             }
-            return;
+            return OVA_SUCCESS;
         }
         node = node->next;
     }
 
     map_entry *new_node = (map_entry *)malloc(sizeof(map_entry));
-    if (new_node) {
-        new_node->key = key;
-        new_node->data = data;
-        new_node->next = impl->buckets[index];
-        impl->buckets[index] = new_node;
-        impl->size++;
+    if (!new_node) {
+        if (impl->lock) {
+            pthread_mutex_unlock(impl->lock);
+        }
+        return OVA_ERROR_MEMORY;
     }
+    new_node->key = key;
+    new_node->data = data;
+    new_node->next = impl->buckets[index];
+    impl->buckets[index] = new_node;
+    impl->size++;
 
     if (impl->lock) {
         pthread_mutex_unlock(impl->lock);
     }
+    return OVA_SUCCESS;
 }
 
-static void hash_put_bulk(map *self, void **keys, void **values, int count) {
+static ova_error_code hash_put_bulk(map *self, void **keys, void **values, int count) {
     if (!self || !keys || !values || count <= 0) {
-        return;
+        return OVA_ERROR_INVALID_ARG;
     }
 
     for (int i = 0; i < count; i++) {
-        self->put(self, keys[i], values[i]);
+        ova_error_code err = self->put(self, keys[i], values[i]);
+        if (err != OVA_SUCCESS) {
+            return err;
+        }
     }
+    return OVA_SUCCESS;
 }
 
 static void *hash_get(map *self, void *key) {

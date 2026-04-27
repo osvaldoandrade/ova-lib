@@ -265,6 +265,22 @@ static void test_trie_sso_update_value(void) {
     t->free(t);
 }
 
+static void test_trie_insert_error_codes(void) {
+    trie *t = create_trie();
+    if (!t) {
+        print_test_result(0, "Trie creation for error code test");
+        return;
+    }
+
+    int val = 42;
+    print_test_result(t->insert(t, "hello", &val) == OVA_SUCCESS,
+                      "Trie insert returns OVA_SUCCESS");
+    print_test_result(t->insert(t, "hello", &val) == OVA_SUCCESS,
+                      "Trie insert update returns OVA_SUCCESS");
+
+    t->free(t);
+}
+
 int main(void) {
     test_trie_basic_ops();
     test_trie_sso_short_keys();
@@ -272,5 +288,6 @@ int main(void) {
     test_trie_sso_delete();
     test_trie_sso_single_char_key();
     test_trie_sso_update_value();
+    test_trie_insert_error_codes();
     return 0;
 }

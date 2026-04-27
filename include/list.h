@@ -24,8 +24,9 @@ typedef struct list {
      * @param self List instance.
      * @param item Item pointer to insert.
      * @param index Zero-based insertion index.
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*insert)(struct list *self, void *item, int index);
+    ova_error_code (*insert)(struct list *self, void *item, int index);
 
     /**
      * @brief Insert multiple items at the current end of the list.
@@ -33,8 +34,9 @@ typedef struct list {
      * @param self List instance.
      * @param elements Array of payload pointers.
      * @param count Number of elements in @p elements.
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*insert_bulk)(struct list *self, void **elements, int count);
+    ova_error_code (*insert_bulk)(struct list *self, void **elements, int count);
 
     /**
      * @brief Retrieve the item at the given index.
@@ -50,8 +52,9 @@ typedef struct list {
      *
      * @param self List instance.
      * @param index Zero-based item index.
+     * @return OVA_SUCCESS on success, or a negative ova_error_code on failure.
      */
-    void (*remove)(struct list *self, int index);
+    ova_error_code (*remove)(struct list *self, int index);
 
     /**
      * @brief Return the current element count.

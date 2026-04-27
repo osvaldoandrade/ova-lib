@@ -137,10 +137,10 @@ static walk_result_t trie_walk_ex(const trie *self, const char *s,
     return WALK_EXACT;
 }
 
-static void trie_insert_method(trie *self, const char *word, void *value) {
+static ova_error_code trie_insert_method(trie *self, const char *word, void *value) {
     trie_impl *impl = trie_impl_from_self(self);
     if (!impl || !impl->root || !word) {
-        return;
+        return OVA_ERROR_INVALID_ARG;
     }
 
     trie_node *node = impl->root;
@@ -148,7 +148,7 @@ static void trie_insert_method(trie *self, const char *word, void *value) {
     while (*p) {
         if (node->sso_len > 0) {
             if (!sso_expand(node)) {
-                return;
+                return OVA_ERROR_MEMORY;
             }
         }
 
@@ -156,7 +156,7 @@ static void trie_insert_method(trie *self, const char *word, void *value) {
         if (!node->children[c]) {
             trie_node *created = trie_node_create();
             if (!created) {
-                return;
+                return OVA_ERROR_MEMORY;
             }
             node->children[c] = created;
             node->child_count++;
@@ -181,7 +181,7 @@ static void trie_insert_method(trie *self, const char *word, void *value) {
                     n->subtree_words++;
                     q++;
                 }
-                return;
+                return OVA_SUCCESS;
             }
         }
         node = node->children[c];
@@ -190,13 +190,13 @@ static void trie_insert_method(trie *self, const char *word, void *value) {
 
     if (node->sso_len > 0) {
         if (!sso_expand(node)) {
-            return;
+            return OVA_ERROR_MEMORY;
         }
     }
 
     if (node->is_end) {
         node->value = value;
-        return;
+        return OVA_SUCCESS;
     }
 
     node->is_end = true;
@@ -214,6 +214,7 @@ static void trie_insert_method(trie *self, const char *word, void *value) {
         node->subtree_words++;
         p++;
     }
+    return OVA_SUCCESS;
 }
 
 static void *trie_search_method(const trie *self, const char *word) {

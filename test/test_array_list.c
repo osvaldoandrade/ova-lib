@@ -219,6 +219,50 @@ void test_safe_double_capacity_overflow_protection(void) {
     print_test_result(safe_double_capacity(INT_MAX - 1) == INT_MAX, "safe_double_capacity(INT_MAX-1) returns INT_MAX");
 }
 
+void test_array_list_insert_error_codes(void) {
+    list *lst = create_list(ARRAY_LIST, 4, NULL);
+    int val = 42;
+
+    print_test_result(lst->insert(lst, &val, 0) == OVA_SUCCESS,
+                      "Array List insert at valid index returns OVA_SUCCESS");
+    print_test_result(lst->insert(lst, &val, -1) == OVA_ERROR_INDEX_OUT_OF_BOUNDS,
+                      "Array List insert at negative index returns OVA_ERROR_INDEX_OUT_OF_BOUNDS");
+    print_test_result(lst->insert(lst, &val, 100) == OVA_ERROR_INDEX_OUT_OF_BOUNDS,
+                      "Array List insert beyond size returns OVA_ERROR_INDEX_OUT_OF_BOUNDS");
+
+    lst->free(lst);
+}
+
+void test_array_list_remove_error_codes(void) {
+    list *lst = create_list(ARRAY_LIST, 4, NULL);
+    int val = 42;
+    lst->insert(lst, &val, 0);
+
+    print_test_result(lst->remove(lst, 0) == OVA_SUCCESS,
+                      "Array List remove at valid index returns OVA_SUCCESS");
+    print_test_result(lst->remove(lst, 0) == OVA_ERROR_INDEX_OUT_OF_BOUNDS,
+                      "Array List remove from empty list returns OVA_ERROR_INDEX_OUT_OF_BOUNDS");
+    print_test_result(lst->remove(lst, -1) == OVA_ERROR_INDEX_OUT_OF_BOUNDS,
+                      "Array List remove at negative index returns OVA_ERROR_INDEX_OUT_OF_BOUNDS");
+
+    lst->free(lst);
+}
+
+void test_array_list_bulk_insert_error_codes(void) {
+    list *lst = create_list(ARRAY_LIST, 4, NULL);
+    int items[] = {1, 2, 3};
+    void *ptrs[] = {&items[0], &items[1], &items[2]};
+
+    print_test_result(lst->insert_bulk(lst, ptrs, 3) == OVA_SUCCESS,
+                      "Array List bulk insert returns OVA_SUCCESS");
+    print_test_result(lst->insert_bulk(lst, NULL, 3) == OVA_ERROR_INVALID_ARG,
+                      "Array List bulk insert with NULL returns OVA_ERROR_INVALID_ARG");
+    print_test_result(lst->insert_bulk(lst, ptrs, 0) == OVA_ERROR_INVALID_ARG,
+                      "Array List bulk insert with count 0 returns OVA_ERROR_INVALID_ARG");
+
+    lst->free(lst);
+}
+
 void run_all_tests(void) {
     test_safe_double_capacity_normal();
     test_safe_double_capacity_overflow_protection();
@@ -232,6 +276,9 @@ void run_all_tests(void) {
     test_array_list_releases_internal_buffer();
     test_array_list_insert_bulk();
     test_array_list_insert_bulk_empty();
+    test_array_list_insert_error_codes();
+    test_array_list_remove_error_codes();
+    test_array_list_bulk_insert_error_codes();
     //test_list_clear();
     //test_high_volume_array_list_insertions();
 }

@@ -21,18 +21,16 @@ binary_heap *binary_heap_init(int initial_capacity, comparator cmp) {
     return h;
 }
 
-static void binary_heap_put(heap *self, void *item) {
+static ova_error_code binary_heap_put(heap *self, void *item) {
     binary_heap *h = (binary_heap *)self->impl;
     if (h->size == h->capacity) {
         int new_capacity = safe_double_capacity(h->capacity);
         if (new_capacity == h->capacity) {
-            // Already at maximum capacity - cannot add item
-            return;
+            return OVA_ERROR_FULL;
         }
         void **new_data = realloc(h->data, (size_t)new_capacity * sizeof(void *));
         if (new_data == NULL) {
-            // Allocation failed - cannot add item, maintain existing state
-            return;
+            return OVA_ERROR_MEMORY;
         }
         h->data = new_data;
         h->capacity = new_capacity;
@@ -40,6 +38,7 @@ static void binary_heap_put(heap *self, void *item) {
     h->data[h->size] = item;
     sift_up(h, h->size);
     h->size++;
+    return OVA_SUCCESS;
 }
 
 static void *binary_heap_pop(heap *self) {

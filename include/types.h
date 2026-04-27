@@ -27,4 +27,20 @@ typedef int (*comparator)(const void *a, const void *b);
  */
 typedef int (*hash_func_t)(void *key, int capacity);
 
+/**
+ * @brief Consistent error codes returned by mutating operations.
+ *
+ * All insertion, deletion, and resize operations return one of these codes so
+ * that callers can distinguish between different failure modes.
+ */
+typedef enum {
+    OVA_SUCCESS               =  0,
+    OVA_ERROR_MEMORY          = -1,
+    OVA_ERROR_INVALID_ARG     = -2,
+    OVA_ERROR_INDEX_OUT_OF_BOUNDS = -3,
+    OVA_ERROR_EMPTY           = -4,
+    OVA_ERROR_FULL            = -5,
+    OVA_ERROR_NOT_FOUND       = -6
+} ova_error_code;
+
 #endif /* TYPES_H */

@@ -13,9 +13,9 @@ typedef struct {
     int size;
 } linked_list_impl;
 
-static void linked_list_insert(list *self, void *item, int index);
+static ova_error_code linked_list_insert(list *self, void *item, int index);
 static void *linked_list_get(list *self, int index);
-static void linked_list_remove(list *self, int index);
+static ova_error_code linked_list_remove(list *self, int index);
 static void linked_list_free(list *self);
 static int linked_list_size(const list *self);
 
@@ -42,11 +42,11 @@ list *create_linked_list(void) {
     return NULL;
 }
 
-static void linked_list_insert(list *self, void *item, int index) {
+static ova_error_code linked_list_insert(list *self, void *item, int index) {
     linked_list_impl *impl = (linked_list_impl *)self->impl;
-    if (index < 0 || index > impl->size) return;
+    if (index < 0 || index > impl->size) return OVA_ERROR_INDEX_OUT_OF_BOUNDS;
     linked_list_node *new_node = malloc(sizeof(linked_list_node));
-    if (!new_node) return;
+    if (!new_node) return OVA_ERROR_MEMORY;
 
     new_node->data = item;
     new_node->next = NULL;
@@ -89,6 +89,7 @@ static void linked_list_insert(list *self, void *item, int index) {
         }
     }
     impl->size++;
+    return OVA_SUCCESS;
 }
 
 static void *linked_list_get(list *self, int index) {
@@ -101,9 +102,9 @@ static void *linked_list_get(list *self, int index) {
     return current ? current->data : NULL;
 }
 
-static void linked_list_remove(list *self, int index) {
+static ova_error_code linked_list_remove(list *self, int index) {
     linked_list_impl *impl = (linked_list_impl *)self->impl;
-    if (index < 0 || index >= impl->size) return;
+    if (index < 0 || index >= impl->size) return OVA_ERROR_INDEX_OUT_OF_BOUNDS;
     linked_list_node *current = impl->head;
     for (int i = 0; i < index && current; i++) {
         current = current->next;
@@ -122,6 +123,7 @@ static void linked_list_remove(list *self, int index) {
         free(current);
         impl->size--;
     }
+    return OVA_SUCCESS;
 }
 
 static int linked_list_size(const list *self) {
