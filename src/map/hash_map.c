@@ -266,7 +266,13 @@ map *create_hash_map(int capacity, int (*hash_func)(void *, int), comparator key
             free(out);
             return NULL;
         }
-        pthread_mutex_init(impl->lock, NULL);
+        if (pthread_mutex_init(impl->lock, NULL) != 0) {
+            free(impl->lock);
+            free(impl->buckets);
+            free(impl);
+            free(out);
+            return NULL;
+        }
     }
 
     out->impl = impl;

@@ -366,6 +366,19 @@ void test_map_put_bulk_edge_cases(void) {
     m->free(m);
 }
 
+void test_thread_safe_map_creation(void) {
+    map *ht = create_map(HASH_TABLE, 10, NULL, string_compare);
+    print_test_result(ht != NULL, "Thread-safe hash map creation succeeds");
+
+    char key[] = "test_key";
+    char value[] = "test_value";
+    ht->put(ht, key, value);
+    char *retrieved = (char *)ht->get(ht, key);
+    print_test_result(retrieved != NULL && strcmp(retrieved, value) == 0, "Thread-safe hash map put and get work correctly");
+
+    ht->free(ht);
+}
+
 void test_safe_double_capacity_for_hash_map(void) {
     print_test_result(safe_double_capacity(10) == 20, "Hash map safe_double_capacity(10) == 20");
     print_test_result(safe_double_capacity(INT_MAX / 2 + 1) == INT_MAX, "Hash map safe_double_capacity caps at INT_MAX");
@@ -409,6 +422,7 @@ void run_all_tests(void) {
     test_map_get_empty();
     test_with_high_volume();
     test_concurrent_access();
+    test_thread_safe_map_creation();
     test_map_put_bulk();
     test_map_put_bulk_with_duplicate_keys();
     test_map_put_bulk_edge_cases();
