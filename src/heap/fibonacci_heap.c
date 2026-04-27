@@ -328,5 +328,6 @@ heap *create_fibonacci_heap(comparator compare_function) {
     h->size = fibonacci_heap_size;
     h->clear = fibonacci_heap_clear;
     h->free = fibonacci_heap_free;
+    h->user_data = NULL;
     return h;
 }

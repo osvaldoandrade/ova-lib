@@ -434,6 +434,7 @@ sorter *create_sorter(comparator cmp) {
     s->max = collections_max;
     s->min_max = collections_min_max;
     s->free = sorter_free;
+    s->user_data = NULL;
 
     return s;
 }

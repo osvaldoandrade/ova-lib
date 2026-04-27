@@ -32,6 +32,7 @@ struct memory_pool {
     chunk      *chunks;            /**< Head of the chunk list for cleanup.   */
     size_t      total_blocks;      /**< Total blocks across all chunks.       */
     size_t      free_blocks;       /**< Blocks on the free list.              */
+    void       *user_data;         /**< User-provided context pointer.        */
 };
 
 /* ------------------------------------------------------------------ */
@@ -158,4 +159,14 @@ void memory_pool_destroy(memory_pool *pool) {
     }
 
     free(pool);
+}
+
+void memory_pool_set_user_data(memory_pool *pool, void *user_data) {
+    if (pool) {
+        pool->user_data = user_data;
+    }
+}
+
+void *memory_pool_get_user_data(const memory_pool *pool) {
+    return pool ? pool->user_data : NULL;
 }

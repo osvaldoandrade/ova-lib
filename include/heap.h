@@ -19,6 +19,7 @@ typedef enum {
 typedef struct heap {
 
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Put an item into the heap.

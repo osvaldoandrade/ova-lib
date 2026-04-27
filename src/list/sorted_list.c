@@ -52,6 +52,7 @@ list *create_sorted_list(int initial_capacity, comparator cmp) {
     lst->size = sorted_list_size;
     lst->clear = sorted_list_clear;
     lst->free = sorted_list_free;
+    lst->user_data = NULL;
 
     return lst;
 }

@@ -42,6 +42,7 @@ typedef enum {
  */
 typedef struct graph_weighted_edge {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Return the source vertex id.
@@ -82,6 +83,7 @@ typedef struct graph_weighted_edge {
  */
 typedef struct graph {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     void (*add_vertex)(struct graph *self, int vertex_id);
     void (*add_edge)(struct graph *self, int from, int to, double weight);

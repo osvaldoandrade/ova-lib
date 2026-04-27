@@ -36,6 +36,7 @@ list *create_linked_list(void) {
         lst->size = linked_list_size;
         lst->clear = linked_list_clear;
         lst->free = linked_list_free;
+        lst->user_data = NULL;
         return lst;
     }
 

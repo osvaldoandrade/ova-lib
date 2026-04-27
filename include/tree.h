@@ -16,6 +16,7 @@ typedef enum {
  */
 typedef struct tree {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Insert or update a key/value pair.

@@ -11,6 +11,7 @@
  */
 typedef struct sorter {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Sort a list in place.
