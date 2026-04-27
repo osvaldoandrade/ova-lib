@@ -19,6 +19,7 @@ typedef enum {
  */
 typedef struct map {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Insert or update a key/value pair.
@@ -74,6 +75,16 @@ typedef struct map {
      * @return Number of buckets currently allocated.
      */
     int (*capacity)(const struct map *self);
+
+    /**
+     * @brief Remove all key/value pairs without destroying the map.
+     *
+     * The map becomes empty but retains its bucket capacity.
+     * User keys and values are not freed.
+     *
+     * @param self Map instance.
+     */
+    void (*clear)(struct map *self);
 
     /**
      * @brief Release the map and its internal allocations.

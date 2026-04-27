@@ -27,6 +27,7 @@ typedef enum {
  */
 typedef struct lp_problem {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Add a new constraint row.
@@ -140,6 +141,7 @@ typedef struct lp_problem {
  */
 typedef struct solver {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Solve a problem and optionally return the final tableau.

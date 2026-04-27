@@ -63,6 +63,11 @@ static int binary_heap_size(const heap *self) {
     return h->size;
 }
 
+static void binary_heap_clear(heap *self) {
+    binary_heap *h = (binary_heap *)self->impl;
+    h->size = 0;
+}
+
 static void binary_heap_free(heap *self) {
     binary_heap *h = (binary_heap *) self->impl;
     free(h->data);
@@ -88,7 +93,9 @@ heap *create_binary_heap(int initial_capacity, comparator compare_function) {
     h->pop = binary_heap_pop;
     h->peek = binary_heap_peek;
     h->size = binary_heap_size;
+    h->clear = binary_heap_clear;
     h->free = binary_heap_free;
+    h->user_data = NULL;
     return h;
 }
 

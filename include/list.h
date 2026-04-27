@@ -17,6 +17,7 @@ typedef enum {
  */
 typedef struct list {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Insert an item at the given index.
@@ -63,6 +64,16 @@ typedef struct list {
      * @return Number of stored elements.
      */
     int (*size)(const struct list *self);
+
+    /**
+     * @brief Remove all elements without destroying the list.
+     *
+     * The list retains its allocated capacity but becomes empty.
+     * User payloads are not freed.
+     *
+     * @param self List instance.
+     */
+    void (*clear)(struct list *self);
 
     /**
      * @brief Release the list and its internal allocations.

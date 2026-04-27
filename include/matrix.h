@@ -10,6 +10,7 @@
  */
 typedef struct matrix {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Read a matrix element.
@@ -140,6 +141,7 @@ typedef struct matrix {
  */
 typedef struct vector {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Read a vector element.
@@ -250,5 +252,19 @@ double vector_dot_product_simd(vector *a, vector *b);
  * @return New scaled vector, or NULL on failure.
  */
 vector *vector_scale_simd(vector *v, double scalar);
+
+/**
+ * @brief Multiply two matrices using Strassen's algorithm.
+ *
+ * Uses Strassen's divide-and-conquer algorithm for large matrices
+ * (dimensions greater than @c STRASSEN_THRESHOLD, default 64) and
+ * falls back to the naive O(n³) method for smaller sub-problems.
+ * Non-square or non-power-of-two matrices are padded internally.
+ *
+ * @param a Left-hand matrix.
+ * @param b Right-hand matrix.
+ * @return New matrix holding the product, or NULL on failure.
+ */
+matrix *matrix_multiply_strassen(matrix *a, matrix *b);
 
 #endif // MATRIX_H

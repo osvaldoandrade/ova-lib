@@ -16,6 +16,7 @@ typedef struct {
 static ova_error_code linked_list_insert(list *self, void *item, int index);
 static void *linked_list_get(list *self, int index);
 static ova_error_code linked_list_remove(list *self, int index);
+static void linked_list_clear(list *self);
 static void linked_list_free(list *self);
 static int linked_list_size(const list *self);
 
@@ -33,7 +34,9 @@ list *create_linked_list(void) {
         lst->get = linked_list_get;
         lst->remove = linked_list_remove;
         lst->size = linked_list_size;
+        lst->clear = linked_list_clear;
         lst->free = linked_list_free;
+        lst->user_data = NULL;
         return lst;
     }
 
@@ -130,6 +133,21 @@ static int linked_list_size(const list *self) {
     if (!self || !self->impl) return 0;
     linked_list_impl *impl = (linked_list_impl *)self->impl;
     return impl->size;
+}
+
+static void linked_list_clear(list *self) {
+    if (self && self->impl) {
+        linked_list_impl *impl = (linked_list_impl *)self->impl;
+        linked_list_node *current = impl->head;
+        while (current) {
+            linked_list_node *next = current->next;
+            free(current);
+            current = next;
+        }
+        impl->head = NULL;
+        impl->tail = NULL;
+        impl->size = 0;
+    }
 }
 
 static void linked_list_free(list *self) {

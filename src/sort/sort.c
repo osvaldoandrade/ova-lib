@@ -1,5 +1,6 @@
 #include "../../include/sort.h"
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct sorter_impl {
     comparator cmp;
@@ -108,6 +109,106 @@ static void sorter_quick(sorter *self, list *lst) {
         }
     }
     free(stack);
+}
+
+/**
+ * @brief Merges two sorted sub-arrays within a temporary buffer.
+ *
+ * @param arr  Array of payload pointers.
+ * @param tmp  Temporary buffer for merging.
+ * @param low  Start index of the first half.
+ * @param mid  End index of the first half (exclusive start of second half).
+ * @param high End index of the range (exclusive).
+ * @param cmp  Comparator function.
+ */
+static void merge(void **arr, void **tmp, int low, int mid, int high,
+                  comparator cmp) {
+    memcpy(tmp + low, arr + low, (size_t)(high - low) * sizeof(void *));
+
+    int i = low;
+    int j = mid;
+    int k = low;
+
+    while (i < mid && j < high) {
+        if (cmp(tmp[i], tmp[j]) <= 0) {
+            arr[k++] = tmp[i++];
+        } else {
+            arr[k++] = tmp[j++];
+        }
+    }
+    while (i < mid) {
+        arr[k++] = tmp[i++];
+    }
+    while (j < high) {
+        arr[k++] = tmp[j++];
+    }
+}
+
+/**
+ * @brief Recursively sorts a sub-array using cache-oblivious merge sort.
+ *
+ * The recursive halving naturally creates sub-problems that fit into each
+ * level of the cache hierarchy without requiring any tuning parameters.
+ *
+ * @param arr  Array of payload pointers.
+ * @param tmp  Temporary buffer for merging.
+ * @param low  Start index (inclusive).
+ * @param high End index (exclusive).
+ * @param cmp  Comparator function.
+ */
+static void merge_sort_recursive(void **arr, void **tmp, int low, int high,
+                                 comparator cmp) {
+    if (high - low < 2) {
+        return;
+    }
+    int mid = low + (high - low) / 2;
+    merge_sort_recursive(arr, tmp, low, mid, cmp);
+    merge_sort_recursive(arr, tmp, mid, high, cmp);
+    merge(arr, tmp, low, mid, high, cmp);
+}
+
+/**
+ * @brief Sorts a list using cache-oblivious merge sort.
+ *
+ * Elements are copied into a contiguous array for cache-friendly access,
+ * sorted using a recursive merge sort (which naturally adapts to all cache
+ * levels), and then written back to the list.  This guarantees O(n log n)
+ * worst-case time complexity.
+ *
+ * @param self A pointer to the sorter structure.
+ * @param lst  A pointer to the list to be sorted.
+ */
+static void sorter_merge(sorter *self, list *lst) {
+    sorter_impl *impl = sorter_impl_from_self(self);
+    if (!impl) return;
+
+    int size = lst->size(lst);
+    if (size < 2) {
+        return;
+    }
+
+    void **arr = malloc((size_t)size * sizeof(void *));
+    if (!arr) return;
+
+    void **tmp = malloc((size_t)size * sizeof(void *));
+    if (!tmp) {
+        free(arr);
+        return;
+    }
+
+    for (int i = 0; i < size; i++) {
+        arr[i] = lst->get(lst, i);
+    }
+
+    merge_sort_recursive(arr, tmp, 0, size, impl->cmp);
+
+    for (int i = 0; i < size; i++) {
+        lst->remove(lst, i);
+        lst->insert(lst, arr[i], i);
+    }
+
+    free(tmp);
+    free(arr);
 }
 
 /**
@@ -333,6 +434,27 @@ sorter *create_sorter(comparator cmp) {
     s->max = collections_max;
     s->min_max = collections_min_max;
     s->free = sorter_free;
+    s->user_data = NULL;
 
+    return s;
+}
+
+/**
+ * @brief Creates a sorter that uses cache-oblivious merge sort.
+ *
+ * Identical to create_sorter() but the sort function pointer uses a
+ * cache-oblivious merge sort instead of quicksort.  This provides
+ * O(n log n) worst-case time and better cache utilization without any
+ * tuning parameters.
+ *
+ * @param cmp The comparator function for sorting the data.
+ * @return A pointer to the created sorter structure.
+ * @retval NULL If memory allocation failed.
+ */
+sorter *create_merge_sorter(comparator cmp) {
+    sorter *s = create_sorter(cmp);
+    if (!s) return NULL;
+
+    s->sort = sorter_merge;
     return s;
 }

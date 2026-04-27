@@ -19,6 +19,7 @@ typedef enum {
 typedef struct heap {
 
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Put an item into the heap.
@@ -102,6 +103,16 @@ typedef struct heap {
      * @return The number of elements in the heap.
      */
     int (*size)(const struct heap *self);
+
+    /**
+     * @brief Remove all elements without destroying the heap.
+     *
+     * The heap becomes empty but retains its allocated capacity.
+     * User payloads are not freed.
+     *
+     * @param self A pointer to the heap structure.
+     */
+    void (*clear)(struct heap *self);
 
     /**
      * @brief Free the memory allocated for the heap.

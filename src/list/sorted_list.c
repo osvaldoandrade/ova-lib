@@ -13,6 +13,7 @@ static ova_error_code sorted_list_insert(list *self, void *item, int index);
 static void *sorted_list_get(list *self, int index);
 static ova_error_code sorted_list_remove(list *self, int index);
 static int sorted_list_size(const list *self);
+static void sorted_list_clear(list *self);
 static void sorted_list_free(list *self);
 
 static int clamp_initial_capacity(int initial_capacity) {
@@ -49,7 +50,9 @@ list *create_sorted_list(int initial_capacity, comparator cmp) {
     lst->get = sorted_list_get;
     lst->remove = sorted_list_remove;
     lst->size = sorted_list_size;
+    lst->clear = sorted_list_clear;
     lst->free = sorted_list_free;
+    lst->user_data = NULL;
 
     return lst;
 }
@@ -133,6 +136,13 @@ static ova_error_code sorted_list_remove(list *self, int index) {
 static int sorted_list_size(const list *self) {
     const sorted_list_impl *impl = get_impl(self);
     return impl ? impl->size : 0;
+}
+
+static void sorted_list_clear(list *self) {
+    sorted_list_impl *impl = get_impl(self);
+    if (impl) {
+        impl->size = 0;
+    }
 }
 
 static void sorted_list_free(list *self) {

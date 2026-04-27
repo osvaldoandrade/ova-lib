@@ -16,6 +16,7 @@ typedef enum {
  */
 typedef struct queue {
     void *impl;
+    void *user_data; /**< User-provided context pointer. */
 
     /**
      * @brief Enqueue an item.
@@ -49,6 +50,16 @@ typedef struct queue {
      * @return Number of stored elements.
      */
     int (*size)(const struct queue *self);
+
+    /**
+     * @brief Remove all elements without destroying the queue.
+     *
+     * The queue becomes empty but remains usable.
+     * User payloads are not freed.
+     *
+     * @param self Queue instance.
+     */
+    void (*clear)(struct queue *self);
 
     /**
      * @brief Release the queue and its internal allocations.

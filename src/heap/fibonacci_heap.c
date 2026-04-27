@@ -286,6 +286,15 @@ static void free_fib_node(fib_node *node) {
     } while (cur != node);  // A condição de parada ocorre quando circula de volta ao nó inicial
 }
 
+static void fibonacci_heap_clear(heap *self) {
+    fibonacci_heap *h = (fibonacci_heap *)self->impl;
+    if (h->min != NULL) {
+        free_fib_node(h->min);
+        h->min = NULL;
+    }
+    h->n = 0;
+}
+
 static void fibonacci_heap_free(heap *self) {
     fibonacci_heap *h = (fibonacci_heap *)self->impl;
     if (h->min != NULL) {
@@ -317,6 +326,8 @@ heap *create_fibonacci_heap(comparator compare_function) {
     h->pop = fibonacci_heap_pop;
     h->peek = fibonacci_heap_peek;
     h->size = fibonacci_heap_size;
+    h->clear = fibonacci_heap_clear;
     h->free = fibonacci_heap_free;
+    h->user_data = NULL;
     return h;
 }

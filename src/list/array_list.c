@@ -19,6 +19,8 @@ static ova_error_code array_list_remove(list *self, int index);
 
 static int array_list_size(const list *self);
 
+static void array_list_clear(list *self);
+
 static void array_list_free(list *self);
 
 list *create_array_list(int initial_capacity) {
@@ -35,7 +37,9 @@ list *create_array_list(int initial_capacity) {
         lst->get = array_list_get;
         lst->remove = array_list_remove;
         lst->size = array_list_size;
+        lst->clear = array_list_clear;
         lst->free = array_list_free;
+        lst->user_data = NULL;
         return lst;
     }
 
@@ -94,6 +98,13 @@ static ova_error_code array_list_remove(list *self, int index) {
 static int array_list_size(const list *self) {
     if (!self || !self->impl) return 0;
     return get_size_from_impl(self->impl);
+}
+
+static void array_list_clear(list *self) {
+    if (self && self->impl) {
+        array_list_impl *impl = (array_list_impl *) self->impl;
+        impl->size = 0;
+    }
 }
 
 static void array_list_free(list *self) {
