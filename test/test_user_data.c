@@ -14,6 +14,7 @@
 #include "../include/sort.h"
 #include "../include/solver.h"
 #include "../include/memory_pool.h"
+#include "../include/skip_list.h"
 
 static int dummy_cmp(const void *a, const void *b) {
     return (*(const int *)a) - (*(const int *)b);
@@ -253,6 +254,20 @@ void test_memory_pool_user_data_null_pool(void) {
     print_test_result(1, "Memory pool user_data NULL pool");
 }
 
+void test_skip_list_user_data(void) {
+    skip_list *sl = create_skip_list(16, dummy_cmp);
+    assert_not_null(sl);
+    assert_true(sl->user_data == NULL);
+
+    int context = 800;
+    sl->user_data = &context;
+    assert_true(sl->user_data == &context);
+    assert_int_equal(800, *(int *)sl->user_data);
+
+    sl->free(sl);
+    print_test_result(1, "Skip list user_data");
+}
+
 void run_all_tests(void) {
     test_list_user_data();
     test_map_user_data();
@@ -272,6 +287,7 @@ void run_all_tests(void) {
     test_lp_problem_user_data();
     test_memory_pool_user_data();
     test_memory_pool_user_data_null_pool();
+    test_skip_list_user_data();
 }
 
 int main(void) {
