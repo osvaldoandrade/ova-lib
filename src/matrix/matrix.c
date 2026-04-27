@@ -166,7 +166,12 @@ static int matrix_cols_method(const matrix *self) {
 static matrix *matrix_add_method(matrix *self, const matrix *other) {
     matrix_impl *lhs = matrix_impl_from_matrix(self);
     matrix_impl *rhs = matrix_impl_from_matrix(other);
-    if (!lhs || !rhs || lhs->rows != rhs->rows || lhs->cols != rhs->cols) {
+    if (!lhs || !rhs) {
+        return NULL;
+    }
+    if (lhs->rows != rhs->rows || lhs->cols != rhs->cols) {
+        fprintf(stderr, "Matrix dimension mismatch in add: (%d×%d) vs (%d×%d)\n",
+                lhs->rows, lhs->cols, rhs->rows, rhs->cols);
         return NULL;
     }
 
@@ -187,7 +192,12 @@ static matrix *matrix_add_method(matrix *self, const matrix *other) {
 static matrix *matrix_subtract_method(matrix *self, const matrix *other) {
     matrix_impl *lhs = matrix_impl_from_matrix(self);
     matrix_impl *rhs = matrix_impl_from_matrix(other);
-    if (!lhs || !rhs || lhs->rows != rhs->rows || lhs->cols != rhs->cols) {
+    if (!lhs || !rhs) {
+        return NULL;
+    }
+    if (lhs->rows != rhs->rows || lhs->cols != rhs->cols) {
+        fprintf(stderr, "Matrix dimension mismatch in subtract: (%d×%d) vs (%d×%d)\n",
+                lhs->rows, lhs->cols, rhs->rows, rhs->cols);
         return NULL;
     }
 
@@ -208,7 +218,12 @@ static matrix *matrix_subtract_method(matrix *self, const matrix *other) {
 static matrix *matrix_multiply_method(matrix *self, const matrix *other) {
     matrix_impl *lhs = matrix_impl_from_matrix(self);
     matrix_impl *rhs = matrix_impl_from_matrix(other);
-    if (!lhs || !rhs || lhs->cols != rhs->rows) {
+    if (!lhs || !rhs) {
+        return NULL;
+    }
+    if (lhs->cols != rhs->rows) {
+        fprintf(stderr, "Matrix dimension mismatch in multiply: (%d×%d) * (%d×%d)\n",
+                lhs->rows, lhs->cols, rhs->rows, rhs->cols);
         return NULL;
     }
 
