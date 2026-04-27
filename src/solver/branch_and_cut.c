@@ -7,9 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BC_MAX_NODES    10000
-#define BC_MAX_CUTS     10
-#define BC_INT_TOL      1e-6
+#define BC_MAX_NODES      10000
+#define BC_MAX_CUTS       10
+#define BC_INT_TOL        1e-6
+#define BC_COEFF_LIMIT    1e12
 
 /**
  * @brief Clone an lp_problem including all constraints, objective, and bounds.
@@ -186,7 +187,7 @@ static int add_gomory_cuts(lp_problem *problem, matrix *tableau, int num_vars) {
         for (int j = 0; j < num_vars && j < cols - 1; j++) {
             double aij = tab->data[i][j];
             double fij = aij - floor(aij);
-            if (fij < -1e12 || fij > 1e12) {
+            if (fij < -BC_COEFF_LIMIT || fij > BC_COEFF_LIMIT) {
                 valid_cut = 0;
                 break;
             }
