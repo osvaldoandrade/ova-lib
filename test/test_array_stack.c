@@ -62,11 +62,22 @@ void test_stack_high_volume(void) {
     stk->free(stk);
 }
 
+void test_stack_push_error_codes(void) {
+    stack *stk = create_stack(ARRAY_STACK);
+    int val = 42;
+
+    print_test_result(stk->push(stk, &val) == OVA_SUCCESS,
+                      "Stack push returns OVA_SUCCESS");
+
+    stk->free(stk);
+}
+
 void run_all_tests(void) {
     test_linked_stack_push_pop();
     test_linked_stack_empty_after_pop();
     test_stack_top_behavior();
     test_stack_high_volume();
+    test_stack_push_error_codes();
 }
 
 int main(void) {

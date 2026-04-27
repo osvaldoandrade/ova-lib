@@ -195,6 +195,31 @@ void test_heap_complex_operations(void) {
     h->free(h);
 }
 
+void test_fibonacci_heap_error_codes(void) {
+    heap *h = create_heap(FIBONACCI_HEAP, 10, int_compare_fibonacci);
+    static int val = 42;
+
+    print_test_result(h->put(h, &val) == OVA_SUCCESS,
+                      "Fibonacci heap put returns OVA_SUCCESS");
+
+    void *handle = h->put_with_handle(h, &val);
+    assert_not_null(handle);
+
+    static int new_val = 100;
+    print_test_result(h->decrease_key(h, handle, &new_val) == OVA_SUCCESS,
+                      "Fibonacci heap decrease_key returns OVA_SUCCESS");
+    print_test_result(h->decrease_key(h, NULL, &new_val) == OVA_ERROR_INVALID_ARG,
+                      "Fibonacci heap decrease_key with NULL handle returns OVA_ERROR_INVALID_ARG");
+
+    handle = h->put_with_handle(h, &val);
+    print_test_result(h->delete_node(h, handle) == OVA_SUCCESS,
+                      "Fibonacci heap delete_node returns OVA_SUCCESS");
+    print_test_result(h->delete_node(h, NULL) == OVA_ERROR_INVALID_ARG,
+                      "Fibonacci heap delete_node with NULL handle returns OVA_ERROR_INVALID_ARG");
+
+    h->free(h);
+}
+
 void run_all_heap_tests(void) {
     test_heap_insert_and_extract_max();
     test_heap_peek_max();
@@ -207,6 +232,7 @@ void run_all_heap_tests(void) {
     test_heap_delete_node();
     test_heap_delete_min_node();
     test_heap_complex_operations();
+    test_fibonacci_heap_error_codes();
 }
 
 int main(void) {

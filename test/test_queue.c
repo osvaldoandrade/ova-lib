@@ -75,6 +75,16 @@ void test_queue_with_string_data(void) {
     q->free(q);
 }
 
+void test_queue_enqueue_error_codes(void) {
+    queue *q = create_queue(QUEUE_TYPE_NORMAL, 10, NULL);
+    int data1 = 42;
+
+    print_test_result(q->enqueue(q, &data1) == OVA_SUCCESS,
+                      "Queue enqueue returns OVA_SUCCESS");
+
+    q->free(q);
+}
+
 void run_all_queue_tests(void) {
     test_queue_empty_initially();
     test_queue_dequeue_empty();
@@ -82,6 +92,7 @@ void run_all_queue_tests(void) {
     test_queue_enqueue_dequeue_multiple();
     test_queue_high_volume();
     test_queue_with_string_data();
+    test_queue_enqueue_error_codes();
 }
 
 int main(void) {

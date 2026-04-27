@@ -132,8 +132,21 @@ static void test_avl_tree_basic_ops(void) {
     t->free(t);
 }
 
+void test_avl_tree_error_codes(void) {
+    tree *t = create_tree(TREE_AVL, int_comparator);
+    int k = 42, v = 99;
+
+    print_test_result(t->insert(t, &k, &v) == OVA_SUCCESS,
+                      "AVL tree insert returns OVA_SUCCESS");
+    print_test_result(t->delete(t, &k) == OVA_SUCCESS,
+                      "AVL tree delete returns OVA_SUCCESS");
+
+    t->free(t);
+}
+
 int main(void) {
     test_avl_tree_basic_ops();
+    test_avl_tree_error_codes();
     return 0;
 }
 

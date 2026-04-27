@@ -380,6 +380,23 @@ void test_safe_double_capacity_for_deque(void) {
     print_test_result(safe_double_capacity(INT_MAX) == INT_MAX, "Deque safe_double_capacity(INT_MAX) stays INT_MAX");
 }
 
+void test_deque_push_error_codes(void) {
+    deque *d = create_deque(4);
+    int val = 42;
+
+    print_test_result(d->push_front(d, &val) == OVA_SUCCESS,
+                      "Deque push_front returns OVA_SUCCESS");
+    print_test_result(d->push_back(d, &val) == OVA_SUCCESS,
+                      "Deque push_back returns OVA_SUCCESS");
+
+    print_test_result(d->push_front(NULL, &val) == OVA_ERROR_INVALID_ARG,
+                      "Deque push_front with NULL self returns OVA_ERROR_INVALID_ARG");
+    print_test_result(d->push_back(NULL, &val) == OVA_ERROR_INVALID_ARG,
+                      "Deque push_back with NULL self returns OVA_ERROR_INVALID_ARG");
+
+    d->free(d);
+}
+
 void run_all_deque_tests(void) {
     test_safe_double_capacity_for_deque();
     test_deque_create();
@@ -400,6 +417,7 @@ void run_all_deque_tests(void) {
     test_deque_high_volume();
     test_deque_with_string_data();
     test_deque_alternating_operations();
+    test_deque_push_error_codes();
 }
 
 int main(void) {
