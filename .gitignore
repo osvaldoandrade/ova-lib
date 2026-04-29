@@ -10,3 +10,4 @@ coverage.info
 coverage_html/
 *.gcno
 *.gcda
+build-asan

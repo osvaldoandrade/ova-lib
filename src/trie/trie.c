@@ -149,9 +149,16 @@ static ova_error_code trie_insert_method(trie *self, const char *word, void *val
 
     /* depth + 2: one slot for the root node and one for a possible
        SSO-created child node that gets pushed before the early return. */
-    trie_node **path = (trie_node **)malloc((depth + 2) * sizeof(trie_node *));
-    if (!path) {
-        return OVA_ERROR_MEMORY;
+    #define TRIE_PATH_STACK_SIZE 64
+    trie_node *path_stack[TRIE_PATH_STACK_SIZE];
+    trie_node **path;
+    if (depth + 2 <= TRIE_PATH_STACK_SIZE) {
+        path = path_stack;
+    } else {
+        path = (trie_node **)malloc((depth + 2) * sizeof(trie_node *));
+        if (!path) {
+            return OVA_ERROR_MEMORY;
+        }
     }
     size_t path_len = 0;
 
@@ -161,7 +168,7 @@ static ova_error_code trie_insert_method(trie *self, const char *word, void *val
     while (*p) {
         if (node->sso_len > 0) {
             if (!sso_expand(node)) {
-                free(path);
+                if (path != path_stack) { free(path); }
                 return OVA_ERROR_MEMORY;
             }
         }
@@ -170,7 +177,7 @@ static ova_error_code trie_insert_method(trie *self, const char *word, void *val
         if (!node->children[c]) {
             trie_node *created = trie_node_create();
             if (!created) {
-                free(path);
+                if (path != path_stack) { free(path); }
                 return OVA_ERROR_MEMORY;
             }
             node->children[c] = created;
@@ -189,7 +196,7 @@ static ova_error_code trie_insert_method(trie *self, const char *word, void *val
                 for (size_t i = 0; i < path_len; i++) {
                     path[i]->subtree_words++;
                 }
-                free(path);
+                if (path != path_stack) { free(path); }
                 return OVA_SUCCESS;
             }
         }
@@ -200,14 +207,14 @@ static ova_error_code trie_insert_method(trie *self, const char *word, void *val
 
     if (node->sso_len > 0) {
         if (!sso_expand(node)) {
-            free(path);
+            if (path != path_stack) { free(path); }
             return OVA_ERROR_MEMORY;
         }
     }
 
     if (node->is_end) {
         node->value = value;
-        free(path);
+        if (path != path_stack) { free(path); }
         return OVA_SUCCESS;
     }
 
@@ -218,7 +225,7 @@ static ova_error_code trie_insert_method(trie *self, const char *word, void *val
     for (size_t i = 0; i < path_len; i++) {
         path[i]->subtree_words++;
     }
-    free(path);
+    if (path != path_stack) { free(path); }
     return OVA_SUCCESS;
 }
 

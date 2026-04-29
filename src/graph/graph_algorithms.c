@@ -467,18 +467,30 @@ matrix *graph_floyd_warshall_impl(const graph_impl *g) {
         }
     }
 
-    for (int k = 0; k < g->vertex_capacity; k++) {
-        if (!graph_is_valid_vertex(g, k)) {
-            continue;
+    int *valid = (int *)malloc((size_t)g->vertex_capacity * sizeof(int));
+    if (!valid) {
+        dist->free(dist);
+        return NULL;
+    }
+    int valid_count = 0;
+    for (int v = 0; v < g->vertex_capacity; v++) {
+        if (graph_is_valid_vertex(g, v)) {
+            valid[valid_count++] = v;
         }
-        for (int i = 0; i < g->vertex_capacity; i++) {
+    }
+
+    for (int ki = 0; ki < valid_count; ki++) {
+        int k = valid[ki];
+        for (int ii = 0; ii < valid_count; ii++) {
+            int i = valid[ii];
             double d_ik = dist_impl->data[i][k];
-            if (!graph_is_valid_vertex(g, i) || d_ik == GRAPH_NO_EDGE) {
+            if (d_ik == GRAPH_NO_EDGE) {
                 continue;
             }
-            for (int j = 0; j < g->vertex_capacity; j++) {
+            for (int ji = 0; ji < valid_count; ji++) {
+                int j = valid[ji];
                 double d_kj = dist_impl->data[k][j];
-                if (!graph_is_valid_vertex(g, j) || d_kj == GRAPH_NO_EDGE) {
+                if (d_kj == GRAPH_NO_EDGE) {
                     continue;
                 }
                 double nd = d_ik + d_kj;
@@ -488,6 +500,8 @@ matrix *graph_floyd_warshall_impl(const graph_impl *g) {
             }
         }
     }
+
+    free(valid);
 
     return dist;
 }

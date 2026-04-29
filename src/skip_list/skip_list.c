@@ -1,6 +1,7 @@
 #include "../../include/skip_list.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 /* ------------------------------------------------------------------ */
@@ -80,10 +81,17 @@ static ova_error_code sl_insert(skip_list *self, void *key, void *value) {
     }
 
     /* update[i] will point to the last node at level i whose key < key */
-    skip_node **update = (skip_node **)calloc((size_t)(sl->max_level + 1),
-                                              sizeof(skip_node *));
-    if (!update) {
-        return OVA_ERROR_MEMORY;
+    skip_node *update_stack[32];
+    skip_node **update;
+    if (sl->max_level + 1 <= 32) {
+        update = update_stack;
+        memset(update, 0, (size_t)(sl->max_level + 1) * sizeof(skip_node *));
+    } else {
+        update = (skip_node **)calloc((size_t)(sl->max_level + 1),
+                                      sizeof(skip_node *));
+        if (!update) {
+            return OVA_ERROR_MEMORY;
+        }
     }
 
     skip_node *cur = sl->header;
@@ -99,7 +107,9 @@ static ova_error_code sl_insert(skip_list *self, void *key, void *value) {
     /* Key already exists – update value */
     if (cur && sl->cmp(cur->key, key) == 0) {
         cur->value = value;
-        free(update);
+        if (update != update_stack) {
+            free(update);
+        }
         return OVA_SUCCESS;
     }
 
@@ -115,7 +125,9 @@ static ova_error_code sl_insert(skip_list *self, void *key, void *value) {
 
     skip_node *new_node = create_node(new_level, key, value);
     if (!new_node) {
-        free(update);
+        if (update != update_stack) {
+            free(update);
+        }
         return OVA_ERROR_MEMORY;
     }
 
@@ -125,7 +137,9 @@ static ova_error_code sl_insert(skip_list *self, void *key, void *value) {
     }
 
     sl->size++;
-    free(update);
+    if (update != update_stack) {
+        free(update);
+    }
     return OVA_SUCCESS;
 }
 
@@ -155,10 +169,17 @@ static ova_error_code sl_delete(skip_list *self, void *key) {
         return OVA_ERROR_INVALID_ARG;
     }
 
-    skip_node **update = (skip_node **)calloc((size_t)(sl->max_level + 1),
-                                              sizeof(skip_node *));
-    if (!update) {
-        return OVA_ERROR_MEMORY;
+    skip_node *update_stack[32];
+    skip_node **update;
+    if (sl->max_level + 1 <= 32) {
+        update = update_stack;
+        memset(update, 0, (size_t)(sl->max_level + 1) * sizeof(skip_node *));
+    } else {
+        update = (skip_node **)calloc((size_t)(sl->max_level + 1),
+                                      sizeof(skip_node *));
+        if (!update) {
+            return OVA_ERROR_MEMORY;
+        }
     }
 
     skip_node *cur = sl->header;
@@ -172,7 +193,9 @@ static ova_error_code sl_delete(skip_list *self, void *key) {
     cur = cur->forward[0];
 
     if (!cur || sl->cmp(cur->key, key) != 0) {
-        free(update);
+        if (update != update_stack) {
+            free(update);
+        }
         return OVA_ERROR_NOT_FOUND;
     }
 
@@ -192,7 +215,9 @@ static ova_error_code sl_delete(skip_list *self, void *key) {
         sl->level--;
     }
 
-    free(update);
+    if (update != update_stack) {
+        free(update);
+    }
     return OVA_SUCCESS;
 }
 
