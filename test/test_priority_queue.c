@@ -69,7 +69,8 @@ void test_priority_queue_high_volume(void) {
     }
 
     char message[100];
-    sprintf(message, "Priority Queue should have %d elements after enqueues", max_data);
+    snprintf(message, sizeof(message),
+             "Priority Queue should have %d elements after enqueues", max_data);
     print_test_result(pq->size(pq) == max_data, message);
 
     for (int i = 0; i < max_data; i++) {
@@ -77,7 +78,8 @@ void test_priority_queue_high_volume(void) {
         assert(dequeued_data != NULL); // Ensuring that we actually dequeue data
         (void)dequeued_data;
     }
-    sprintf(message, "Priority Queue should be empty after dequeuing %d elements", max_data);
+    snprintf(message, sizeof(message),
+             "Priority Queue should be empty after dequeuing %d elements", max_data);
     print_test_result(pq->is_empty(pq), message);
 
     double elapsed_ms = ((double)(clock() - start) / CLOCKS_PER_SEC) * 1000.0;

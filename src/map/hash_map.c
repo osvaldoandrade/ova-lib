@@ -355,6 +355,7 @@ static map *hash_clone_shallow(const map *self) {
     return copy;
 }
 
+
 static map *hash_clone_deep(const map *self, element_copier copier) {
     if (!self || !copier) {
         return NULL;

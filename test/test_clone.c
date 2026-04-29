@@ -16,6 +16,40 @@ static void *int_copier(void *elem) {
     return copy;
 }
 
+typedef struct tracked_copy {
+    void *ptr;
+    struct tracked_copy *next;
+} tracked_copy;
+
+static tracked_copy *tracked_copies = NULL;
+
+static void tracked_copies_cleanup(void) {
+    while (tracked_copies) {
+        tracked_copy *current = tracked_copies;
+        tracked_copies = current->next;
+        free(current->ptr);
+        free(current);
+    }
+}
+
+static void *tracked_int_copier(void *elem) {
+    int *copy = int_copier(elem);
+    if (!copy) {
+        return NULL;
+    }
+
+    tracked_copy *node = malloc(sizeof(*node));
+    if (!node) {
+        free(copy);
+        return NULL;
+    }
+
+    node->ptr = copy;
+    node->next = tracked_copies;
+    tracked_copies = node;
+    return copy;
+}
+
 static int int_compare(const void *a, const void *b) {
     return *(const int *)a - *(const int *)b;
 }
@@ -326,6 +360,8 @@ void test_map_clone_shallow(void) {
 }
 
 void test_map_clone_deep(void) {
+    tracked_copies_cleanup();
+
     map *m = create_map(HASH_MAP, 16, int_hash, int_compare);
     int k1 = 1, v1 = 100;
     int k2 = 2, v2 = 200;
@@ -334,7 +370,7 @@ void test_map_clone_deep(void) {
     m->put(m, &k2, &v2);
     m->put(m, &k3, &v3);
 
-    map *clone = m->clone_deep(m, int_copier);
+    map *clone = m->clone_deep(m, tracked_int_copier);
 
     int same_size = (clone->size(clone) == m->size(m));
 
@@ -353,6 +389,7 @@ void test_map_clone_deep(void) {
                       "Map deep clone has same values but different pointers");
 
     clone->free(clone);
+    tracked_copies_cleanup();
     m->free(m);
 }
 
@@ -380,13 +417,15 @@ void test_set_clone_shallow(void) {
 }
 
 void test_set_clone_deep(void) {
+    tracked_copies_cleanup();
+
     set *s = create_set(SET_HASH, int_compare, int_hash);
     int a = 10, b = 20, c = 30;
     s->add(s, &a);
     s->add(s, &b);
     s->add(s, &c);
 
-    set *clone = s->clone_deep(s, int_copier);
+    set *clone = s->clone_deep(s, tracked_int_copier);
 
     int same_size = (clone->size(clone) == s->size(s));
     int contains_all = clone->contains(clone, &a)
@@ -397,6 +436,7 @@ void test_set_clone_deep(void) {
                       "Set deep clone has same size and contains same values");
 
     clone->free(clone);
+    tracked_copies_cleanup();
     s->free(s);
 }
 

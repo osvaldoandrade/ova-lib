@@ -49,7 +49,7 @@ void test_heap_pop_empty(void) {
 
 void test_heap_high_volume(void) {
     heap *h = create_heap(BINARY_HEAP, 10000, int_compare);
-    const int MAX = 1000;
+    enum { MAX = 1000 };
     int values[MAX];
     clock_t start = clock();
     for (int i = 0; i < MAX; i++) {

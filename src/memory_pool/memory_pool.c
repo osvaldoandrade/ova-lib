@@ -1,5 +1,7 @@
 #include "../../include/memory_pool.h"
 
+#include <stdint.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -18,7 +20,8 @@ typedef struct free_node {
  */
 typedef struct chunk {
     struct chunk *next;
-    /* The raw allocation follows immediately after this header. */
+    max_align_t align;
+    unsigned char data[];
 } chunk;
 
 /**
@@ -39,15 +42,21 @@ struct memory_pool {
 /*  Internal helpers                                                   */
 /* ------------------------------------------------------------------ */
 
+static size_t align_up(size_t size, size_t alignment) {
+    size_t remainder = size % alignment;
+    return remainder == 0 ? size : size + alignment - remainder;
+}
+
 /**
  * Initialise the free list for a newly allocated chunk.
  * The usable area starts right after the @c chunk header.
  */
 static void init_chunk_free_list(memory_pool *pool, chunk *c) {
-    unsigned char *base = (unsigned char *)(c + 1);
+    unsigned char *base = c->data;
 
     for (int i = 0; i < pool->blocks_per_chunk; i++) {
-        free_node *node = (free_node *)(base + (size_t)i * pool->aligned_block);
+        uintptr_t block_addr = (uintptr_t)(void *)base + (size_t)i * pool->aligned_block;
+        free_node *node = (free_node *)(void *)block_addr;
         node->next      = pool->free_list;
         pool->free_list  = node;
     }
@@ -88,11 +97,11 @@ memory_pool *create_memory_pool(size_t block_size, int initial_blocks) {
         return NULL;
     }
 
-    /* Each block must be large enough to hold a free_node pointer. */
+    /* Each block must be large enough and aligned enough to hold any payload. */
+    size_t min_block = block_size < sizeof(free_node) ? sizeof(free_node) : block_size;
+
     pool->block_size      = block_size;
-    pool->aligned_block   = block_size < sizeof(free_node)
-                            ? sizeof(free_node)
-                            : block_size;
+    pool->aligned_block   = align_up(min_block, _Alignof(max_align_t));
     pool->blocks_per_chunk = initial_blocks;
     pool->free_list        = NULL;
     pool->chunks           = NULL;

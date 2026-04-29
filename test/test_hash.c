@@ -129,8 +129,8 @@ void test_insert_retrieve_large_number_of_items(void) {
     char data[15][20];
 
     for (int i = 0; i < num_items; i++) {
-        sprintf(keys[i], "key%d", i);
-        sprintf(data[i], "data%d", i);
+        snprintf(keys[i], sizeof(keys[i]), "key%d", i);
+        snprintf(data[i], sizeof(data[i]), "data%d", i);
         ht->put(ht, keys[i], data[i]);
         char *retrieved_data = (char *)ht->get(ht, keys[i]);
         assert_not_null(retrieved_data);
@@ -257,8 +257,8 @@ typedef struct {
 void *pthread_test_function(void *arg) {
     thread_arg *data = (thread_arg *)arg;
     for (int i = 0; i < OPERATIONS_PER_THREAD; i++) {
-        sprintf(data->keys[i], "key_%d_%d", data->id, i);
-        sprintf(data->values[i], "value_%d_%d", data->id, i);
+        snprintf(data->keys[i], sizeof(data->keys[i]), "key_%d_%d", data->id, i);
+        snprintf(data->values[i], sizeof(data->values[i]), "value_%d_%d", data->id, i);
         data->ht->put(data->ht, data->keys[i], data->values[i]);
         char *retrieved = (char *)data->ht->get(data->ht, data->keys[i]);
         assert_not_null(retrieved);

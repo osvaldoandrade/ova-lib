@@ -109,6 +109,7 @@ static stack *stack_clone_shallow(const stack *self) {
     return copy;
 }
 
+
 static stack *stack_clone_deep(const stack *self, element_copier copier) {
     if (!self || !copier) {
         return NULL;

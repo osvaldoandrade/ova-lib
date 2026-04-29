@@ -359,6 +359,14 @@ static void bc_solve(lp_problem *problem, double *best_obj, double *best_sol,
 
     /* Branch on most fractional variable */
     int branch_var = bc_find_branching_variable(true_sol, num_vars);
+    if (branch_var < 0) {
+        free(true_sol);
+        if (tableau) {
+            tableau->free(tableau);
+        }
+        cut_problem->free(cut_problem);
+        return;
+    }
     double branch_val = true_sol[branch_var];
     free(true_sol);
 
@@ -366,10 +374,6 @@ static void bc_solve(lp_problem *problem, double *best_obj, double *best_sol,
         tableau->free(tableau);
     }
     cut_problem->free(cut_problem);
-
-    if (branch_var < 0) {
-        return;
-    }
 
     /* Floor child: x[branch_var] <= floor(branch_val) */
     {
@@ -489,10 +493,23 @@ int branch_and_cut_solver(lp_problem *prob, matrix **out_tableau) {
     /* Extract original constraint data for feasibility checking */
     matrix_impl *orig_c = matrix_impl_from_matrix(impl->constraints);
     vector_impl *orig_b = vector_impl_from_vector(impl->bounds);
+    const double *const *orig_constraints = NULL;
+    const double *orig_bounds = NULL;
+
+    if (impl->constraint_count > 0) {
+        if (!orig_c || !orig_b || !orig_c->data || !orig_b->data) {
+            free(best_sol);
+            free(offsets);
+            root->free(root);
+            return INFEASIBLE;
+        }
+        orig_constraints = (const double *const *)orig_c->data;
+        orig_bounds = orig_b->data;
+    }
 
     int nodes = 0;
     bc_solve(root, &best_obj, best_sol, num_vars, is_max, &nodes, offsets, 0.0,
-             (const double *const *)orig_c->data, orig_b->data, impl->constraint_count);
+             orig_constraints, orig_bounds, impl->constraint_count);
     root->free(root);
     free(offsets);
 
