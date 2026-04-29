@@ -21,11 +21,42 @@ static void sorter_free(sorter *self) {
 }
 
 /**
+ * @brief Snapshot a list into a freshly allocated pointer array.
+ *
+ * Returns NULL on allocation failure or empty list. Caller must free.
+ */
+static void **list_snapshot(list *lst, int *out_size) {
+    int n = lst->size(lst);
+    *out_size = n;
+    if (n <= 0) return NULL;
+    void **arr = malloc((size_t)n * sizeof(void *));
+    if (!arr) return NULL;
+    for (int i = 0; i < n; i++) {
+        arr[i] = lst->get(lst, i);
+    }
+    return arr;
+}
+
+/**
+ * @brief Replace the contents of @p lst with @p arr in O(n).
+ *
+ * Both array_list and linked_list provide O(1) append at the tail,
+ * so a clear-and-bulk-append is linear in the number of elements.
+ */
+static void list_replace_with(list *lst, void **arr, int n) {
+    lst->clear(lst);
+    for (int i = 0; i < n; i++) {
+        lst->insert(lst, arr[i], i);
+    }
+}
+
+/**
  * @brief Swaps two elements in a list at the specified indices.
  *
- * This function swaps two elements in a list at the given indices.
- * The elements are swapped by removing them from the list and then
- * inserting them back at the opposite indices.
+ * Public swap helper preserved for backwards compatibility. It dispatches
+ * through the list's own get/remove/insert API and therefore costs O(n)
+ * for array-backed lists. Internal sort/shuffle/reverse routines avoid it
+ * by operating on a snapshot pointer buffer with true O(1) swaps.
  *
  * @param self A pointer to the sorter structure.
  * @param lst A pointer to the list structure.
@@ -34,6 +65,7 @@ static void sorter_free(sorter *self) {
  */
 void sorter_swap(sorter *self, list *lst, int index1, int index2) {
     (void)self;
+    if (index1 == index2) return;
     void *temp1 = lst->get(lst, index1);
     void *temp2 = lst->get(lst, index2);
 
@@ -43,52 +75,60 @@ void sorter_swap(sorter *self, list *lst, int index1, int index2) {
     lst->insert(lst, temp1, index2);
 }
 
+static inline void buffer_swap(void **arr, int i, int j) {
+    void *t = arr[i];
+    arr[i] = arr[j];
+    arr[j] = t;
+}
+
 /**
- * @brief Partitions a list for sorting using a pivot element.
+ * @brief Partitions a contiguous pointer buffer for quicksort.
  *
- * This function partitions a list for sorting using a pivot element. It rearranges the items in the list
- * such that all the items that are less than or equal to the pivot element are moved to the left of the pivot,
- * and all the items that are greater than the pivot are moved to the right of the pivot. The pivot element is
- * chosen as the last element in the list.
- *
- * @param lst A pointer to the list structure.
- * @param low The starting index of the partition.
- * @param high The ending index of the partition.
- * @param self A pointer to the sorter structure.
- * @return The index of the pivot element after partitioning.
+ * Uses Lomuto partitioning with O(1) swaps over the raw buffer instead of
+ * dispatching through the list interface. This keeps quicksort at the
+ * advertised O(n log n) average even for array-backed lists, where the
+ * old per-swap remove+insert path made the algorithm O(n^3).
  */
-static int sorter_partition(list *lst, int low, int high, sorter *self) {
-    sorter_impl *impl = sorter_impl_from_self(self);
-    void *pivot = lst->get(lst, high);
+static int buffer_partition(void **arr, int low, int high, comparator cmp) {
+    void *pivot = arr[high];
     int i = low - 1;
 
     for (int j = low; j < high; j++) {
-        if (impl && impl->cmp(lst->get(lst, j), pivot) <= 0) {
+        if (cmp(arr[j], pivot) <= 0) {
             i++;
-            self->swap(self, lst, i, j);
+            buffer_swap(arr, i, j);
         }
     }
-    self->swap(self, lst, i + 1, high);
+    buffer_swap(arr, i + 1, high);
     return i + 1;
 }
 
 /**
- * @brief Sorts a list using the quicksort algorithm.
+ * @brief Sorts a list using quicksort over a snapshot pointer buffer.
  *
- * This function sorts a list using the quicksort algorithm.
- * The list is sorted in place, i.e., the original content of the list is modified.
+ * Snapshots the list into a contiguous pointer buffer, sorts it in place
+ * with O(1) swaps, then writes the result back via clear+append in O(n).
  *
  * @param self A pointer to the sorter structure.
  * @param lst A pointer to the list to be sorted.
  */
 static void sorter_quick(sorter *self, list *lst) {
-    int size = lst->size(lst);
+    sorter_impl *impl = sorter_impl_from_self(self);
+    if (!impl || !impl->cmp) return;
+
+    int size = 0;
+    void **arr = list_snapshot(lst, &size);
     if (size < 2) {
+        free(arr);
         return;
     }
+    if (!arr) return;
 
     int *stack = malloc(sizeof(int) * (size_t)size * 2);
-    if (!stack) return;
+    if (!stack) {
+        free(arr);
+        return;
+    }
 
     int top = 0;
     stack[top++] = 0;
@@ -97,7 +137,7 @@ static void sorter_quick(sorter *self, list *lst) {
     while (top > 0) {
         int high = stack[--top];
         int low = stack[--top];
-        int pi = sorter_partition(lst, low, high, self);
+        int pi = buffer_partition(arr, low, high, impl->cmp);
 
         if (pi - 1 > low) {
             stack[top++] = low;
@@ -109,6 +149,9 @@ static void sorter_quick(sorter *self, list *lst) {
         }
     }
     free(stack);
+
+    list_replace_with(lst, arr, size);
+    free(arr);
 }
 
 /**
@@ -202,10 +245,7 @@ static void sorter_merge(sorter *self, list *lst) {
 
     merge_sort_recursive(arr, tmp, 0, size, impl->cmp);
 
-    for (int i = 0; i < size; i++) {
-        lst->remove(lst, i);
-        lst->insert(lst, arr[i], i);
-    }
+    list_replace_with(lst, arr, size);
 
     free(tmp);
     free(arr);
@@ -214,38 +254,61 @@ static void sorter_merge(sorter *self, list *lst) {
 /**
  * @brief Shuffle the elements in a list using the Fisher-Yates algorithm.
  *
- * This function shuffles the elements in a list using the Fisher-Yates algorithm.
- * The Fisher-Yates algorithm randomly swaps each element in the list with another element,
- * resulting in a randomized order of elements.
+ * Operates on a snapshot pointer buffer with O(1) swaps and writes the
+ * result back via clear+append, giving O(n) total work instead of the
+ * O(n^2) cost incurred when swapping through the list interface.
  *
  * @param self A pointer to the sorter structure.
  * @param lst A pointer to the list to be shuffled.
  */
 void collections_shuffle(sorter *self, list *lst) {
-    int n = lst->size(lst);
+    (void)self;
+    int n = 0;
+    void **arr = list_snapshot(lst, &n);
+    if (n < 2) {
+        free(arr);
+        return;
+    }
+    if (!arr) return;
+
     for (int i = n - 1; i > 0; i--) {
         int j = rand() % (i + 1);
-        self->swap(self, lst, i, j);
+        buffer_swap(arr, i, j);
     }
+
+    list_replace_with(lst, arr, n);
+    free(arr);
 }
 
 /**
  * @brief Reverse the elements in a list.
  *
- * This function reverses the elements in a list using the specified sorter instance.
- * It swaps pairs of elements starting from the first and last positions, until the first and last indices meet in the middle.
+ * Snapshots the list into a pointer buffer, reverses in place with O(1)
+ * swaps, and writes the result back in O(n).
  *
  * @param self A pointer to the sorter instance.
  * @param lst The list to be reversed.
  */
 void collections_reverse(sorter *self, list *lst) {
+    (void)self;
+    int n = 0;
+    void **arr = list_snapshot(lst, &n);
+    if (n < 2) {
+        free(arr);
+        return;
+    }
+    if (!arr) return;
+
     int i = 0;
-    int j = lst->size(lst) - 1;
+    int j = n - 1;
     while (i < j) {
-        self->swap(self, lst, i, j);
+        buffer_swap(arr, i, j);
         i++;
         j--;
     }
+
+    list_replace_with(lst, arr, n);
+    free(arr);
 }
 
 /**
