@@ -472,14 +472,16 @@ matrix *graph_floyd_warshall_impl(const graph_impl *g) {
             continue;
         }
         for (int i = 0; i < g->vertex_capacity; i++) {
-            if (!graph_is_valid_vertex(g, i) || dist_impl->data[i][k] == GRAPH_NO_EDGE) {
+            double d_ik = dist_impl->data[i][k];
+            if (!graph_is_valid_vertex(g, i) || d_ik == GRAPH_NO_EDGE) {
                 continue;
             }
             for (int j = 0; j < g->vertex_capacity; j++) {
-                if (!graph_is_valid_vertex(g, j) || dist_impl->data[k][j] == GRAPH_NO_EDGE) {
+                double d_kj = dist_impl->data[k][j];
+                if (!graph_is_valid_vertex(g, j) || d_kj == GRAPH_NO_EDGE) {
                     continue;
                 }
-                double nd = dist_impl->data[i][k] + dist_impl->data[k][j];
+                double nd = d_ik + d_kj;
                 if (nd < dist_impl->data[i][j]) {
                     dist_impl->data[i][j] = nd;
                 }

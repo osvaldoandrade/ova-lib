@@ -66,8 +66,7 @@ static ova_error_code hash_insert(map *self, void *key, void *data) {
         pthread_mutex_lock(impl->lock);
     }
 
-    double load_factor = (double)impl->size / (double)impl->capacity;
-    if (load_factor > LOAD_FACTOR) {
+    if (impl->size > impl->capacity - impl->capacity / 4) {
         resize_and_rehash(impl);
     }
 

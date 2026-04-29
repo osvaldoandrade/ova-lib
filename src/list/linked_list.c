@@ -74,8 +74,7 @@ static ova_error_code linked_list_insert(list *self, void *item, int index) {
         int current_index = (index < impl->size / 2) ? 0 : impl->size - 1;
 
         while (current) {
-            if ((index < impl->size / 2 && current_index == index) ||
-                (index >= impl->size / 2 && current_index == index)) {
+            if (current_index == index) {
                 new_node->next = current;
                 new_node->prev = current->prev;
                 if (current->prev) {
@@ -98,9 +97,17 @@ static ova_error_code linked_list_insert(list *self, void *item, int index) {
 static void *linked_list_get(list *self, int index) {
     linked_list_impl *impl = (linked_list_impl *)self->impl;
     if (index < 0 || index >= impl->size) return NULL;
-    linked_list_node *current = impl->head;
-    for (int i = 0; i < index && current; i++) {
-        current = current->next;
+    linked_list_node *current;
+    if (index < impl->size / 2) {
+        current = impl->head;
+        for (int i = 0; i < index && current; i++) {
+            current = current->next;
+        }
+    } else {
+        current = impl->tail;
+        for (int i = impl->size - 1; i > index && current; i--) {
+            current = current->prev;
+        }
     }
     return current ? current->data : NULL;
 }
@@ -108,9 +115,17 @@ static void *linked_list_get(list *self, int index) {
 static ova_error_code linked_list_remove(list *self, int index) {
     linked_list_impl *impl = (linked_list_impl *)self->impl;
     if (index < 0 || index >= impl->size) return OVA_ERROR_INDEX_OUT_OF_BOUNDS;
-    linked_list_node *current = impl->head;
-    for (int i = 0; i < index && current; i++) {
-        current = current->next;
+    linked_list_node *current;
+    if (index < impl->size / 2) {
+        current = impl->head;
+        for (int i = 0; i < index && current; i++) {
+            current = current->next;
+        }
+    } else {
+        current = impl->tail;
+        for (int i = impl->size - 1; i > index && current; i--) {
+            current = current->prev;
+        }
     }
     if (current) {
         if (current->prev) {
