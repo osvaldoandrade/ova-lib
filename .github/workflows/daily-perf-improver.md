@@ -21,6 +21,10 @@ timeout-minutes: 60
 
 permissions: read-all
 
+engine:
+  id: copilot
+  model: claude-opus-4.7
+
 network:
   allowed:
   - defaults
@@ -31,8 +35,6 @@ network:
   - java
 
 safe-outputs:
-  assign-to-agent:
-    model: claude-opus-4.7
   add-comment:
     max: 10
     target: "*"
