@@ -24,10 +24,6 @@ static bool hash_set_add(set_impl *state, void *element) {
         return false;
     }
 
-    if (impl->m->get(impl->m, element) != NULL) {
-        return false;
-    }
-
     int before = impl->m->size(impl->m);
     impl->m->put(impl->m, element, &hash_set_marker);
     return impl->m->size(impl->m) > before;

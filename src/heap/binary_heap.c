@@ -111,24 +111,17 @@ static void sift_up(binary_heap *h, int index) {
 }
 
 static void sift_down(binary_heap *h, int index) {
-    int left, right, largest;
-    void *temp;
-    while (index < h->size / 2) {
-        left = 2 * index + 1;
-        right = 2 * index + 2;
-        largest = index;
-
-        if (left < h->size && h->cmp(h->data[left], h->data[largest]) > 0) {
-            largest = left;
+    void *item = h->data[index];
+    int half = h->size / 2;
+    while (index < half) {
+        int child = 2 * index + 1;
+        if (child + 1 < h->size &&
+            h->cmp(h->data[child + 1], h->data[child]) > 0) {
+            child++;
         }
-        if (right < h->size && h->cmp(h->data[right], h->data[largest]) > 0) {
-            largest = right;
-        }
-        if (largest == index) break;
-
-        temp = h->data[index];
-        h->data[index] = h->data[largest];
-        h->data[largest] = temp;
-        index = largest;
+        if (h->cmp(h->data[child], item) <= 0) break;
+        h->data[index] = h->data[child];
+        index = child;
     }
+    h->data[index] = item;
 }
