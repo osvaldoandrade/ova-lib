@@ -95,17 +95,16 @@ matrix *create_matrix(int rows, int cols) {
         return NULL;
     }
 
+    double *buffer = (double *)calloc((size_t)rows * (size_t)cols, sizeof(double));
+    if (!buffer) {
+        free(impl->data);
+        free(impl);
+        free(out);
+        return NULL;
+    }
+
     for (int i = 0; i < rows; i++) {
-        impl->data[i] = (double *)calloc((size_t)cols, sizeof(double));
-        if (!impl->data[i]) {
-            for (int j = 0; j < i; j++) {
-                free(impl->data[j]);
-            }
-            free(impl->data);
-            free(impl);
-            free(out);
-            return NULL;
-        }
+        impl->data[i] = buffer + (size_t)i * (size_t)cols;
     }
 
     impl->rows = rows;
@@ -240,10 +239,10 @@ static matrix *matrix_multiply_method(matrix *self, const matrix *other) {
     }
 
     for (int i = 0; i < lhs->rows; i++) {
-        for (int j = 0; j < rhs->cols; j++) {
-            out->data[i][j] = 0.0;
-            for (int k = 0; k < lhs->cols; k++) {
-                out->data[i][j] += lhs->data[i][k] * rhs->data[k][j];
+        for (int k = 0; k < lhs->cols; k++) {
+            double a_ik = lhs->data[i][k];
+            for (int j = 0; j < rhs->cols; j++) {
+                out->data[i][j] += a_ik * rhs->data[k][j];
             }
         }
     }
@@ -422,54 +421,34 @@ static int matrix_resize_method(matrix *self, int new_rows, int new_cols) {
     int min_rows = old_rows < new_rows ? old_rows : new_rows;
     int copy_cols = old_cols < new_cols ? old_cols : new_cols;
 
+    double *new_buffer = (double *)calloc((size_t)new_rows * (size_t)new_cols, sizeof(double));
+    if (!new_buffer) {
+        return -1;
+    }
+
     double **new_data = (double **)malloc((size_t)new_rows * sizeof(double *));
     if (!new_data) {
+        free(new_buffer);
         return -1;
     }
 
     for (int i = 0; i < new_rows; i++) {
-        new_data[i] = NULL;
+        new_data[i] = new_buffer + (size_t)i * (size_t)new_cols;
     }
 
     for (int i = 0; i < min_rows; i++) {
-        double *new_row = (double *)malloc((size_t)new_cols * sizeof(double));
-        if (!new_row) {
-            goto resize_failure;
-        }
-
         if (copy_cols > 0) {
-            memcpy(new_row, old_data[i], (size_t)copy_cols * sizeof(double));
-        }
-        for (int j = copy_cols; j < new_cols; j++) {
-            new_row[j] = 0.0;
-        }
-
-        new_data[i] = new_row;
-    }
-
-    for (int i = min_rows; i < new_rows; i++) {
-        new_data[i] = (double *)calloc((size_t)new_cols, sizeof(double));
-        if (!new_data[i]) {
-            goto resize_failure;
+            memcpy(new_data[i], old_data[i], (size_t)copy_cols * sizeof(double));
         }
     }
 
-    for (int i = 0; i < old_rows; i++) {
-        free(old_data[i]);
-    }
+    free(old_data[0]);
     free(old_data);
 
     impl->data = new_data;
     impl->rows = new_rows;
     impl->cols = new_cols;
     return 0;
-
-resize_failure:
-    for (int i = 0; i < new_rows; i++) {
-        free(new_data[i]);
-    }
-    free(new_data);
-    return -1;
 }
 
 static matrix *matrix_copy_method(matrix *self) {
@@ -499,9 +478,7 @@ static void matrix_free_method(matrix *self) {
     matrix_impl *impl = matrix_impl_from_matrix(self);
     if (impl) {
         if (impl->data) {
-            for (int i = 0; i < impl->rows; i++) {
-                free(impl->data[i]);
-            }
+            free(impl->data[0]);
             free(impl->data);
         }
         free(impl);
@@ -541,26 +518,23 @@ static double **strassen_alloc_block(int n) {
     if (!b) {
         return NULL;
     }
+    double *buf = (double *)calloc((size_t)n * (size_t)n, sizeof(double));
+    if (!buf) {
+        free(b);
+        return NULL;
+    }
     for (int i = 0; i < n; i++) {
-        b[i] = (double *)calloc((size_t)n, sizeof(double));
-        if (!b[i]) {
-            for (int j = 0; j < i; j++) {
-                free(b[j]);
-            }
-            free(b);
-            return NULL;
-        }
+        b[i] = buf + (size_t)i * (size_t)n;
     }
     return b;
 }
 
 static void strassen_free_block(double **b, int n) {
+    (void)n;
     if (!b) {
         return;
     }
-    for (int i = 0; i < n; i++) {
-        free(b[i]);
-    }
+    free(b[0]);
     free(b);
 }
 
@@ -583,11 +557,15 @@ static void strassen_sub_block(double **a, double **b, double **result, int n) {
 static void strassen_naive_block(double **a, double **b, double **result, int n) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            double sum = 0.0;
-            for (int k = 0; k < n; k++) {
-                sum += a[i][k] * b[k][j];
+            result[i][j] = 0.0;
+        }
+    }
+    for (int i = 0; i < n; i++) {
+        for (int k = 0; k < n; k++) {
+            double a_ik = a[i][k];
+            for (int j = 0; j < n; j++) {
+                result[i][j] += a_ik * b[k][j];
             }
-            result[i][j] = sum;
         }
     }
 }
