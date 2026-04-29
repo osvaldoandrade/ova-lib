@@ -31,6 +31,11 @@ static skip_list_impl *impl_from(const skip_list *self) {
     return self ? (skip_list_impl *)self->impl : NULL;
 }
 
+static unsigned int next_random(skip_list_impl *sl) {
+    sl->seed = sl->seed * 1103515245u + 12345u;
+    return sl->seed;
+}
+
 /**
  * Create a node with @p lvl+1 forward pointers (levels 0..lvl).
  */
@@ -58,8 +63,7 @@ static skip_node *create_node(int lvl, void *key, void *value) {
  */
 static int random_level(skip_list_impl *sl) {
     int lvl = 0;
-    /* rand_r is reentrant and avoids global state */
-    while (lvl < sl->max_level && (rand_r(&sl->seed) & 1)) {
+    while (lvl < sl->max_level && (next_random(sl) & 1u)) {
         lvl++;
     }
     return lvl;

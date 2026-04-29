@@ -222,6 +222,13 @@ static void bb_solve(lp_problem *problem, double *best_obj, double *best_sol,
     }
 
     lp_problem_impl *impl = lp_problem_impl_from_public(problem);
+    if (!impl || !impl->solution) {
+        if (tableau) {
+            tableau->free(tableau);
+        }
+        lp_solver->free(lp_solver);
+        return;
+    }
     /* True objective = LP objective + accumulated offset */
     double obj_val = impl->objective_value + obj_offset;
 
