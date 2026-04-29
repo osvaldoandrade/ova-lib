@@ -27,6 +27,10 @@ tools:
 
 timeout-minutes: 15
 
+engine:
+  id: copilot
+  model: claude-opus-4.7
+
 source: githubnext/agentics/workflows/weekly-research.md@3de4e604a36b5190a1c7dc4719c7341500ba8a95
 ---
 
