@@ -11,6 +11,10 @@ typedef struct {
     linked_list_node *head;
     linked_list_node *tail;
     int size;
+    /* Cursor cache to make sequential get(i), get(i+1), ... amortized O(1).
+     * cursor_index == -1 means cache is invalid. */
+    linked_list_node *cursor_node;
+    int cursor_index;
 } linked_list_impl;
 
 static ova_error_code linked_list_insert(list *self, void *item, int index);
@@ -28,6 +32,8 @@ list *create_linked_list(void) {
         impl->head = NULL;
         impl->tail = NULL;
         impl->size = 0;
+        impl->cursor_node = NULL;
+        impl->cursor_index = -1;
 
         lst->impl = impl;
         lst->insert = linked_list_insert;
@@ -54,6 +60,9 @@ static ova_error_code linked_list_insert(list *self, void *item, int index) {
     new_node->data = item;
     new_node->next = NULL;
     new_node->prev = NULL;
+
+    impl->cursor_node = NULL;
+    impl->cursor_index = -1;
 
     if (index == 0) {
         if (impl->head == NULL) {
@@ -97,24 +106,55 @@ static ova_error_code linked_list_insert(list *self, void *item, int index) {
 static void *linked_list_get(list *self, int index) {
     linked_list_impl *impl = (linked_list_impl *)self->impl;
     if (index < 0 || index >= impl->size) return NULL;
-    linked_list_node *current;
-    if (index < impl->size / 2) {
-        current = impl->head;
-        for (int i = 0; i < index && current; i++) {
-            current = current->next;
-        }
-    } else {
-        current = impl->tail;
-        for (int i = impl->size - 1; i > index && current; i--) {
-            current = current->prev;
+
+    linked_list_node *current = NULL;
+    int start_index = 0;
+    int dist_head = index;
+    int dist_tail = impl->size - 1 - index;
+    int best = dist_head < dist_tail ? dist_head : dist_tail;
+
+    if (impl->cursor_node && impl->cursor_index >= 0) {
+        int dist_cursor_abs = index - impl->cursor_index;
+        if (dist_cursor_abs < 0) dist_cursor_abs = -dist_cursor_abs;
+        if (dist_cursor_abs < best) {
+            current = impl->cursor_node;
+            start_index = impl->cursor_index;
+            best = dist_cursor_abs;
         }
     }
-    return current ? current->data : NULL;
+
+    if (!current) {
+        if (dist_head <= dist_tail) {
+            current = impl->head;
+            start_index = 0;
+        } else {
+            current = impl->tail;
+            start_index = impl->size - 1;
+        }
+    }
+
+    while (current && start_index < index) {
+        current = current->next;
+        start_index++;
+    }
+    while (current && start_index > index) {
+        current = current->prev;
+        start_index--;
+    }
+
+    if (current) {
+        impl->cursor_node = current;
+        impl->cursor_index = index;
+        return current->data;
+    }
+    return NULL;
 }
 
 static ova_error_code linked_list_remove(list *self, int index) {
     linked_list_impl *impl = (linked_list_impl *)self->impl;
     if (index < 0 || index >= impl->size) return OVA_ERROR_INDEX_OUT_OF_BOUNDS;
+    impl->cursor_node = NULL;
+    impl->cursor_index = -1;
     linked_list_node *current;
     if (index < impl->size / 2) {
         current = impl->head;
@@ -162,6 +202,8 @@ static void linked_list_clear(list *self) {
         impl->head = NULL;
         impl->tail = NULL;
         impl->size = 0;
+        impl->cursor_node = NULL;
+        impl->cursor_index = -1;
     }
 }
 
