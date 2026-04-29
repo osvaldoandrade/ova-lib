@@ -43,8 +43,7 @@ struct memory_pool {
 /* ------------------------------------------------------------------ */
 
 static size_t align_up(size_t size, size_t alignment) {
-    size_t remainder = size % alignment;
-    return remainder == 0 ? size : size + alignment - remainder;
+    return (size + alignment - 1) & ~(alignment - 1);
 }
 
 /**
@@ -53,12 +52,13 @@ static size_t align_up(size_t size, size_t alignment) {
  */
 static void init_chunk_free_list(memory_pool *pool, chunk *c) {
     unsigned char *base = c->data;
+    unsigned char *ptr = base;
 
     for (int i = 0; i < pool->blocks_per_chunk; i++) {
-        uintptr_t block_addr = (uintptr_t)(void *)base + (size_t)i * pool->aligned_block;
-        free_node *node = (free_node *)(void *)block_addr;
+        free_node *node = (free_node *)(void *)ptr;
         node->next      = pool->free_list;
         pool->free_list  = node;
+        ptr += pool->aligned_block;
     }
 
     pool->total_blocks += (size_t)pool->blocks_per_chunk;
