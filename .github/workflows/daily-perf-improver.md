@@ -31,6 +31,8 @@ network:
   - java
 
 safe-outputs:
+  assign-to-agent:
+    model: claude-opus-4.7
   add-comment:
     max: 10
     target: "*"
