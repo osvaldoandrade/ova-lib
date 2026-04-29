@@ -143,11 +143,26 @@ static ova_error_code trie_insert_method(trie *self, const char *word, void *val
         return OVA_ERROR_INVALID_ARG;
     }
 
+    /* First pass: descend to the insertion point, recording the path length. */
+    size_t depth = 0;
+    const unsigned char *scan = (const unsigned char *)word;
+    while (*scan) { depth++; scan++; }
+
+    /* Allocate path buffer to avoid a second root-to-leaf walk for
+       subtree_words updates. Depth + 2 covers root and SSO-created nodes. */
+    trie_node **path = (trie_node **)malloc((depth + 2) * sizeof(trie_node *));
+    if (!path) {
+        return OVA_ERROR_MEMORY;
+    }
+    size_t path_len = 0;
+
     trie_node *node = impl->root;
+    path[path_len++] = node;
     const unsigned char *p = (const unsigned char *)word;
     while (*p) {
         if (node->sso_len > 0) {
             if (!sso_expand(node)) {
+                free(path);
                 return OVA_ERROR_MEMORY;
             }
         }
@@ -156,6 +171,7 @@ static ova_error_code trie_insert_method(trie *self, const char *word, void *val
         if (!node->children[c]) {
             trie_node *created = trie_node_create();
             if (!created) {
+                free(path);
                 return OVA_ERROR_MEMORY;
             }
             node->children[c] = created;
@@ -170,32 +186,29 @@ static ova_error_code trie_insert_method(trie *self, const char *word, void *val
                 created->value = value;
                 impl->word_count++;
 
-                trie_node *n = impl->root;
-                n->subtree_words++;
-                const unsigned char *q = (const unsigned char *)word;
-                while (*q) {
-                    n = n->children[*q];
-                    if (!n) {
-                        break;
-                    }
-                    n->subtree_words++;
-                    q++;
+                path[path_len++] = created;
+                for (size_t i = 0; i < path_len; i++) {
+                    path[i]->subtree_words++;
                 }
+                free(path);
                 return OVA_SUCCESS;
             }
         }
         node = node->children[c];
+        path[path_len++] = node;
         p++;
     }
 
     if (node->sso_len > 0) {
         if (!sso_expand(node)) {
+            free(path);
             return OVA_ERROR_MEMORY;
         }
     }
 
     if (node->is_end) {
         node->value = value;
+        free(path);
         return OVA_SUCCESS;
     }
 
@@ -203,17 +216,10 @@ static ova_error_code trie_insert_method(trie *self, const char *word, void *val
     node->value = value;
     impl->word_count++;
 
-    node = impl->root;
-    node->subtree_words++;
-    p = (const unsigned char *)word;
-    while (*p) {
-        node = node->children[*p];
-        if (!node) {
-            break;
-        }
-        node->subtree_words++;
-        p++;
+    for (size_t i = 0; i < path_len; i++) {
+        path[i]->subtree_words++;
     }
+    free(path);
     return OVA_SUCCESS;
 }
 

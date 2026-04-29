@@ -320,12 +320,25 @@ void collections_min_max(sorter *self, list *lst, void **min, void **max) {
         return;
     }
 
-    *min = lst->get(lst, 0);
-    *max = lst->get(lst, 0);
+    int i;
+    if (size % 2 == 0) {
+        void *a = lst->get(lst, 0);
+        void *b = lst->get(lst, 1);
+        if (impl && impl->cmp(a, b) > 0) {
+            *max = a;
+            *min = b;
+        } else {
+            *min = a;
+            *max = b;
+        }
+        i = 2;
+    } else {
+        *min = lst->get(lst, 0);
+        *max = *min;
+        i = 1;
+    }
 
-    int i = (size % 2 == 0) ? 1 : 2;
-
-    for (; i < size - 1; i += 2) {
+    for (; i + 1 < size; i += 2) {
         void *first = lst->get(lst, i);
         void *second = lst->get(lst, i + 1);
 
@@ -336,12 +349,6 @@ void collections_min_max(sorter *self, list *lst, void **min, void **max) {
             if (impl && impl->cmp(second, *max) > 0) *max = second;
             if (impl && impl->cmp(first, *min) < 0) *min = first;
         }
-    }
-
-    if (size % 2 != 0) {
-        void *last = lst->get(lst, size - 1);
-        if (impl && impl->cmp(last, *max) > 0) *max = last;
-        if (impl && impl->cmp(last, *min) < 0) *min = last;
     }
 }
 
