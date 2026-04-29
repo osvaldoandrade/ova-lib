@@ -143,13 +143,12 @@ static ova_error_code trie_insert_method(trie *self, const char *word, void *val
         return OVA_ERROR_INVALID_ARG;
     }
 
-    /* First pass: descend to the insertion point, recording the path length. */
-    size_t depth = 0;
-    const unsigned char *scan = (const unsigned char *)word;
-    while (*scan) { depth++; scan++; }
+    /* Compute word length to size the path buffer.  This replaces a second
+       root-to-leaf walk that the old code performed after insertion. */
+    size_t depth = strlen(word);
 
-    /* Allocate path buffer to avoid a second root-to-leaf walk for
-       subtree_words updates. Depth + 2 covers root and SSO-created nodes. */
+    /* depth + 2: one slot for the root node and one for a possible
+       SSO-created child node that gets pushed before the early return. */
     trie_node **path = (trie_node **)malloc((depth + 2) * sizeof(trie_node *));
     if (!path) {
         return OVA_ERROR_MEMORY;
