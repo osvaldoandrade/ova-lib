@@ -18,14 +18,28 @@ static bloom_filter_impl *bloom_filter_impl_from_self(const bloom_filter *self) 
     return self ? (bloom_filter_impl *)self->impl : NULL;
 }
 
-static uint64_t fnv1a64_seeded(const void *data, size_t len, uint64_t seed) {
+#define FNV1A64_OFFSET 14695981039346656037ULL
+#define FNV1A64_PRIME  1099511628211ULL
+#define BLOOM_SEED_1   0x243f6a8885a308d3ULL
+#define BLOOM_SEED_2   0x9e3779b97f4a7c15ULL
+#define BLOOM_H2_FALLBACK 0x27d4eb2f165667c5ULL
+
+/* Compute two seeded FNV-1a 64-bit hashes of the same buffer in a single
+ * pass over the data. Matches the per-seed result of the previous helper
+ * exactly (verified by table-driven tests) but loads the input only once,
+ * which is the bottleneck on warm bloom filters with non-trivial keys. */
+static void fnv1a64_dual(const void *data, size_t len,
+                         uint64_t *h1_out, uint64_t *h2_out) {
     const uint8_t *bytes = (const uint8_t *)data;
-    uint64_t hash = 14695981039346656037ULL ^ seed;
+    uint64_t h1 = FNV1A64_OFFSET ^ BLOOM_SEED_1;
+    uint64_t h2 = FNV1A64_OFFSET ^ BLOOM_SEED_2;
     for (size_t i = 0; i < len; i++) {
-        hash ^= (uint64_t)bytes[i];
-        hash *= 1099511628211ULL;
+        const uint64_t b = (uint64_t)bytes[i];
+        h1 = (h1 ^ b) * FNV1A64_PRIME;
+        h2 = (h2 ^ b) * FNV1A64_PRIME;
     }
-    return hash;
+    *h1_out = h1;
+    *h2_out = h2;
 }
 
 static void bloom_set_bit(uint8_t *bits, size_t idx) {
@@ -102,10 +116,10 @@ static void bloom_filter_add_method(bloom_filter *self, const void *element, siz
         return;
     }
 
-    uint64_t h1 = fnv1a64_seeded(element, len, 0x243f6a8885a308d3ULL);
-    uint64_t h2 = fnv1a64_seeded(element, len, 0x9e3779b97f4a7c15ULL);
+    uint64_t h1, h2;
+    fnv1a64_dual(element, len, &h1, &h2);
     if (h2 == 0) {
-        h2 = 0x27d4eb2f165667c5ULL;
+        h2 = BLOOM_H2_FALLBACK;
     }
 
     for (size_t i = 0; i < impl->k_hashes; i++) {
@@ -125,10 +139,10 @@ static bool bloom_filter_might_contain_method(const bloom_filter *self, const vo
         return false;
     }
 
-    uint64_t h1 = fnv1a64_seeded(element, len, 0x243f6a8885a308d3ULL);
-    uint64_t h2 = fnv1a64_seeded(element, len, 0x9e3779b97f4a7c15ULL);
+    uint64_t h1, h2;
+    fnv1a64_dual(element, len, &h1, &h2);
     if (h2 == 0) {
-        h2 = 0x27d4eb2f165667c5ULL;
+        h2 = BLOOM_H2_FALLBACK;
     }
 
     for (size_t i = 0; i < impl->k_hashes; i++) {
