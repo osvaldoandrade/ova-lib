@@ -12,7 +12,7 @@ typedef struct skip_node {
     void *key;
     void *value;
     int level;                 /* highest level this node participates in */
-    struct skip_node **forward; /* array of forward pointers [0..level]   */
+    struct skip_node *forward[1]; /* flexible tail: levels 0..level (co-allocated) */
 } skip_node;
 
 typedef struct {
@@ -33,25 +33,32 @@ static skip_list_impl *impl_from(const skip_list *self) {
 }
 
 static unsigned int next_random(skip_list_impl *sl) {
-    sl->seed = sl->seed * 1103515245u + 12345u;
+    /* xorshift32: better bit quality than the LCG variant for coin flips,
+     * and just as cheap. Each bit is independent with p≈0.5. */
+    unsigned int x = sl->seed;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    sl->seed = x ? x : 1u;
     return sl->seed;
 }
 
 /**
  * Create a node with @p lvl+1 forward pointers (levels 0..lvl).
+ * The node header and the forward[] tail are allocated in a single
+ * contiguous block to halve malloc/free traffic on the insert path.
  */
 static skip_node *create_node(int lvl, void *key, void *value) {
-    skip_node *n = (skip_node *)malloc(sizeof(skip_node));
+    /* skip_node already reserves space for forward[1]; ask for the
+     * extra (lvl) slots beyond that one. */
+    size_t bytes = sizeof(skip_node) + (size_t)lvl * sizeof(skip_node *);
+    skip_node *n = (skip_node *)malloc(bytes);
     if (!n) {
         return NULL;
     }
-
-    n->forward = (skip_node **)calloc((size_t)(lvl + 1), sizeof(skip_node *));
-    if (!n->forward) {
-        free(n);
-        return NULL;
+    for (int i = 0; i <= lvl; i++) {
+        n->forward[i] = NULL;
     }
-
     n->key   = key;
     n->value = value;
     n->level = lvl;
@@ -60,12 +67,26 @@ static skip_node *create_node(int lvl, void *key, void *value) {
 
 /**
  * Generate a random level using a coin-flip approach (p = 0.5).
- * Uses a per-instance seed so multiple skip lists are independent.
+ * Single PRNG call: count trailing zero bits of the random word.
+ * For a uniformly random 32-bit word w, P(ctz(w) >= k) = 2^-k, which
+ * is exactly the geometric distribution the coin-flip loop produces.
  */
 static int random_level(skip_list_impl *sl) {
-    int lvl = 0;
-    while (lvl < sl->max_level && (next_random(sl) & 1u)) {
+    unsigned int r = next_random(sl);
+    int lvl;
+#if defined(__GNUC__) || defined(__clang__)
+    /* __builtin_ctz is undefined for 0; xorshift never returns 0,
+     * but guard anyway in case future RNG changes. */
+    lvl = r ? __builtin_ctz(r) : 32;
+#else
+    lvl = 0;
+    while ((r & 1u) && lvl < 32) {
         lvl++;
+        r >>= 1;
+    }
+#endif
+    if (lvl > sl->max_level) {
+        lvl = sl->max_level;
     }
     return lvl;
 }
@@ -206,7 +227,6 @@ static ova_error_code sl_delete(skip_list *self, void *key) {
         update[i]->forward[i] = cur->forward[i];
     }
 
-    free(cur->forward);
     free(cur);
     sl->size--;
 
@@ -236,7 +256,6 @@ static void sl_free(skip_list *self) {
         skip_node *cur = sl->header;
         while (cur) {
             skip_node *next = cur->forward[0];
-            free(cur->forward);
             free(cur);
             cur = next;
         }
@@ -275,6 +294,7 @@ skip_list *create_skip_list(int max_level, comparator cmp) {
         static unsigned int seed_counter;
         sl->seed = (unsigned int)time(NULL) ^ (unsigned int)(size_t)sl
                    ^ (++seed_counter * 2654435761u);
+        if (sl->seed == 0u) sl->seed = 1u;
     }
 
     sl->header = create_node(sl->max_level, NULL, NULL);
