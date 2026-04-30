@@ -167,6 +167,46 @@ void test_linked_list_remove_error_codes(void) {
     lst->free(lst);
 }
 
+void test_linked_list_sequential_access(void) {
+    const int N = 200;
+    list *lst = create_list(LINKED_LIST, 0, NULL);
+    int *values = malloc((size_t)N * sizeof(int));
+    for (int i = 0; i < N; i++) {
+        values[i] = i * 7 + 3;
+        lst->insert(lst, &values[i], i);
+    }
+
+    int passed = 1;
+    for (int i = 0; i < N; i++) {
+        int *got = (int *)lst->get(lst, i);
+        if (!got || *got != values[i]) { passed = 0; break; }
+    }
+    print_test_result(passed, "Linked list sequential forward access");
+
+    for (int i = N - 1; i >= 0; i--) {
+        int *got = (int *)lst->get(lst, i);
+        if (!got || *got != values[i]) { passed = 0; break; }
+    }
+    print_test_result(passed, "Linked list sequential reverse access");
+
+    int access_order[] = {0, N - 1, N / 2, 1, N - 2, N / 2 + 1, 5, 100, 50, N - 5};
+    int n_access = (int)(sizeof(access_order) / sizeof(access_order[0]));
+    for (int i = 0; i < n_access; i++) {
+        int idx = access_order[i];
+        int *got = (int *)lst->get(lst, idx);
+        if (!got || *got != values[idx]) { passed = 0; break; }
+    }
+    print_test_result(passed, "Linked list random access pattern");
+
+    lst->remove(lst, 10);
+    int *after_remove = (int *)lst->get(lst, 10);
+    print_test_result(after_remove && *after_remove == values[11],
+                      "Linked list get after remove invalidates cursor");
+
+    lst->free(lst);
+    free(values);
+}
+
 void run_all_tests(void) {
     test_linked_list_insert_and_get();
     test_linked_list_remove();
@@ -178,6 +218,7 @@ void run_all_tests(void) {
     test_high_volume_linked_list_insertions();
     test_linked_list_insert_error_codes();
     test_linked_list_remove_error_codes();
+    test_linked_list_sequential_access();
 }
 
 int main(void) {
