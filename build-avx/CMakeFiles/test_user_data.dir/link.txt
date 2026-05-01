@@ -1,1 +1,0 @@
-/usr/bin/cc -mavx -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_user_data.dir/link.d CMakeFiles/test_user_data.dir/test/test_user_data.c.o CMakeFiles/test_user_data.dir/test/base_test.c.o -o bin/test_user_data  lib/libova_lib.a -lm

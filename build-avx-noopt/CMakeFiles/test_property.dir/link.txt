@@ -1,1 +1,0 @@
-/usr/bin/cc -mavx -O0 -g -Wl,--dependency-file=CMakeFiles/test_property.dir/link.d CMakeFiles/test_property.dir/test/test_property.c.o CMakeFiles/test_property.dir/test/base_test.c.o -o bin/test_property  lib/libova_lib.a -lm

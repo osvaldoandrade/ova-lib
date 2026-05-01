@@ -1,1 +1,0 @@
-/usr/bin/cc -mavx -O0 -g -Wl,--dependency-file=CMakeFiles/test_red_black_tree.dir/link.d CMakeFiles/test_red_black_tree.dir/test/test_red_black_tree.c.o CMakeFiles/test_red_black_tree.dir/test/base_test.c.o -o bin/test_red_black_tree  lib/libova_lib.a -lm
