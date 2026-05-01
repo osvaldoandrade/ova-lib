@@ -1,0 +1,1 @@
+/usr/bin/cc -O0 -g -Wl,--dependency-file=CMakeFiles/test_clear.dir/link.d CMakeFiles/test_clear.dir/test/test_clear.c.o CMakeFiles/test_clear.dir/test/base_test.c.o -o bin/test_clear  lib/libova_lib.a -lm

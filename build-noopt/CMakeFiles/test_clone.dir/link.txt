@@ -1,0 +1,1 @@
+/usr/bin/cc -O0 -g -Wl,--dependency-file=CMakeFiles/test_clone.dir/link.d CMakeFiles/test_clone.dir/test/test_clone.c.o CMakeFiles/test_clone.dir/test/base_test.c.o -o bin/test_clone  lib/libova_lib.a -lm

@@ -180,6 +180,43 @@ void test_matrix_add_dimension_mismatch(void) {
     m4->free(m4);
 }
 
+void test_matrix_add_subtract_large(void) {
+    /* Use a column count that is not a multiple of 4 so that both the
+     * SIMD body and the scalar tail of matrix_add/subtract are exercised. */
+    const int ROWS = 7;
+    const int COLS = 67;
+    matrix *a = create_matrix(ROWS, COLS);
+    matrix *b = create_matrix(ROWS, COLS);
+    matrix *expected_sum = create_matrix(ROWS, COLS);
+    matrix *expected_diff = create_matrix(ROWS, COLS);
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            double av = (double)(i * COLS + j) * 0.5;
+            double bv = (double)(j - i) * 1.25;
+            set_matrix_value(a, i, j, av);
+            set_matrix_value(b, i, j, bv);
+            set_matrix_value(expected_sum, i, j, av + bv);
+            set_matrix_value(expected_diff, i, j, av - bv);
+        }
+    }
+
+    matrix *sum = a->add(a, b);
+    matrix *diff = a->subtract(a, b);
+
+    int passed = sum != NULL && diff != NULL &&
+                 compare_matrices(sum, expected_sum) &&
+                 compare_matrices(diff, expected_diff);
+    print_test_result(passed,
+                      "matrix add/subtract correct on large non-multiple-of-4 cols");
+
+    if (sum) { sum->free(sum); }
+    if (diff) { diff->free(diff); }
+    a->free(a);
+    b->free(b);
+    expected_sum->free(expected_sum);
+    expected_diff->free(expected_diff);
+}
+
 void test_matrix_subtract_dimension_mismatch(void) {
     matrix *m1 = create_matrix(2, 2);
     matrix *m2 = create_matrix(3, 2);
@@ -306,6 +343,7 @@ void run_all_tests(void) {
     test_vector_resize();
     test_matrix_add_dimension_mismatch();
     test_matrix_subtract_dimension_mismatch();
+    test_matrix_add_subtract_large();
     test_matrix_multiply_dimension_mismatch();
     test_strassen_small_square();
     test_strassen_identity();

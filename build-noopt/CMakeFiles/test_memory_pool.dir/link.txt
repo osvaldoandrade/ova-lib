@@ -1,0 +1,1 @@
+/usr/bin/cc -O0 -g -Wl,--dependency-file=CMakeFiles/test_memory_pool.dir/link.d CMakeFiles/test_memory_pool.dir/test/test_memory_pool.c.o CMakeFiles/test_memory_pool.dir/test/base_test.c.o -o bin/test_memory_pool  lib/libova_lib.a -lm

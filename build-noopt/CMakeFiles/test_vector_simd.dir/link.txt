@@ -1,0 +1,1 @@
+/usr/bin/cc -O0 -g -Wl,--dependency-file=CMakeFiles/test_vector_simd.dir/link.d CMakeFiles/test_vector_simd.dir/test/test_vector_simd.c.o CMakeFiles/test_vector_simd.dir/test/base_test.c.o -o bin/test_vector_simd  lib/libova_lib.a -lm

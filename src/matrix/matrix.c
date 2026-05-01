@@ -186,9 +186,21 @@ static matrix *matrix_add_method(matrix *self, const matrix *other) {
         return NULL;
     }
 
+    int cols = lhs->cols;
     for (int i = 0; i < lhs->rows; i++) {
-        for (int j = 0; j < lhs->cols; j++) {
-            out->data[i][j] = lhs->data[i][j] + rhs->data[i][j];
+        const double *a_row = lhs->data[i];
+        const double *b_row = rhs->data[i];
+        double *out_row = out->data[i];
+        int j = 0;
+#ifdef __AVX__
+        for (; j + 3 < cols; j += 4) {
+            __m256d va4 = _mm256_loadu_pd(&a_row[j]);
+            __m256d vb4 = _mm256_loadu_pd(&b_row[j]);
+            _mm256_storeu_pd(&out_row[j], _mm256_add_pd(va4, vb4));
+        }
+#endif
+        for (; j < cols; j++) {
+            out_row[j] = a_row[j] + b_row[j];
         }
     }
     return result;
@@ -212,9 +224,21 @@ static matrix *matrix_subtract_method(matrix *self, const matrix *other) {
         return NULL;
     }
 
+    int cols = lhs->cols;
     for (int i = 0; i < lhs->rows; i++) {
-        for (int j = 0; j < lhs->cols; j++) {
-            out->data[i][j] = lhs->data[i][j] - rhs->data[i][j];
+        const double *a_row = lhs->data[i];
+        const double *b_row = rhs->data[i];
+        double *out_row = out->data[i];
+        int j = 0;
+#ifdef __AVX__
+        for (; j + 3 < cols; j += 4) {
+            __m256d va4 = _mm256_loadu_pd(&a_row[j]);
+            __m256d vb4 = _mm256_loadu_pd(&b_row[j]);
+            _mm256_storeu_pd(&out_row[j], _mm256_sub_pd(va4, vb4));
+        }
+#endif
+        for (; j < cols; j++) {
+            out_row[j] = a_row[j] - b_row[j];
         }
     }
     return result;
