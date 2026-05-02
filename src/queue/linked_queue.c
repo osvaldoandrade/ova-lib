@@ -2,13 +2,46 @@
 
 #include <stdlib.h>
 
-static queue_entry *create_node(void *data) {
-    queue_entry *new_node = (queue_entry *)malloc(sizeof(queue_entry));
-    if (new_node) {
-        new_node->data = data;
-        new_node->next = NULL;
+#define LINKED_QUEUE_FREELIST_MAX 4096
+
+static queue_entry *acquire_node(queue_impl *impl, void *data) {
+    queue_entry *node = impl->freelist;
+    if (node) {
+        impl->freelist = node->next;
+        impl->freelist_size--;
+    } else {
+        node = (queue_entry *)malloc(sizeof(queue_entry));
+        if (!node) {
+            return NULL;
+        }
     }
-    return new_node;
+    node->data = data;
+    node->next = NULL;
+    return node;
+}
+
+static void release_node(queue_impl *impl, queue_entry *node) {
+    if (!node) {
+        return;
+    }
+    if (impl->freelist_size < LINKED_QUEUE_FREELIST_MAX) {
+        node->next = impl->freelist;
+        impl->freelist = node;
+        impl->freelist_size++;
+    } else {
+        free(node);
+    }
+}
+
+static void drain_freelist(queue_impl *impl) {
+    queue_entry *node = impl->freelist;
+    while (node) {
+        queue_entry *next = node->next;
+        free(node);
+        node = next;
+    }
+    impl->freelist = NULL;
+    impl->freelist_size = 0;
 }
 
 static ova_error_code linked_enqueue(queue *self, void *data) {
@@ -17,7 +50,7 @@ static ova_error_code linked_enqueue(queue *self, void *data) {
         return OVA_ERROR_INVALID_ARG;
     }
 
-    queue_entry *new_node = create_node(data);
+    queue_entry *new_node = acquire_node(impl, data);
     if (!new_node) {
         return OVA_ERROR_MEMORY;
     }
@@ -49,7 +82,7 @@ static void *linked_dequeue(queue *self) {
         impl->rear = NULL;
     }
 
-    free(temp);
+    release_node(impl, temp);
     impl->length--;
     return data;
 }
@@ -83,6 +116,11 @@ static void linked_free(queue *self) {
         (void)linked_dequeue(self);
     }
 
+    queue_impl *impl = queue_impl_from_queue(self);
+    if (impl) {
+        drain_freelist(impl);
+    }
+
     free(self->impl);
     self->impl = NULL;
     free(self);
@@ -108,6 +146,8 @@ queue *create_linked_queue(void) {
     impl->rear = NULL;
     impl->p_heap = NULL;
     impl->length = 0;
+    impl->freelist = NULL;
+    impl->freelist_size = 0;
 
     out->impl = impl;
     out->enqueue = linked_enqueue;

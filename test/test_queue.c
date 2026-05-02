@@ -85,6 +85,28 @@ void test_queue_enqueue_error_codes(void) {
     q->free(q);
 }
 
+void test_queue_node_recycle(void) {
+    queue *q = create_queue(QUEUE_TYPE_NORMAL, 0, NULL);
+    const int rounds = 8;
+    const int batch = 256;
+    int values[256];
+    for (int i = 0; i < batch; i++) values[i] = i;
+
+    int ok = 1;
+    for (int r = 0; r < rounds; r++) {
+        for (int i = 0; i < batch; i++) {
+            if (q->enqueue(q, &values[i]) != OVA_SUCCESS) { ok = 0; break; }
+        }
+        for (int i = 0; i < batch; i++) {
+            int *out = (int *)q->dequeue(q);
+            if (!out || *out != i) { ok = 0; break; }
+        }
+        if (!q->is_empty(q)) { ok = 0; break; }
+    }
+    print_test_result(ok, "Queue preserves FIFO order across repeated enqueue/dequeue cycles (freelist reuse)");
+    q->free(q);
+}
+
 void run_all_queue_tests(void) {
     test_queue_empty_initially();
     test_queue_dequeue_empty();
@@ -93,6 +115,7 @@ void run_all_queue_tests(void) {
     test_queue_high_volume();
     test_queue_with_string_data();
     test_queue_enqueue_error_codes();
+    test_queue_node_recycle();
 }
 
 int main(void) {
