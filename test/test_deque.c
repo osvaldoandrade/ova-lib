@@ -185,6 +185,31 @@ void test_deque_resize(void) {
     d->free(d);
 }
 
+void test_deque_resize_wrapped_buffer(void) {
+    /* Force the buffer to wrap before triggering a resize, and verify both
+       segments are copied to the new buffer in logical order. */
+    deque *d = create_deque(8);
+    static int values[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+
+    /* Push 4 to the back, then 4 to the front, so logical order is:
+       [3, 2, 1, 0, 4, 5, 6, 7] and the physical buffer wraps. */
+    for (int i = 4; i < 8; i++) d->push_back(d, &values[i]);
+    for (int i = 0; i < 4; i++) d->push_front(d, &values[i]);
+    print_test_result(d->size(d) == 8, "Wrapped deque should be full at size 8");
+
+    int extra = 99;
+    d->push_back(d, &extra); /* triggers resize on wrapped buffer */
+
+    int expected[9] = {3, 2, 1, 0, 4, 5, 6, 7, 99};
+    int ok = 1;
+    for (int i = 0; i < 9; i++) {
+        int *got = (int *)d->get(d, i);
+        if (!got || *got != expected[i]) { ok = 0; break; }
+    }
+    print_test_result(ok, "Wrapped deque should preserve logical order after resize");
+    d->free(d);
+}
+
 void test_deque_resize_with_front_operations(void) {
     deque *d = create_deque(4);
     int values[20];
@@ -409,6 +434,7 @@ void run_all_deque_tests(void) {
     test_deque_get();
     test_deque_random_access_after_operations();
     test_deque_resize();
+    test_deque_resize_wrapped_buffer();
     test_deque_resize_with_front_operations();
     test_deque_pop_empty();
     test_deque_peek_empty();
