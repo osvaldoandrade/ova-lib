@@ -32,9 +32,17 @@ static int deque_resize_impl(deque_impl *impl) {
         return -1;
     }
 
-    for (int i = 0; i < impl->size; i++) {
-        int physical_index = (impl->front + i) % impl->capacity;
-        new_buffer[i] = impl->buffer[physical_index];
+    if (impl->size > 0) {
+        int first = impl->capacity - impl->front;
+        if (first >= impl->size) {
+            memcpy(new_buffer, impl->buffer + impl->front,
+                   (size_t)impl->size * sizeof(void *));
+        } else {
+            memcpy(new_buffer, impl->buffer + impl->front,
+                   (size_t)first * sizeof(void *));
+            memcpy(new_buffer + first, impl->buffer,
+                   (size_t)(impl->size - first) * sizeof(void *));
+        }
     }
 
     free(impl->buffer);
