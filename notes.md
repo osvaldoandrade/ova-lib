@@ -26,9 +26,11 @@
 - DONE 2026-04-29: bloom_filter fused dual FNV-1a (PR #138 merged).
 - DONE 2026-04-30: skip_list xorshift + ctz + co-alloc forward (PR #140 merged).
 - DONE 2026-05-01: linked_queue node freelist (PR #143 merged).
-- DONE 2026-05-02: deque resize memcpy x2 (PR pending; this run; ~2.9–4.7× resize, ~1.9× grow).
-- TODO: hash_map resize_and_rehash recomputes hash each entry. API constraint: hash_func returns modded index. Would need API change. Defer / discuss.
-- TODO: graph_algorithms.c (1179 LOC) — Dijkstra/Tarjan hot loops (BFS/DFS now benefit from queue freelist).
+- DONE 2026-05-02: deque resize memcpy x2 (PR #147 open).
+- DONE 2026-05-03: dijkstra pq_node bump-arena (PR pending; this run; ~1.09–1.16×).
+- TODO: prim_push_edges allocates graph_weighted_edge per push — same arena idea.
+- TODO: hash_map resize_and_rehash recomputes hash each entry. API constraint: hash_func returns modded index. Defer / discuss.
+- TODO: graph_algorithms.c — Tarjan still recursive; bellman_ford untouched.
 - TODO: matrix.c (1005 LOC) — SIMD opportunities (test_vector_simd hints prior work).
 - TODO: Add proper benchmark harness (CTest perf labels or Google Benchmark) so CI can detect regressions.
 - TODO: array_list / sorted_list — capacity growth strategy and front-insert.
@@ -43,4 +45,5 @@
 - 2026-04-29 20:52 UTC: bloom_filter dual-hash PR #138 (16B 1.13–1.27×, 128B 1.59–1.65×).
 - 2026-04-30 20:52 UTC: skip_list RNG + co-alloc PR #140 (5k: 68–170×; 100k: >4000× vs degenerate baseline).
 - 2026-05-01 20:50 UTC: linked_queue freelist PR #143 (mixed 15.0→5.3 ms; merged).
-- 2026-05-02 20:49 UTC: deque resize two-memcpy PR (cap=1024 12.05→2.58 ms ~4.7×, cap=1M 54.6→18.7 ms ~2.9×).
+- 2026-05-02 20:49 UTC: deque resize two-memcpy PR #147 (cap=1024 12.05→2.58 ms ~4.7×, cap=1M 54.6→18.7 ms ~2.9×).
+- 2026-05-03 20:49 UTC: dijkstra pq_node bump-arena (V=2k deg=32 1.45→1.27 ms; V=5k deg=16 3.14→2.74 ms; ~1.09–1.16×).
