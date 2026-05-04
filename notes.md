@@ -12,38 +12,35 @@
 - C11 library, public API in `include/`, impls in `src/<module>/`.
 - No benchmark harness exists; ad-hoc bench programs go in `/tmp/gh-aw/agent/`.
 - CI: .github/workflows/main.yml — multi-arch build/test, ASan, Valgrind, coverage, cppcheck.
-- linked_list has cursor cache (cursor_node, cursor_index); get() picks closest of head/tail/cursor.
-- bloom_filter uses FNV-1a dual hashing; both seeds updated in single pass via fnv1a64_dual.
-- skip_list uses xorshift32 + __builtin_ctz for level selection; node + forward[] co-allocated.
-- linked_queue has a bounded per-queue freelist (cap 4096) — enqueue/dequeue reuse nodes.
-- queue_impl gained `freelist`, `freelist_size`; heap_queue uses calloc so its zero-init is fine.
-- deque resize uses two memcpys on the wrapped live range (one when contiguous).
-- IMPORTANT: glibc-style LCG (mul 1103515245 + 12345) low bit is period-2 — never use bit 0 alone for coin flips.
+- treats unused static functions as errors (-Wunused-function): clean up dead helpers.
+- linked_list has cursor cache; bloom_filter dual FNV-1a; skip_list xorshift+ctz+co-alloc.
+- linked_queue freelist (cap 4096); deque resize uses two memcpys.
+- Dijkstra and Prim both use bump-pointer arenas (pq_node / prim_cand) — same chunk shape.
+- IMPORTANT: glibc-style LCG (mul 1103515245 + 12345) low bit is period-2.
 
 ## Optimization backlog
-- DONE 2026-04-29: sort.c snapshot-buffer rewrite (PR #127 merged).
+- DONE 2026-04-29: sort.c snapshot-buffer (PR #127 merged).
 - DONE 2026-04-29: linked_list cursor cache (PR #136 merged).
 - DONE 2026-04-29: bloom_filter fused dual FNV-1a (PR #138 merged).
-- DONE 2026-04-30: skip_list xorshift + ctz + co-alloc forward (PR #140 merged).
+- DONE 2026-04-30: skip_list xorshift+ctz+co-alloc (PR #140 merged).
 - DONE 2026-05-01: linked_queue node freelist (PR #143 merged).
-- DONE 2026-05-02: deque resize memcpy x2 (PR #147 open).
-- DONE 2026-05-03: dijkstra pq_node bump-arena (PR pending; this run; ~1.09–1.16×).
-- TODO: prim_push_edges allocates graph_weighted_edge per push — same arena idea.
-- TODO: hash_map resize_and_rehash recomputes hash each entry. API constraint: hash_func returns modded index. Defer / discuss.
-- TODO: graph_algorithms.c — Tarjan still recursive; bellman_ford untouched.
-- TODO: matrix.c (1005 LOC) — SIMD opportunities (test_vector_simd hints prior work).
-- TODO: Add proper benchmark harness (CTest perf labels or Google Benchmark) so CI can detect regressions.
-- TODO: array_list / sorted_list — capacity growth strategy and front-insert.
-- TODO: hash_map / hash_set — measure load factor, collision rate; bernstein hash quality on integer keys.
+- DONE 2026-05-02: deque resize memcpy x2 (PR #147 OPEN — needs maintainer review).
+- DONE 2026-05-03: dijkstra pq_node bump-arena (PR #149 merged).
+- DONE 2026-05-04: Prim heap bump-arena candidates (this run — PR opened on perf-assist/prim-cand-arena).
+- TODO: hash_map resize_and_rehash recomputes hash per entry (API constraint; needs discussion).
+- TODO: graph_algorithms.c — Tarjan recursive; bellman_ford untouched.
+- TODO: matrix.c (1005 LOC) — SIMD opportunities.
+- TODO: benchmark harness (CTest perf labels or Google Benchmark).
+- TODO: array_list / sorted_list capacity growth + front-insert.
+- TODO: hash_map / hash_set load factor / bernstein hash on int keys.
 
 ## Activity issue
 - 2026-04 #137 closed by maintainer 2026-05-01.
-- 2026-05 monthly activity issue #144 (open).
+- 2026-05 #144 was closed by maintainer; new monthly activity issue created this run.
 
 ## Recent runs
-- 2026-04-29 14:10 UTC: linked_list cursor PR #136.
-- 2026-04-29 20:52 UTC: bloom_filter dual-hash PR #138 (16B 1.13–1.27×, 128B 1.59–1.65×).
-- 2026-04-30 20:52 UTC: skip_list RNG + co-alloc PR #140 (5k: 68–170×; 100k: >4000× vs degenerate baseline).
-- 2026-05-01 20:50 UTC: linked_queue freelist PR #143 (mixed 15.0→5.3 ms; merged).
-- 2026-05-02 20:49 UTC: deque resize two-memcpy PR #147 (cap=1024 12.05→2.58 ms ~4.7×, cap=1M 54.6→18.7 ms ~2.9×).
-- 2026-05-03 20:49 UTC: dijkstra pq_node bump-arena (V=2k deg=32 1.45→1.27 ms; V=5k deg=16 3.14→2.74 ms; ~1.09–1.16×).
+- 2026-04-30 20:52 UTC: skip_list RNG + co-alloc PR #140.
+- 2026-05-01 20:50 UTC: linked_queue freelist PR #143 (merged).
+- 2026-05-02 20:49 UTC: deque resize two-memcpy PR #147 (still open).
+- 2026-05-03 20:49 UTC: dijkstra pq_node bump-arena PR #149 (merged).
+- 2026-05-04 20:55 UTC: Prim bump-arena candidates: V=2k deg=16 6.35→2.52 (2.5×); V=2k deg=32 14.8→3.8 (3.9×); V=5k deg=16 21→7.4 (2.9×); V=500 deg=100 8.4→1.5 (5.6×); V=800 deg=50 ADJ_MATRIX 8.6→3.6 (2.4×).
