@@ -206,6 +206,50 @@ static int pq_node_cmp(const void *a, const void *b) {
     return 0;
 }
 
+typedef struct pq_arena_chunk {
+    struct pq_arena_chunk *next;
+    int used;
+    int capacity;
+    pq_node nodes[];
+} pq_arena_chunk;
+
+typedef struct {
+    pq_arena_chunk *head;
+    int next_capacity;
+} pq_arena;
+
+static void pq_arena_init(pq_arena *a, int initial_capacity) {
+    a->head = NULL;
+    a->next_capacity = initial_capacity > 16 ? initial_capacity : 16;
+}
+
+static pq_node *pq_arena_alloc(pq_arena *a) {
+    if (!a->head || a->head->used >= a->head->capacity) {
+        int cap = a->next_capacity;
+        pq_arena_chunk *c = (pq_arena_chunk *)malloc(
+            sizeof(pq_arena_chunk) + (size_t)cap * sizeof(pq_node));
+        if (!c) return NULL;
+        c->next = a->head;
+        c->used = 0;
+        c->capacity = cap;
+        a->head = c;
+        if (a->next_capacity < (1 << 20)) {
+            a->next_capacity = a->next_capacity * 2;
+        }
+    }
+    return &a->head->nodes[a->head->used++];
+}
+
+static void pq_arena_destroy(pq_arena *a) {
+    pq_arena_chunk *c = a->head;
+    while (c) {
+        pq_arena_chunk *next = c->next;
+        free(c);
+        c = next;
+    }
+    a->head = NULL;
+}
+
 int graph_dijkstra_impl(const graph_impl *g, int start_vertex, vector **out_dist) {
     if (out_dist) {
         *out_dist = NULL;
@@ -231,8 +275,12 @@ int graph_dijkstra_impl(const graph_impl *g, int start_vertex, vector **out_dist
         return 0;
     }
 
-    pq_node *start = (pq_node *)malloc(sizeof(pq_node));
+    pq_arena arena;
+    pq_arena_init(&arena, g->vertex_count > 0 ? g->vertex_count : 16);
+
+    pq_node *start = pq_arena_alloc(&arena);
     if (!start) {
+        pq_arena_destroy(&arena);
         pq->free(pq);
         dist->free(dist);
         return 0;
@@ -249,7 +297,6 @@ int graph_dijkstra_impl(const graph_impl *g, int start_vertex, vector **out_dist
 
         int v = cur->vertex;
         double d = cur->dist;
-        free(cur);
 
         if (d > dist_impl->data[v]) {
             continue;
@@ -266,7 +313,7 @@ int graph_dijkstra_impl(const graph_impl *g, int start_vertex, vector **out_dist
                 double nd = dist_impl->data[v] + e->weight;
                 if (nd < dist_impl->data[e->to]) {
                     dist_impl->data[e->to] = nd;
-                    pq_node *next = (pq_node *)malloc(sizeof(pq_node));
+                    pq_node *next = pq_arena_alloc(&arena);
                     if (!next) {
                         continue;
                     }
@@ -287,7 +334,7 @@ int graph_dijkstra_impl(const graph_impl *g, int start_vertex, vector **out_dist
                 double nd = dist_impl->data[v] + w;
                 if (nd < dist_impl->data[to]) {
                     dist_impl->data[to] = nd;
-                    pq_node *next = (pq_node *)malloc(sizeof(pq_node));
+                    pq_node *next = pq_arena_alloc(&arena);
                     if (!next) {
                         continue;
                     }
@@ -299,10 +346,8 @@ int graph_dijkstra_impl(const graph_impl *g, int start_vertex, vector **out_dist
         }
     }
 
-    while (pq->size(pq) > 0) {
-        free(pq->pop(pq));
-    }
     pq->free(pq);
+    pq_arena_destroy(&arena);
 
     *out_dist = dist;
     return 1;
