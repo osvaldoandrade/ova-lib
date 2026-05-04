@@ -551,21 +551,67 @@ matrix *graph_floyd_warshall_impl(const graph_impl *g) {
     return dist;
 }
 
-static int edge_min_heap_cmp(const void *a, const void *b) {
-    const graph_weighted_edge *ea = (const graph_weighted_edge *)a;
-    const graph_weighted_edge *eb = (const graph_weighted_edge *)b;
-    graph_weighted_edge_impl *lhs = graph_weighted_edge_impl_from_public(ea);
-    graph_weighted_edge_impl *rhs = graph_weighted_edge_impl_from_public(eb);
-    if (!lhs || !rhs) {
-        return 0;
-    }
-    if (lhs->weight < rhs->weight) return 1;
-    if (lhs->weight > rhs->weight) return -1;
+typedef struct {
+    int from;
+    int to;
+    double weight;
+} prim_cand;
+
+static int prim_cand_cmp(const void *a, const void *b) {
+    const prim_cand *pa = (const prim_cand *)a;
+    const prim_cand *pb = (const prim_cand *)b;
+    if (pa->weight < pb->weight) return 1;
+    if (pa->weight > pb->weight) return -1;
     return 0;
 }
 
-static void prim_push_edges(const graph_impl *g, int from, const bool *in_mst, heap *pq) {
-    if (!g || !pq || !in_mst) {
+typedef struct prim_arena_chunk {
+    struct prim_arena_chunk *next;
+    int used;
+    int capacity;
+    prim_cand nodes[];
+} prim_arena_chunk;
+
+typedef struct {
+    prim_arena_chunk *head;
+    int next_capacity;
+} prim_arena;
+
+static void prim_arena_init(prim_arena *a, int initial_capacity) {
+    a->head = NULL;
+    a->next_capacity = initial_capacity > 16 ? initial_capacity : 16;
+}
+
+static prim_cand *prim_arena_alloc(prim_arena *a) {
+    if (!a->head || a->head->used >= a->head->capacity) {
+        int cap = a->next_capacity;
+        prim_arena_chunk *c = (prim_arena_chunk *)malloc(
+            sizeof(prim_arena_chunk) + (size_t)cap * sizeof(prim_cand));
+        if (!c) return NULL;
+        c->next = a->head;
+        c->used = 0;
+        c->capacity = cap;
+        a->head = c;
+        if (a->next_capacity < (1 << 20)) {
+            a->next_capacity = a->next_capacity * 2;
+        }
+    }
+    return &a->head->nodes[a->head->used++];
+}
+
+static void prim_arena_destroy(prim_arena *a) {
+    prim_arena_chunk *c = a->head;
+    while (c) {
+        prim_arena_chunk *next = c->next;
+        free(c);
+        c = next;
+    }
+    a->head = NULL;
+}
+
+static void prim_push_edges(const graph_impl *g, int from, const bool *in_mst,
+                            heap *pq, prim_arena *arena) {
+    if (!g || !pq || !in_mst || !arena) {
         return;
     }
 
@@ -577,10 +623,14 @@ static void prim_push_edges(const graph_impl *g, int from, const bool *in_mst, h
             if (!e || !graph_is_valid_vertex(g, e->to) || in_mst[e->to]) {
                 continue;
             }
-            graph_weighted_edge *we = graph_create_weighted_edge(from, e->to, e->weight);
-            if (we) {
-                pq->put(pq, we);
+            prim_cand *c = prim_arena_alloc(arena);
+            if (!c) {
+                continue;
             }
+            c->from = from;
+            c->to = e->to;
+            c->weight = e->weight;
+            pq->put(pq, c);
         }
         return;
     }
@@ -593,10 +643,14 @@ static void prim_push_edges(const graph_impl *g, int from, const bool *in_mst, h
         if (w == GRAPH_NO_EDGE) {
             continue;
         }
-        graph_weighted_edge *we = graph_create_weighted_edge(from, to, w);
-        if (we) {
-            pq->put(pq, we);
+        prim_cand *c = prim_arena_alloc(arena);
+        if (!c) {
+            continue;
         }
+        c->from = from;
+        c->to = to;
+        c->weight = w;
+        pq->put(pq, c);
     }
 }
 
@@ -619,7 +673,7 @@ list *graph_mst_prim_impl(const graph_impl *g, int start_vertex) {
     }
 
     bool *in_mst = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
-    heap *pq = create_heap(BINARY_HEAP, g->vertex_count > 0 ? g->vertex_count : 4, edge_min_heap_cmp);
+    heap *pq = create_heap(BINARY_HEAP, g->vertex_count > 0 ? g->vertex_count : 4, prim_cand_cmp);
     if (!in_mst || !pq) {
         free(in_mst);
         if (pq) {
@@ -629,33 +683,32 @@ list *graph_mst_prim_impl(const graph_impl *g, int start_vertex) {
         return NULL;
     }
 
+    prim_arena arena;
+    prim_arena_init(&arena, g->vertex_count > 0 ? g->vertex_count : 16);
+
     in_mst[start] = true;
-    prim_push_edges(g, start, in_mst, pq);
+    prim_push_edges(g, start, in_mst, pq, &arena);
 
     while (pq->size(pq) > 0 && mst->size(mst) < g->vertex_count - 1) {
-        graph_weighted_edge *e = (graph_weighted_edge *)pq->pop(pq);
-        graph_weighted_edge_impl *edge = graph_weighted_edge_impl_from_public(e);
-        if (!e || !edge) {
+        prim_cand *c = (prim_cand *)pq->pop(pq);
+        if (!c) {
             break;
         }
-        if (in_mst[edge->to]) {
-            e->free(e);
+        if (in_mst[c->to]) {
             continue;
         }
 
-        mst->insert(mst, e, mst->size(mst));
-        in_mst[edge->to] = true;
-        prim_push_edges(g, edge->to, in_mst, pq);
-    }
-
-    while (pq->size(pq) > 0) {
-        graph_weighted_edge *e = (graph_weighted_edge *)pq->pop(pq);
-        if (e) {
-            e->free(e);
+        graph_weighted_edge *we = graph_create_weighted_edge(c->from, c->to, c->weight);
+        if (!we) {
+            break;
         }
+        mst->insert(mst, we, mst->size(mst));
+        in_mst[c->to] = true;
+        prim_push_edges(g, c->to, in_mst, pq, &arena);
     }
 
     pq->free(pq);
+    prim_arena_destroy(&arena);
     free(in_mst);
     return mst;
 }
