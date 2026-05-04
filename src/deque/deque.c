@@ -228,12 +228,19 @@ static deque *deque_clone_shallow_method(const deque *self) {
         return NULL;
     }
 
-    for (int i = 0; i < n; i++) {
-        int physical_index = (impl->front + i) % impl->capacity;
-        if (copy->push_back(copy, impl->buffer[physical_index]) != OVA_SUCCESS) {
-            copy->free(copy);
-            return NULL;
+    if (n > 0) {
+        deque_impl *copy_impl = deque_impl_from_self(copy);
+        int head_count = impl->capacity - impl->front;
+        if (head_count >= n) {
+            memcpy(copy_impl->buffer, impl->buffer + impl->front,
+                   (size_t)n * sizeof(void *));
+        } else {
+            memcpy(copy_impl->buffer, impl->buffer + impl->front,
+                   (size_t)head_count * sizeof(void *));
+            memcpy(copy_impl->buffer + head_count, impl->buffer,
+                   (size_t)(n - head_count) * sizeof(void *));
         }
+        copy_impl->size = n;
     }
     copy->user_data = self->user_data;
     return copy;
