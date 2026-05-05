@@ -11,6 +11,8 @@ typedef struct map_entry {
     struct map_entry *next;
 } map_entry;
 
+#define MAP_ENTRY_FREELIST_CAP 65536
+
 typedef struct map_impl {
     map_type type;
     map_entry **buckets;
@@ -19,6 +21,8 @@ typedef struct map_impl {
     int (*hash_func)(void *key, int capacity);
     comparator key_compare;
     pthread_mutex_t *lock;
+    map_entry *free_head;
+    int free_count;
 } map_impl;
 
 static inline map_impl *map_impl_from_map(const map *m) {
