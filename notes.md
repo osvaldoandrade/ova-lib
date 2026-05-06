@@ -17,8 +17,9 @@
 - linked_queue freelist (cap 4096); deque resize uses two memcpys.
 - Dijkstra and Prim both use bump-pointer arenas (pq_node / prim_cand) — same chunk shape.
 - hash_map: per-map map_entry freelist (cap 65536) — recycles on remove/clear, drains on free.
+- bellman_ford: SPFA-style active/next_active bitmaps; only iterate vertices whose dist changed last pass; full final pass for negative-cycle detection unchanged.
 - IMPORTANT: glibc-style LCG (mul 1103515245 + 12345) low bit is period-2.
-- map_impl in src/map/map_internal.h; bernstein/fnv1a/xor/rotational/additive hash in src/map/map.c.
+- map_impl in src/map/map_internal.h.
 
 ## Optimization backlog
 - DONE 2026-04-29: sort.c snapshot-buffer (PR #127 merged).
@@ -26,16 +27,17 @@
 - DONE 2026-04-29: bloom_filter fused dual FNV-1a (PR #138 merged).
 - DONE 2026-04-30: skip_list xorshift+ctz+co-alloc (PR #140 merged).
 - DONE 2026-05-01: linked_queue node freelist (PR #143 merged).
-- DONE 2026-05-02: deque resize memcpy x2 (PR #147 OPEN — needs maintainer review).
+- DONE 2026-05-02: deque resize memcpy x2 (PR #147 OPEN).
 - DONE 2026-05-03: dijkstra pq_node bump-arena (PR #149 merged).
 - DONE 2026-05-04: Prim heap bump-arena (PR #152 merged).
-- DONE 2026-05-05: hash_map map_entry freelist (this run — PR opened on perf-assist/hash-map-entry-freelist).
-- TODO: hash_map resize_and_rehash recomputes hash per entry (API constraint; needs discussion).
-- TODO: graph_algorithms.c — Tarjan recursive; bellman_ford untouched.
+- DONE 2026-05-05: hash_map map_entry freelist (PR #156 OPEN).
+- DONE 2026-05-06: bellman_ford SPFA-style active-set (PR opened on perf-assist/bellman-ford-active-set).
+- TODO: hash_map resize_and_rehash recomputes hash per entry (API constraint).
+- TODO: Tarjan SCC still recursive; convert to iterative.
 - TODO: matrix.c (1005 LOC) — SIMD opportunities.
 - TODO: benchmark harness (CTest perf labels or Google Benchmark).
-- TODO: array_list / sorted_list capacity growth + front-insert (front-insert needs API discussion).
-- TODO: hash_set could mirror map_entry freelist (uses map internally; check src/set/hash_set.c — likely already benefits via map).
+- TODO: array_list / sorted_list capacity growth + front-insert.
+- TODO: hash_set bench (likely already benefits via map).
 
 ## Activity issue
 - 2026-04 #137 closed by maintainer 2026-05-01.
@@ -43,9 +45,9 @@
 - 2026-05 #153 OPEN — current.
 
 ## Recent runs
-- 2026-04-30 20:52 UTC: skip_list RNG + co-alloc PR #140.
 - 2026-05-01 20:50 UTC: linked_queue freelist PR #143 (merged).
 - 2026-05-02 20:49 UTC: deque resize two-memcpy PR #147 (still open).
 - 2026-05-03 20:49 UTC: dijkstra pq_node bump-arena PR #149 (merged).
 - 2026-05-04 20:55 UTC: Prim bump-arena PR #152 (merged).
-- 2026-05-05 20:52 UTC: hash_map map_entry freelist PR opened. N=50k churn 5.85->4.00 (1.46x), clear+fill 14.25->7.96 (1.79x); N=100k churn 11.89->8.28 (1.44x), clear+fill 29.24->21.58 (1.36x); N=200k churn 25.19->19.81 (1.27x); N=500k churn 132->114 (1.16x). Pure insert unchanged.
+- 2026-05-05 20:52 UTC: hash_map map_entry freelist PR #156 (still open).
+- 2026-05-06 20:58 UTC: bellman_ford SPFA active-set PR opened. AdjList V=1k 1.32->0.71 ms (1.86x), V=10k 8.92->4.69 (1.90x); AdjMatrix V=1k 42->9.2 (4.6x), V=2k 131.5->27.5 (4.8x), V=5k 1696->283 (6.0x), V=10k 4670->759 (6.2x). Negative-cycle detection unchanged.
