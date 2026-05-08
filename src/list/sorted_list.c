@@ -1,4 +1,5 @@
 #include "sorted_list.h"
+#include "../utils/capacity_utils.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -66,7 +67,10 @@ static int ensure_capacity(sorted_list_impl *impl) {
         return 1; // Already has capacity
     }
 
-    int new_capacity = impl->capacity * 2;
+    int new_capacity = safe_double_capacity(impl->capacity);
+    if (new_capacity == impl->capacity) {
+        return 0; // Already at maximum capacity
+    }
     void **new_items = realloc(impl->items, sizeof(void *) * (size_t)new_capacity);
     if (new_items == NULL) {
         return 0; // Signal failure
