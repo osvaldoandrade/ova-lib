@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 static int graph_is_valid_vertex(const graph_impl *g, int v) {
     return g && v >= 0 && v < g->vertex_capacity && g->present && g->present[v];
@@ -373,39 +374,60 @@ int graph_bellman_ford_impl(const graph_impl *g, int start_vertex, vector **out_
     dist_impl->data[start_vertex] = 0.0;
 
     int V = g->vertex_count;
+    int V_cap = g->vertex_capacity;
+
+    // SPFA-style active-set: only iterate `from` vertices whose distance
+    // changed in the previous pass. The first pass starts with just
+    // start_vertex; subsequent passes swap the bitmaps.
+    char *active = (char *)calloc((size_t)V_cap, 1);
+    char *next_active = (char *)calloc((size_t)V_cap, 1);
+    if (!active || !next_active) {
+        free(active);
+        free(next_active);
+        dist->free(dist);
+        return 0;
+    }
+    active[start_vertex] = 1;
+
     for (int iter = 0; iter < V - 1; iter++) {
         int updated = 0;
-        for (int from = 0; from < g->vertex_capacity; from++) {
-            if (!graph_is_valid_vertex(g, from) || dist_impl->data[from] == GRAPH_NO_EDGE) {
+        memset(next_active, 0, (size_t)V_cap);
+        for (int from = 0; from < V_cap; from++) {
+            if (!active[from]) {
                 continue;
             }
 
             if (g->rep == GRAPH_ADJACENCY_LIST) {
                 list *adj = g->adj_lists ? g->adj_lists[from] : NULL;
                 int n = adj ? adj->size(adj) : 0;
+                double from_d = dist_impl->data[from];
                 for (int i = 0; i < n; i++) {
                     graph_edge *e = (graph_edge *)adj->get(adj, i);
                     if (!e || !graph_is_valid_vertex(g, e->to)) {
                         continue;
                     }
-                    double nd = dist_impl->data[from] + e->weight;
+                    double nd = from_d + e->weight;
                     if (nd < dist_impl->data[e->to]) {
                         dist_impl->data[e->to] = nd;
+                        next_active[e->to] = 1;
                         updated = 1;
                     }
                 }
             } else {
-                for (int to = 0; to < g->vertex_capacity; to++) {
+                double from_d = dist_impl->data[from];
+                const double *row = &g->adj_matrix[(size_t)from * (size_t)V_cap];
+                for (int to = 0; to < V_cap; to++) {
                     if (!graph_is_valid_vertex(g, to)) {
                         continue;
                     }
-                    double w = g->adj_matrix[from * g->vertex_capacity + to];
+                    double w = row[to];
                     if (w == GRAPH_NO_EDGE) {
                         continue;
                     }
-                    double nd = dist_impl->data[from] + w;
+                    double nd = from_d + w;
                     if (nd < dist_impl->data[to]) {
                         dist_impl->data[to] = nd;
+                        next_active[to] = 1;
                         updated = 1;
                     }
                 }
@@ -415,7 +437,13 @@ int graph_bellman_ford_impl(const graph_impl *g, int start_vertex, vector **out_
         if (!updated) {
             break;
         }
+        char *tmp = active;
+        active = next_active;
+        next_active = tmp;
     }
+
+    free(active);
+    free(next_active);
 
     for (int from = 0; from < g->vertex_capacity; from++) {
         if (!graph_is_valid_vertex(g, from) || dist_impl->data[from] == GRAPH_NO_EDGE) {
