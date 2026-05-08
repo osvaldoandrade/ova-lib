@@ -23,6 +23,8 @@ static void array_list_clear(list *self);
 
 static void array_list_free(list *self);
 
+static ova_error_code array_list_insert_bulk(list *self, void **elements, int count);
+
 list *create_array_list(int initial_capacity) {
     list *lst = malloc(sizeof(list));
     array_list_impl *impl = malloc(sizeof(array_list_impl));
@@ -34,6 +36,7 @@ list *create_array_list(int initial_capacity) {
 
         lst->impl = impl;
         lst->insert = array_list_insert;
+        lst->insert_bulk = array_list_insert_bulk;
         lst->get = array_list_get;
         lst->remove = array_list_remove;
         lst->size = array_list_size;
@@ -123,6 +126,41 @@ static void array_list_free(list *self) {
         }
         free(self);
     }
+}
+
+static ova_error_code array_list_insert_bulk(list *self, void **elements, int count) {
+    if (!self || !elements || count <= 0) {
+        return OVA_ERROR_INVALID_ARG;
+    }
+
+    array_list_impl *impl = (array_list_impl *) self->impl;
+
+    int required = impl->size + count;
+    if (required < impl->size) {
+        return OVA_ERROR_MEMORY;
+    }
+
+    if (required > impl->capacity) {
+        int new_cap = impl->capacity;
+        while (new_cap < required) {
+            int doubled = safe_double_capacity(new_cap);
+            if (doubled == new_cap) break;
+            new_cap = doubled;
+        }
+        if (new_cap < required) {
+            return OVA_ERROR_MEMORY;
+        }
+        void **new_items = realloc(impl->items, (size_t)new_cap * sizeof(void *));
+        if (!new_items) {
+            return OVA_ERROR_MEMORY;
+        }
+        impl->items = new_items;
+        impl->capacity = new_cap;
+    }
+
+    memcpy(&impl->items[impl->size], elements, (size_t)count * sizeof(void *));
+    impl->size = required;
+    return OVA_SUCCESS;
 }
 
 size_t array_list_active_buffer_count(void) {

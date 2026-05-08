@@ -42,7 +42,9 @@ list *create_list(ListType type, int initial_capacity, comparator cmp) {
     if (out) {
         out->_type = type;
         out->_cmp = cmp;
-        out->insert_bulk = list_insert_bulk_impl;
+        if (!out->insert_bulk) {
+            out->insert_bulk = list_insert_bulk_impl;
+        }
         out->clone_shallow = list_clone_shallow_impl;
         out->clone_deep = list_clone_deep_impl;
     }
