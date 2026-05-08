@@ -136,8 +136,8 @@ static ova_error_code array_list_insert_bulk(list *self, void **elements, int co
     array_list_impl *impl = (array_list_impl *) self->impl;
 
     int required = impl->size + count;
-    if (required < impl->size) {
-        return OVA_ERROR_MEMORY;
+    if (required < impl->size) { /* integer overflow */
+        return OVA_ERROR_INVALID_ARG;
     }
 
     if (required > impl->capacity) {
