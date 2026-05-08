@@ -56,6 +56,37 @@ static void resize_and_rehash(map_impl *impl) {
     impl->capacity = new_capacity;
 }
 
+static map_entry *map_entry_acquire(map_impl *impl) {
+    if (impl->free_head) {
+        map_entry *node = impl->free_head;
+        impl->free_head = node->next;
+        impl->free_count--;
+        return node;
+    }
+    return (map_entry *)malloc(sizeof(map_entry));
+}
+
+static void map_entry_release(map_impl *impl, map_entry *node) {
+    if (impl->free_count < MAP_ENTRY_FREELIST_CAP) {
+        node->next = impl->free_head;
+        impl->free_head = node;
+        impl->free_count++;
+    } else {
+        free(node);
+    }
+}
+
+static void map_entry_freelist_drain(map_impl *impl) {
+    map_entry *node = impl->free_head;
+    while (node) {
+        map_entry *next = node->next;
+        free(node);
+        node = next;
+    }
+    impl->free_head = NULL;
+    impl->free_count = 0;
+}
+
 static ova_error_code hash_insert(map *self, void *key, void *data) {
     map_impl *impl = map_impl_from_map(self);
     if (!impl) {
@@ -83,7 +114,7 @@ static ova_error_code hash_insert(map *self, void *key, void *data) {
         node = node->next;
     }
 
-    map_entry *new_node = (map_entry *)malloc(sizeof(map_entry));
+    map_entry *new_node = map_entry_acquire(impl);
     if (!new_node) {
         if (impl->lock) {
             pthread_mutex_unlock(impl->lock);
@@ -166,7 +197,7 @@ static void *hash_remove(map *self, void *key) {
             } else {
                 prev->next = current->next;
             }
-            free(current);
+            map_entry_release(impl, current);
             impl->size--;
 
             if (impl->lock) {
@@ -213,7 +244,7 @@ static void hash_clear(map *self) {
         while (node) {
             map_entry *tmp = node;
             node = node->next;
-            free(tmp);
+            map_entry_release(impl, tmp);
         }
         impl->buckets[i] = NULL;
     }
@@ -244,6 +275,8 @@ static void hash_free(map *self) {
             }
         }
         free(impl->buckets);
+
+        map_entry_freelist_drain(impl);
 
         if (impl->lock) {
             pthread_mutex_unlock(impl->lock);
