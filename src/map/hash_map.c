@@ -138,6 +138,22 @@ static ova_error_code hash_put_bulk(map *self, void **keys, void **values, int c
         return OVA_ERROR_INVALID_ARG;
     }
 
+    map_impl *impl = map_impl_from_map(self);
+    if (impl) {
+        int required = impl->size + count;
+        if (impl->lock) {
+            pthread_mutex_lock(impl->lock);
+        }
+        while (required > impl->capacity - impl->capacity / 4) {
+            int old_cap = impl->capacity;
+            resize_and_rehash(impl);
+            if (impl->capacity == old_cap) break;
+        }
+        if (impl->lock) {
+            pthread_mutex_unlock(impl->lock);
+        }
+    }
+
     for (int i = 0; i < count; i++) {
         ova_error_code err = self->put(self, keys[i], values[i]);
         if (err != OVA_SUCCESS) {

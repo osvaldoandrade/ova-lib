@@ -45,9 +45,7 @@ static void **list_snapshot(list *lst, int *out_size) {
  */
 static void list_replace_with(list *lst, void **arr, int n) {
     lst->clear(lst);
-    for (int i = 0; i < n; i++) {
-        lst->insert(lst, arr[i], i);
-    }
+    lst->insert_bulk(lst, arr, n);
 }
 
 /**
@@ -79,6 +77,25 @@ static inline void buffer_swap(void **arr, int i, int j) {
     void *t = arr[i];
     arr[i] = arr[j];
     arr[j] = t;
+}
+
+/**
+ * @brief Insertion sort on a small sub-range of a pointer buffer.
+ *
+ * For ranges smaller than ~16 elements insertion sort outperforms
+ * partitioning-based algorithms due to lower constant overhead and
+ * better cache locality.
+ */
+static void buffer_insertion_sort(void **arr, int low, int high, comparator cmp) {
+    for (int i = low + 1; i <= high; i++) {
+        void *key = arr[i];
+        int j = i - 1;
+        while (j >= low && cmp(arr[j], key) > 0) {
+            arr[j + 1] = arr[j];
+            j--;
+        }
+        arr[j + 1] = key;
+    }
 }
 
 /**
@@ -137,6 +154,12 @@ static void sorter_quick(sorter *self, list *lst) {
     while (top > 0) {
         int high = stack[--top];
         int low = stack[--top];
+
+        if (high - low < 16) {
+            buffer_insertion_sort(arr, low, high, impl->cmp);
+            continue;
+        }
+
         int pi = buffer_partition(arr, low, high, impl->cmp);
 
         if (pi - 1 > low) {
