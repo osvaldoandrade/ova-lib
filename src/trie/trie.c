@@ -63,6 +63,9 @@ static trie_node *sso_expand(trie_node *node) {
 
     char suffix[TRIE_SSO_MAX + 1];
     unsigned char len = node->sso_len;
+    if (len > TRIE_SSO_MAX) {
+        return NULL;
+    }
     memcpy(suffix, node->sso_suffix, len);
     suffix[len] = '\0';
     bool end = node->is_end;
@@ -155,7 +158,7 @@ static ova_error_code trie_insert_method(trie *self, const char *word, void *val
     if (depth + 2 <= TRIE_PATH_STACK_SIZE) {
         path = path_stack;
     } else {
-        path = (trie_node **)malloc((depth + 2) * sizeof(trie_node *));
+        path = (trie_node **)calloc(depth + 2, sizeof(trie_node *));
         if (!path) {
             return OVA_ERROR_MEMORY;
         }
