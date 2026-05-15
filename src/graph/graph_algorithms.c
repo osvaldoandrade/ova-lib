@@ -39,22 +39,23 @@ list *graph_bfs_impl(const graph_impl *g, int start_vertex) {
         return order;
     }
 
-    bool *visited = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
-    queue *q = create_queue(QUEUE_TYPE_NORMAL, 0, NULL);
+    const int cap = g->vertex_capacity;
+    bool *visited = (bool *)calloc((size_t)cap, sizeof(bool));
+    int *q = (int *)malloc((size_t)cap * sizeof(int));
     if (!visited || !q) {
         free(visited);
-        if (q) {
-            q->free(q);
-        }
+        free(q);
         order->free(order);
         return NULL;
     }
 
+    const bool *present = g->present;
+    int qhead = 0, qtail = 0;
     visited[start_vertex] = true;
-    q->enqueue(q, (void *)(intptr_t)start_vertex);
+    q[qtail++] = start_vertex;
 
-    while (!q->is_empty(q)) {
-        int v = (int)(intptr_t)q->dequeue(q);
+    while (qhead < qtail) {
+        int v = q[qhead++];
         order->insert(order, g->vertex_ptrs[v], order->size(order));
 
         if (g->rep == GRAPH_ADJACENCY_LIST) {
@@ -62,27 +63,32 @@ list *graph_bfs_impl(const graph_impl *g, int start_vertex) {
             int n = adj ? adj->size(adj) : 0;
             for (int i = 0; i < n; i++) {
                 graph_edge *e = (graph_edge *)adj->get(adj, i);
-                if (!e || !graph_is_valid_vertex(g, e->to) || visited[e->to]) {
+                if (!e) {
                     continue;
                 }
-                visited[e->to] = true;
-                q->enqueue(q, (void *)(intptr_t)e->to);
-            }
-        } else {
-            for (int to = 0; to < g->vertex_capacity; to++) {
-                if (!graph_is_valid_vertex(g, to) || visited[to]) {
-                    continue;
-                }
-                if (g->adj_matrix[v * g->vertex_capacity + to] == GRAPH_NO_EDGE) {
+                int to = e->to;
+                if ((unsigned)to >= (unsigned)cap || !present[to] || visited[to]) {
                     continue;
                 }
                 visited[to] = true;
-                q->enqueue(q, (void *)(intptr_t)to);
+                q[qtail++] = to;
+            }
+        } else {
+            const double *row = g->adj_matrix + (size_t)v * (size_t)cap;
+            for (int to = 0; to < cap; to++) {
+                if (!present[to] || visited[to]) {
+                    continue;
+                }
+                if (row[to] == GRAPH_NO_EDGE) {
+                    continue;
+                }
+                visited[to] = true;
+                q[qtail++] = to;
             }
         }
     }
 
-    q->free(q);
+    free(q);
     free(visited);
     return order;
 }
@@ -97,21 +103,28 @@ list *graph_dfs_iterative_impl(const graph_impl *g, int start_vertex) {
         return order;
     }
 
-    bool *visited = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
-    stack *st = create_stack(ARRAY_STACK);
+    const int cap = g->vertex_capacity;
+    /*
+     * The stack can hold at most one entry per outgoing edge across the entire
+     * traversal. For dense matrix graphs that bound is cap*cap, but in practice
+     * we cap-grow on demand; start at cap and double as needed.
+     */
+    bool *visited = (bool *)calloc((size_t)cap, sizeof(bool));
+    int st_cap = cap > 0 ? cap : 1;
+    int *st = (int *)malloc((size_t)st_cap * sizeof(int));
     if (!visited || !st) {
         free(visited);
-        if (st) {
-            st->free(st);
-        }
+        free(st);
         order->free(order);
         return NULL;
     }
 
-    st->push(st, (void *)(intptr_t)start_vertex);
+    const bool *present = g->present;
+    int top = 0;
+    st[top++] = start_vertex;
 
-    while (!st->is_empty(st)) {
-        int v = (int)(intptr_t)st->pop(st);
+    while (top > 0) {
+        int v = st[--top];
         if (visited[v]) {
             continue;
         }
@@ -121,27 +134,50 @@ list *graph_dfs_iterative_impl(const graph_impl *g, int start_vertex) {
         if (g->rep == GRAPH_ADJACENCY_LIST) {
             list *adj = g->adj_lists ? g->adj_lists[v] : NULL;
             int n = adj ? adj->size(adj) : 0;
+            if (top + n > st_cap) {
+                int new_cap = st_cap;
+                while (top + n > new_cap) new_cap *= 2;
+                int *ns = (int *)realloc(st, (size_t)new_cap * sizeof(int));
+                if (!ns) {
+                    free(st); free(visited); order->free(order); return NULL;
+                }
+                st = ns; st_cap = new_cap;
+            }
             for (int i = n - 1; i >= 0; i--) {
                 graph_edge *e = (graph_edge *)adj->get(adj, i);
-                if (!e || !graph_is_valid_vertex(g, e->to) || visited[e->to]) {
+                if (!e) {
                     continue;
                 }
-                st->push(st, (void *)(intptr_t)e->to);
+                int to = e->to;
+                if ((unsigned)to >= (unsigned)cap || !present[to] || visited[to]) {
+                    continue;
+                }
+                st[top++] = to;
             }
         } else {
-            for (int to = g->vertex_capacity - 1; to >= 0; to--) {
-                if (!graph_is_valid_vertex(g, to) || visited[to]) {
+            if (top + cap > st_cap) {
+                int new_cap = st_cap;
+                while (top + cap > new_cap) new_cap *= 2;
+                int *ns = (int *)realloc(st, (size_t)new_cap * sizeof(int));
+                if (!ns) {
+                    free(st); free(visited); order->free(order); return NULL;
+                }
+                st = ns; st_cap = new_cap;
+            }
+            const double *row = g->adj_matrix + (size_t)v * (size_t)cap;
+            for (int to = cap - 1; to >= 0; to--) {
+                if (!present[to] || visited[to]) {
                     continue;
                 }
-                if (g->adj_matrix[v * g->vertex_capacity + to] == GRAPH_NO_EDGE) {
+                if (row[to] == GRAPH_NO_EDGE) {
                     continue;
                 }
-                st->push(st, (void *)(intptr_t)to);
+                st[top++] = to;
             }
         }
     }
 
-    st->free(st);
+    free(st);
     free(visited);
     return order;
 }
@@ -909,19 +945,19 @@ list *graph_connected_components_impl(const graph_impl *g) {
         return NULL;
     }
 
-    bool *visited = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
-    queue *q = create_queue(QUEUE_TYPE_NORMAL, 0, NULL);
+    const int cap = g->vertex_capacity;
+    bool *visited = (bool *)calloc((size_t)cap, sizeof(bool));
+    int *q = (int *)malloc((size_t)cap * sizeof(int));
     if (!visited || !q) {
         free(visited);
-        if (q) {
-            q->free(q);
-        }
+        free(q);
         components->free(components);
         return NULL;
     }
 
-    for (int start = 0; start < g->vertex_capacity; start++) {
-        if (!graph_is_valid_vertex(g, start) || visited[start]) {
+    const bool *present = g->present;
+    for (int start = 0; start < cap; start++) {
+        if (!present[start] || visited[start]) {
             continue;
         }
 
@@ -930,11 +966,12 @@ list *graph_connected_components_impl(const graph_impl *g) {
             continue;
         }
 
+        int qhead = 0, qtail = 0;
         visited[start] = true;
-        q->enqueue(q, (void *)(intptr_t)start);
+        q[qtail++] = start;
 
-        while (!q->is_empty(q)) {
-            int v = (int)(intptr_t)q->dequeue(q);
+        while (qhead < qtail) {
+            int v = q[qhead++];
             comp->insert(comp, g->vertex_ptrs[v], comp->size(comp));
 
             if (g->rep == GRAPH_ADJACENCY_LIST) {
@@ -942,22 +979,27 @@ list *graph_connected_components_impl(const graph_impl *g) {
                 int n = adj ? adj->size(adj) : 0;
                 for (int i = 0; i < n; i++) {
                     graph_edge *e = (graph_edge *)adj->get(adj, i);
-                    if (!e || !graph_is_valid_vertex(g, e->to) || visited[e->to]) {
+                    if (!e) {
                         continue;
                     }
-                    visited[e->to] = true;
-                    q->enqueue(q, (void *)(intptr_t)e->to);
-                }
-            } else {
-                for (int to = 0; to < g->vertex_capacity; to++) {
-                    if (!graph_is_valid_vertex(g, to) || visited[to]) {
-                        continue;
-                    }
-                    if (g->adj_matrix[v * g->vertex_capacity + to] == GRAPH_NO_EDGE) {
+                    int to = e->to;
+                    if ((unsigned)to >= (unsigned)cap || !present[to] || visited[to]) {
                         continue;
                     }
                     visited[to] = true;
-                    q->enqueue(q, (void *)(intptr_t)to);
+                    q[qtail++] = to;
+                }
+            } else {
+                const double *row = g->adj_matrix + (size_t)v * (size_t)cap;
+                for (int to = 0; to < cap; to++) {
+                    if (!present[to] || visited[to]) {
+                        continue;
+                    }
+                    if (row[to] == GRAPH_NO_EDGE) {
+                        continue;
+                    }
+                    visited[to] = true;
+                    q[qtail++] = to;
                 }
             }
         }
@@ -965,7 +1007,7 @@ list *graph_connected_components_impl(const graph_impl *g) {
         components->insert(components, comp, components->size(components));
     }
 
-    q->free(q);
+    free(q);
     free(visited);
     return components;
 }
