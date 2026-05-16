@@ -21,6 +21,8 @@
 ## Optimization backlog
 - DONE 2026-04..05: sort snapshot, linked_list cursor, bloom dual-FNV, skip_list co-alloc, linked_queue freelist, deque memcpy, Dijkstra arena, Prim arena, hash_map freelist, bellman_ford SPFA — all merged.
 - DONE 2026-05-14: Tarjan SCC iterative explicit-stack DFS (PR opened on perf-assist/tarjan-iterative).
+- DONE 2026-05-15: BFS/DFSi/CC raw int[] queue+stack (PR opened on perf-assist/graph-bfs-dfs-array).
+- DONE 2026-05-16: topological_sort int[] ring (PR opened on perf-assist/topo-sort-array).
 - TODO: hash_map resize_and_rehash recomputes hash per entry (API constraint).
 - TODO: matrix.c (1005 LOC) — SIMD opportunities.
 - TODO: benchmark harness (CTest perf labels or Google Benchmark).
@@ -40,3 +42,4 @@
 - 2026-05-08: maintainer merged #147, #156, #158 and closed #153.
 - 2026-05-14 19:14 UTC: Tarjan SCC iterative explicit-stack DFS PR opened (perf-assist/tarjan-iterative). Chain list N=10k 0.77->0.59 (1.30x), N=50k 4.91->2.96 (1.66x); chain matrix N=2k 6.39->5.56 (1.15x), N=4k 24.98->22.22 (1.12x). Random sparse list N=50k 22.87->17.55 (1.30x), matrix N=2k 8.21->5.80 (1.41x). Stress: 1M-vertex chain ~63 ms (recursive baseline overflows 8 MB stack). 29/29 ctest pass; ASan-clean. Reopened monthly activity issue.
 - 2026-05-15 19:08 UTC: BFS/DFSi/CC raw int[] queue+stack PR opened (perf-assist/graph-bfs-dfs-array). DFSi chain list 50k 1.301->0.654 (1.99x); BFS random list 50k d=4 9.02->5.30 (1.70x); DFSi random list 50k d=4 12.33->7.81 (1.58x); CC undirect list 50k d=4 18.74->12.36 (1.52x); BFS chain matrix 2k 4.99->3.44 (1.45x). 29/29 ctest pass; ASan-clean. Updated activity issue #173.
+- 2026-05-16 18:57 UTC: topological_sort int[] ring PR opened (perf-assist/topo-sort-array). chain list 50k 1.250->0.885 (1.41x); chain list 200k 6.395->5.320 (1.20x); chain matrix 2k 9.186->6.646 (1.38x); dag list 200k d=4 29.02->24.42 (1.19x); dag matrix 2k d=4 9.38->7.14 (1.31x). 29/29 ctest pass; ASan-clean.
