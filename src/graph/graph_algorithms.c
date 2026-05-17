@@ -1183,123 +1183,199 @@ list *graph_topological_sort_impl(const graph_impl *g) {
     return order;
 }
 
-static bool has_cycle_directed_dfs(const graph_impl *g, int v, unsigned char *color) {
-    color[v] = 1;
+typedef struct cycle_frame {
+    int v;
+    int parent; /* only used for undirected; -1 for directed */
+    int i;
+    int n;
+} cycle_frame;
 
-    if (g->rep == GRAPH_ADJACENCY_LIST) {
-        list *adj = g->adj_lists ? g->adj_lists[v] : NULL;
-        int n = adj ? adj->size(adj) : 0;
-        for (int i = 0; i < n; i++) {
-            graph_edge *e = (graph_edge *)adj->get(adj, i);
-            if (!e || !graph_is_valid_vertex(g, e->to)) {
-                continue;
-            }
-            int to = e->to;
-            if (color[to] == 1) {
-                return true;
-            }
-            if (color[to] == 0 && has_cycle_directed_dfs(g, to, color)) {
-                return true;
-            }
-        }
-    } else {
-        for (int to = 0; to < g->vertex_capacity; to++) {
-            if (!graph_is_valid_vertex(g, to)) {
-                continue;
-            }
-            if (g->adj_matrix[v * g->vertex_capacity + to] == GRAPH_NO_EDGE) {
-                continue;
-            }
-            if (color[to] == 1) {
-                return true;
-            }
-            if (color[to] == 0 && has_cycle_directed_dfs(g, to, color)) {
-                return true;
-            }
-        }
+static bool has_cycle_directed_iter(const graph_impl *g, int start, unsigned char *color, cycle_frame *stk) {
+    const int cap = g->vertex_capacity;
+    const bool *present = g->present;
+    list **const adj_lists = g->adj_lists;
+    const double *const adj_matrix = g->adj_matrix;
+    const int is_list = (g->rep == GRAPH_ADJACENCY_LIST);
+
+    int top = 0;
+    color[start] = 1;
+    {
+        list *adj = (is_list && adj_lists) ? adj_lists[start] : NULL;
+        int n = is_list ? (adj ? adj->size(adj) : 0) : cap;
+        stk[top++] = (cycle_frame){ start, -1, 0, n };
     }
 
-    color[v] = 2;
+    while (top > 0) {
+        cycle_frame *fr = &stk[top - 1];
+        int v = fr->v;
+        int i = fr->i;
+        int n = fr->n;
+        bool descended = false;
+
+        if (is_list) {
+            list *adj = adj_lists ? adj_lists[v] : NULL;
+            for (; i < n; i++) {
+                graph_edge *e = (graph_edge *)adj->get(adj, i);
+                if (!e) continue;
+                int t = e->to;
+                if ((unsigned)t >= (unsigned)cap || !present[t]) continue;
+                unsigned char ct = color[t];
+                if (ct == 1) {
+                    return true;
+                }
+                if (ct == 0) {
+                    color[t] = 1;
+                    fr->i = i + 1;
+                    list *adj2 = adj_lists ? adj_lists[t] : NULL;
+                    int n2 = adj2 ? adj2->size(adj2) : 0;
+                    stk[top++] = (cycle_frame){ t, -1, 0, n2 };
+                    descended = true;
+                    break;
+                }
+            }
+        } else {
+            const double *row = adj_matrix + (size_t)v * (size_t)cap;
+            for (; i < n; i++) {
+                if (!present[i]) continue;
+                if (row[i] == GRAPH_NO_EDGE) continue;
+                int t = i;
+                unsigned char ct = color[t];
+                if (ct == 1) {
+                    return true;
+                }
+                if (ct == 0) {
+                    color[t] = 1;
+                    fr->i = i + 1;
+                    stk[top++] = (cycle_frame){ t, -1, 0, cap };
+                    descended = true;
+                    break;
+                }
+            }
+        }
+
+        if (!descended) {
+            color[v] = 2;
+            top--;
+        }
+    }
     return false;
 }
 
-static bool has_cycle_undirected_dfs(const graph_impl *g, int v, int parent, bool *visited) {
-    visited[v] = true;
+static bool has_cycle_undirected_iter(const graph_impl *g, int start, bool *visited, cycle_frame *stk) {
+    const int cap = g->vertex_capacity;
+    const bool *present = g->present;
+    list **const adj_lists = g->adj_lists;
+    const double *const adj_matrix = g->adj_matrix;
+    const int is_list = (g->rep == GRAPH_ADJACENCY_LIST);
 
-    if (g->rep == GRAPH_ADJACENCY_LIST) {
-        list *adj = g->adj_lists ? g->adj_lists[v] : NULL;
-        int n = adj ? adj->size(adj) : 0;
-        for (int i = 0; i < n; i++) {
-            graph_edge *e = (graph_edge *)adj->get(adj, i);
-            if (!e || !graph_is_valid_vertex(g, e->to)) {
-                continue;
-            }
-            int to = e->to;
-            if (!visited[to]) {
-                if (has_cycle_undirected_dfs(g, to, v, visited)) {
-                    return true;
-                }
-            } else if (to != parent) {
-                return true;
-            }
-        }
-    } else {
-        for (int to = 0; to < g->vertex_capacity; to++) {
-            if (!graph_is_valid_vertex(g, to)) {
-                continue;
-            }
-            if (g->adj_matrix[v * g->vertex_capacity + to] == GRAPH_NO_EDGE) {
-                continue;
-            }
-            if (!visited[to]) {
-                if (has_cycle_undirected_dfs(g, to, v, visited)) {
-                    return true;
-                }
-            } else if (to != parent) {
-                return true;
-            }
-        }
+    int top = 0;
+    visited[start] = true;
+    {
+        list *adj = (is_list && adj_lists) ? adj_lists[start] : NULL;
+        int n = is_list ? (adj ? adj->size(adj) : 0) : cap;
+        stk[top++] = (cycle_frame){ start, -1, 0, n };
     }
 
+    while (top > 0) {
+        cycle_frame *fr = &stk[top - 1];
+        int v = fr->v;
+        int parent = fr->parent;
+        int i = fr->i;
+        int n = fr->n;
+        bool descended = false;
+
+        if (is_list) {
+            list *adj = adj_lists ? adj_lists[v] : NULL;
+            for (; i < n; i++) {
+                graph_edge *e = (graph_edge *)adj->get(adj, i);
+                if (!e) continue;
+                int t = e->to;
+                if ((unsigned)t >= (unsigned)cap || !present[t]) continue;
+                if (!visited[t]) {
+                    visited[t] = true;
+                    fr->i = i + 1;
+                    list *adj2 = adj_lists ? adj_lists[t] : NULL;
+                    int n2 = adj2 ? adj2->size(adj2) : 0;
+                    stk[top++] = (cycle_frame){ t, v, 0, n2 };
+                    descended = true;
+                    break;
+                } else if (t != parent) {
+                    return true;
+                }
+            }
+        } else {
+            const double *row = adj_matrix + (size_t)v * (size_t)cap;
+            for (; i < n; i++) {
+                if (!present[i]) continue;
+                if (row[i] == GRAPH_NO_EDGE) continue;
+                int t = i;
+                if (!visited[t]) {
+                    visited[t] = true;
+                    fr->i = i + 1;
+                    stk[top++] = (cycle_frame){ t, v, 0, cap };
+                    descended = true;
+                    break;
+                } else if (t != parent) {
+                    return true;
+                }
+            }
+        }
+
+        if (!descended) {
+            top--;
+        }
+    }
     return false;
 }
 
 bool graph_has_cycle_impl(const graph_impl *g) {
-    if (!g) {
+    if (!g || g->vertex_capacity <= 0) {
+        return false;
+    }
+
+    const int cap = g->vertex_capacity;
+    cycle_frame *stk = (cycle_frame *)malloc((size_t)cap * sizeof(cycle_frame));
+    if (!stk) {
         return false;
     }
 
     if (g->type == GRAPH_DIRECTED) {
-        unsigned char *color = (unsigned char *)calloc((size_t)g->vertex_capacity, sizeof(unsigned char));
+        unsigned char *color = (unsigned char *)calloc((size_t)cap, sizeof(unsigned char));
         if (!color) {
+            free(stk);
             return false;
         }
-        for (int v = 0; v < g->vertex_capacity; v++) {
+        for (int v = 0; v < cap; v++) {
             if (!graph_is_valid_vertex(g, v) || color[v] != 0) {
                 continue;
             }
-            if (has_cycle_directed_dfs(g, v, color)) {
+            if (has_cycle_directed_iter(g, v, color, stk)) {
                 free(color);
+                free(stk);
                 return true;
             }
         }
         free(color);
+        free(stk);
         return false;
     }
 
-    bool *visited = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
+    bool *visited = (bool *)calloc((size_t)cap, sizeof(bool));
     if (!visited) {
+        free(stk);
         return false;
     }
-    for (int v = 0; v < g->vertex_capacity; v++) {
+    for (int v = 0; v < cap; v++) {
         if (!graph_is_valid_vertex(g, v) || visited[v]) {
             continue;
         }
-        if (has_cycle_undirected_dfs(g, v, -1, visited)) {
+        if (has_cycle_undirected_iter(g, v, visited, stk)) {
             free(visited);
+            free(stk);
             return true;
         }
     }
     free(visited);
+    free(stk);
     return false;
 }
