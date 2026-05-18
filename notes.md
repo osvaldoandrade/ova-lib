@@ -24,6 +24,7 @@
 - DONE 2026-05-15: BFS/DFSi/CC raw int[] queue+stack (PR opened on perf-assist/graph-bfs-dfs-array).
 - DONE 2026-05-16: topological_sort int[] ring (PR opened on perf-assist/topo-sort-array).
 - DONE 2026-05-17: has_cycle iterative explicit-stack (PR opened on perf-assist/has-cycle-iterative).
+- DONE 2026-05-18: dfs_recursive iterative explicit-stack (PR opened on perf-assist/dfs-recursive-iterative).
 - TODO: hash_map resize_and_rehash recomputes hash per entry (API constraint).
 - TODO: matrix.c (1005 LOC) — SIMD opportunities.
 - TODO: benchmark harness (CTest perf labels or Google Benchmark).
@@ -45,3 +46,4 @@
 - 2026-05-15 19:08 UTC: BFS/DFSi/CC raw int[] queue+stack PR opened (perf-assist/graph-bfs-dfs-array). DFSi chain list 50k 1.301->0.654 (1.99x); BFS random list 50k d=4 9.02->5.30 (1.70x); DFSi random list 50k d=4 12.33->7.81 (1.58x); CC undirect list 50k d=4 18.74->12.36 (1.52x); BFS chain matrix 2k 4.99->3.44 (1.45x). 29/29 ctest pass; ASan-clean. Updated activity issue #173.
 - 2026-05-16 18:57 UTC: topological_sort int[] ring PR opened (perf-assist/topo-sort-array). chain list 50k 1.250->0.885 (1.41x); chain list 200k 6.395->5.320 (1.20x); chain matrix 2k 9.186->6.646 (1.38x); dag list 200k d=4 29.02->24.42 (1.19x); dag matrix 2k d=4 9.38->7.14 (1.31x). 29/29 ctest pass; ASan-clean.
 - 2026-05-17 18:57 UTC: has_cycle iterative explicit-stack PR opened (perf-assist/has-cycle-iterative). Throughput within noise on chain/DAG (50k-200k); primary win is robustness — 1M-vertex chain completes in ~24 ms while recursive baseline overflows 8 MB stack. Pattern: cycle_frame stack sized to vertex_capacity, hoist cap/present/adj_lists/matrix row, unsigned-cast bounds check. 29/29 ctest pass; ASan-clean on test_graph_algorithms.
+- 2026-05-18 19:12 UTC: dfs_recursive iterative explicit-stack PR opened (perf-assist/dfs-recursive-iterative). dfs_rec_frame{v,idx,adj,n}; cache adj/n per frame to avoid vtable lookups on backtrack. chain list 200k 6.07->3.39 (1.79x), 500k 15.47->8.85 (1.75x); random list 100k d=4 43.84->41.42 (1.06x), 200k d=4 99.96->92.76 (1.08x); matrix within noise. 1M-vertex chain ~18 ms vs recursive overflow. 29/29 ctest; ASan-clean.
