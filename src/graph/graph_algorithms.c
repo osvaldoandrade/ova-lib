@@ -146,32 +146,12 @@ list *graph_dfs_iterative_impl(const graph_impl *g, int start_vertex) {
     return order;
 }
 
-static void dfs_recursive_visit(const graph_impl *g, int v, bool *visited, list *order) {
-    visited[v] = true;
-    order->insert(order, g->vertex_ptrs[v], order->size(order));
-
-    if (g->rep == GRAPH_ADJACENCY_LIST) {
-        list *adj = g->adj_lists ? g->adj_lists[v] : NULL;
-        int n = adj ? adj->size(adj) : 0;
-        for (int i = 0; i < n; i++) {
-            graph_edge *e = (graph_edge *)adj->get(adj, i);
-            if (!e || !graph_is_valid_vertex(g, e->to) || visited[e->to]) {
-                continue;
-            }
-            dfs_recursive_visit(g, e->to, visited, order);
-        }
-    } else {
-        for (int to = 0; to < g->vertex_capacity; to++) {
-            if (!graph_is_valid_vertex(g, to) || visited[to]) {
-                continue;
-            }
-            if (g->adj_matrix[v * g->vertex_capacity + to] == GRAPH_NO_EDGE) {
-                continue;
-            }
-            dfs_recursive_visit(g, to, visited, order);
-        }
-    }
-}
+typedef struct {
+    int v;
+    int idx;
+    int n;
+    list *adj;
+} dfs_rec_frame;
 
 list *graph_dfs_recursive_impl(const graph_impl *g, int start_vertex) {
     list *order = create_vertex_list(g);
@@ -183,13 +163,94 @@ list *graph_dfs_recursive_impl(const graph_impl *g, int start_vertex) {
         return order;
     }
 
-    bool *visited = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
-    if (!visited) {
+    int cap = g->vertex_capacity;
+    bool *visited = (bool *)calloc((size_t)cap, sizeof(bool));
+    dfs_rec_frame *frames = (dfs_rec_frame *)malloc((size_t)cap * sizeof(*frames));
+    if (!visited || !frames) {
+        free(visited);
+        free(frames);
         order->free(order);
         return NULL;
     }
 
-    dfs_recursive_visit(g, start_vertex, visited, order);
+    list **adj_lists = g->adj_lists;
+    const double *adj_matrix = g->adj_matrix;
+    bool *present = g->present;
+    int **vptrs = g->vertex_ptrs;
+    bool use_list = (g->rep == GRAPH_ADJACENCY_LIST);
+    unsigned ucap = (unsigned)cap;
+
+    int top = 0;
+    visited[start_vertex] = true;
+    order->insert(order, vptrs[start_vertex], order->size(order));
+    frames[top].v = start_vertex;
+    frames[top].idx = 0;
+    if (use_list) {
+        list *adj = adj_lists ? adj_lists[start_vertex] : NULL;
+        frames[top].adj = adj;
+        frames[top].n = adj ? adj->size(adj) : 0;
+    } else {
+        frames[top].adj = NULL;
+        frames[top].n = cap;
+    }
+    top++;
+
+    while (top > 0) {
+        dfs_rec_frame *f = &frames[top - 1];
+        int v = f->v;
+        int next = -1;
+
+        if (use_list) {
+            list *adj = f->adj;
+            int n = f->n;
+            while (f->idx < n) {
+                graph_edge *e = (graph_edge *)adj->get(adj, f->idx);
+                f->idx++;
+                if (!e) {
+                    continue;
+                }
+                int to = e->to;
+                if ((unsigned)to >= ucap || !present[to] || visited[to]) {
+                    continue;
+                }
+                next = to;
+                break;
+            }
+        } else {
+            const double *row = &adj_matrix[(size_t)v * (size_t)cap];
+            while (f->idx < cap) {
+                int to = f->idx++;
+                if (!present[to] || visited[to]) {
+                    continue;
+                }
+                if (row[to] == GRAPH_NO_EDGE) {
+                    continue;
+                }
+                next = to;
+                break;
+            }
+        }
+
+        if (next < 0) {
+            top--;
+        } else {
+            visited[next] = true;
+            order->insert(order, vptrs[next], order->size(order));
+            frames[top].v = next;
+            frames[top].idx = 0;
+            if (use_list) {
+                list *adj = adj_lists ? adj_lists[next] : NULL;
+                frames[top].adj = adj;
+                frames[top].n = adj ? adj->size(adj) : 0;
+            } else {
+                frames[top].adj = NULL;
+                frames[top].n = cap;
+            }
+            top++;
+        }
+    }
+
+    free(frames);
     free(visited);
     return order;
 }
