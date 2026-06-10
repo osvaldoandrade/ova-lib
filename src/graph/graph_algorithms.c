@@ -1192,87 +1192,103 @@ list *graph_topological_sort_impl(const graph_impl *g) {
         return NULL;
     }
 
-    int *indegree = (int *)calloc((size_t)g->vertex_capacity, sizeof(int));
-    queue *q = create_queue(QUEUE_TYPE_NORMAL, 0, NULL);
+    const int cap = g->vertex_capacity;
+    const bool *present = g->present;
+    int *const *vptrs = g->vertex_ptrs;
+    const double *adj_matrix = g->adj_matrix;
+    list *const *adj_lists = g->adj_lists;
+
+    int *indegree = (int *)calloc((size_t)cap, sizeof(int));
+    int *q = (int *)malloc((size_t)cap * sizeof(int));
     list *order = create_vertex_list(g);
     if (!indegree || !q || !order) {
         free(indegree);
-        if (q) {
-            q->free(q);
-        }
+        free(q);
         if (order) {
             order->free(order);
         }
         return NULL;
     }
 
-    for (int from = 0; from < g->vertex_capacity; from++) {
-        if (!graph_is_valid_vertex(g, from)) {
-            continue;
-        }
-
-        if (g->rep == GRAPH_ADJACENCY_LIST) {
-            list *adj = g->adj_lists ? g->adj_lists[from] : NULL;
+    if (g->rep == GRAPH_ADJACENCY_LIST) {
+        for (int from = 0; from < cap; from++) {
+            if (!present[from]) {
+                continue;
+            }
+            list *adj = adj_lists ? adj_lists[from] : NULL;
             int n = adj ? adj->size(adj) : 0;
             for (int i = 0; i < n; i++) {
                 graph_edge *e = (graph_edge *)adj->get(adj, i);
-                if (e && graph_is_valid_vertex(g, e->to)) {
+                if (e && (unsigned)e->to < (unsigned)cap && present[e->to]) {
                     indegree[e->to]++;
                 }
             }
-        } else {
-            for (int to = 0; to < g->vertex_capacity; to++) {
-                if (!graph_is_valid_vertex(g, to)) {
+        }
+    } else {
+        for (int from = 0; from < cap; from++) {
+            if (!present[from]) {
+                continue;
+            }
+            const double *row = adj_matrix + (size_t)from * (size_t)cap;
+            for (int to = 0; to < cap; to++) {
+                if (!present[to]) {
                     continue;
                 }
-                if (g->adj_matrix[from * g->vertex_capacity + to] != GRAPH_NO_EDGE) {
+                if (row[to] != GRAPH_NO_EDGE) {
                     indegree[to]++;
                 }
             }
         }
     }
 
-    for (int v = 0; v < g->vertex_capacity; v++) {
-        if (graph_is_valid_vertex(g, v) && indegree[v] == 0) {
-            q->enqueue(q, (void *)(intptr_t)v);
+    int qhead = 0, qtail = 0;
+    for (int v = 0; v < cap; v++) {
+        if (present[v] && indegree[v] == 0) {
+            q[qtail++] = v;
         }
     }
 
-    while (!q->is_empty(q)) {
-        int v = (int)(intptr_t)q->dequeue(q);
-        order->insert(order, g->vertex_ptrs[v], order->size(order));
+    int produced = 0;
+    if (g->rep == GRAPH_ADJACENCY_LIST) {
+        while (qhead < qtail) {
+            int v = q[qhead++];
+            order->insert(order, vptrs[v], produced++);
 
-        if (g->rep == GRAPH_ADJACENCY_LIST) {
-            list *adj = g->adj_lists ? g->adj_lists[v] : NULL;
+            list *adj = adj_lists ? adj_lists[v] : NULL;
             int n = adj ? adj->size(adj) : 0;
             for (int i = 0; i < n; i++) {
                 graph_edge *e = (graph_edge *)adj->get(adj, i);
-                if (!e || !graph_is_valid_vertex(g, e->to)) {
+                if (!e) {
                     continue;
                 }
-                indegree[e->to]--;
-                if (indegree[e->to] == 0) {
-                    q->enqueue(q, (void *)(intptr_t)e->to);
+                int to = e->to;
+                if ((unsigned)to >= (unsigned)cap || !present[to]) {
+                    continue;
+                }
+                if (--indegree[to] == 0) {
+                    q[qtail++] = to;
                 }
             }
-        } else {
-            for (int to = 0; to < g->vertex_capacity; to++) {
-                if (!graph_is_valid_vertex(g, to)) {
+        }
+    } else {
+        while (qhead < qtail) {
+            int v = q[qhead++];
+            order->insert(order, vptrs[v], produced++);
+
+            const double *row = adj_matrix + (size_t)v * (size_t)cap;
+            for (int to = 0; to < cap; to++) {
+                if (!present[to] || row[to] == GRAPH_NO_EDGE) {
                     continue;
                 }
-                if (g->adj_matrix[v * g->vertex_capacity + to] == GRAPH_NO_EDGE) {
-                    continue;
-                }
-                indegree[to]--;
-                if (indegree[to] == 0) {
-                    q->enqueue(q, (void *)(intptr_t)to);
+                if (--indegree[to] == 0) {
+                    q[qtail++] = to;
                 }
             }
         }
     }
 
-    int ok = (order->size(order) == g->vertex_count);
-    q->free(q);
+    int ok = (produced == g->vertex_count);
+    free(q);
     free(indegree);
 
     if (!ok) {
