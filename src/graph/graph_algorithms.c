@@ -970,76 +970,129 @@ list *graph_connected_components_impl(const graph_impl *g) {
     return components;
 }
 
-static void tarjan_dfs(const graph_impl *g,
-                       int v,
-                       int *index_counter,
-                       int *index,
-                       int *lowlink,
-                       bool *on_stack,
-                       stack *st,
-                       list *out_components) {
-    index[v] = *index_counter;
-    lowlink[v] = *index_counter;
-    (*index_counter)++;
+typedef struct {
+    int v;
+    int i;
+    int n;
+} tarjan_frame;
 
-    st->push(st, (void *)(intptr_t)v);
-    on_stack[v] = true;
-
-    if (g->rep == GRAPH_ADJACENCY_LIST) {
-        list *adj = g->adj_lists ? g->adj_lists[v] : NULL;
-        int n = adj ? adj->size(adj) : 0;
-        for (int i = 0; i < n; i++) {
-            graph_edge *e = (graph_edge *)adj->get(adj, i);
-            int to = (e && graph_is_valid_vertex(g, e->to)) ? e->to : -1;
-            if (to < 0) {
-                continue;
-            }
-
-            if (index[to] == -1) {
-                tarjan_dfs(g, to, index_counter, index, lowlink, on_stack, st, out_components);
-                if (lowlink[to] < lowlink[v]) {
-                    lowlink[v] = lowlink[to];
-                }
-            } else if (on_stack[to] && index[to] < lowlink[v]) {
-                lowlink[v] = index[to];
-            }
-        }
-    } else {
-        for (int to = 0; to < g->vertex_capacity; to++) {
-            if (!graph_is_valid_vertex(g, to)) {
-                continue;
-            }
-            if (g->adj_matrix[v * g->vertex_capacity + to] == GRAPH_NO_EDGE) {
-                continue;
-            }
-
-            if (index[to] == -1) {
-                tarjan_dfs(g, to, index_counter, index, lowlink, on_stack, st, out_components);
-                if (lowlink[to] < lowlink[v]) {
-                    lowlink[v] = lowlink[to];
-                }
-            } else if (on_stack[to] && index[to] < lowlink[v]) {
-                lowlink[v] = index[to];
-            }
+static void tarjan_emit_scc(const graph_impl *g, int v, bool *on_stack,
+                            stack *st, list *out_components) {
+    list *component = create_list(ARRAY_LIST, 4, NULL);
+    if (!component) {
+        return;
+    }
+    while (!st->is_empty(st)) {
+        int w = (int)(intptr_t)st->pop(st);
+        on_stack[w] = false;
+        component->insert(component, g->vertex_ptrs[w], component->size(component));
+        if (w == v) {
+            break;
         }
     }
+    out_components->insert(out_components, component, out_components->size(out_components));
+}
 
-    if (lowlink[v] == index[v]) {
-        list *component = create_list(ARRAY_LIST, 4, NULL);
-        if (!component) {
-            return;
-        }
+static void tarjan_iterative(const graph_impl *g,
+                             int root,
+                             int *index_counter,
+                             int *index,
+                             int *lowlink,
+                             bool *on_stack,
+                             stack *st,
+                             list *out_components,
+                             tarjan_frame *frames) {
+    int top = 0;
+    index[root] = *index_counter;
+    lowlink[root] = *index_counter;
+    (*index_counter)++;
+    st->push(st, (void *)(intptr_t)root);
+    on_stack[root] = true;
 
-        while (!st->is_empty(st)) {
-            int w = (int)(intptr_t)st->pop(st);
-            on_stack[w] = false;
-            component->insert(component, g->vertex_ptrs[w], component->size(component));
-            if (w == v) {
-                break;
+    frames[top].v = root;
+    frames[top].i = 0;
+    if (g->rep == GRAPH_ADJACENCY_LIST) {
+        list *adj = g->adj_lists ? g->adj_lists[root] : NULL;
+        frames[top].n = adj ? adj->size(adj) : 0;
+    } else {
+        frames[top].n = g->vertex_capacity;
+    }
+
+    while (top >= 0) {
+        int v = frames[top].v;
+        int i = frames[top].i;
+        int n = frames[top].n;
+        bool descended = false;
+
+        if (g->rep == GRAPH_ADJACENCY_LIST) {
+            list *adj = g->adj_lists ? g->adj_lists[v] : NULL;
+            for (; i < n; i++) {
+                graph_edge *e = (graph_edge *)adj->get(adj, i);
+                int to = (e && graph_is_valid_vertex(g, e->to)) ? e->to : -1;
+                if (to < 0) {
+                    continue;
+                }
+                if (index[to] == -1) {
+                    frames[top].i = i + 1;
+                    top++;
+                    index[to] = *index_counter;
+                    lowlink[to] = *index_counter;
+                    (*index_counter)++;
+                    st->push(st, (void *)(intptr_t)to);
+                    on_stack[to] = true;
+                    frames[top].v = to;
+                    frames[top].i = 0;
+                    list *child_adj = g->adj_lists ? g->adj_lists[to] : NULL;
+                    frames[top].n = child_adj ? child_adj->size(child_adj) : 0;
+                    descended = true;
+                    break;
+                } else if (on_stack[to] && index[to] < lowlink[v]) {
+                    lowlink[v] = index[to];
+                }
+            }
+        } else {
+            int cap = g->vertex_capacity;
+            const double *row = g->adj_matrix + (size_t)v * (size_t)cap;
+            for (; i < n; i++) {
+                if (!graph_is_valid_vertex(g, i)) {
+                    continue;
+                }
+                if (row[i] == GRAPH_NO_EDGE) {
+                    continue;
+                }
+                int to = i;
+                if (index[to] == -1) {
+                    frames[top].i = i + 1;
+                    top++;
+                    index[to] = *index_counter;
+                    lowlink[to] = *index_counter;
+                    (*index_counter)++;
+                    st->push(st, (void *)(intptr_t)to);
+                    on_stack[to] = true;
+                    frames[top].v = to;
+                    frames[top].i = 0;
+                    frames[top].n = cap;
+                    descended = true;
+                    break;
+                } else if (on_stack[to] && index[to] < lowlink[v]) {
+                    lowlink[v] = index[to];
+                }
             }
         }
 
-        out_components->insert(out_components, component, out_components->size(out_components));
+        if (!descended) {
+            if (lowlink[v] == index[v]) {
+                tarjan_emit_scc(g, v, on_stack, st, out_components);
+            }
+            int child_low = lowlink[v];
+            top--;
+            if (top >= 0) {
+                int p = frames[top].v;
+                if (child_low < lowlink[p]) {
+                    lowlink[p] = child_low;
+                }
+            }
+        }
     }
 }
 
@@ -1056,11 +1109,14 @@ list *graph_strongly_connected_components_impl(const graph_impl *g) {
     int *index = (int *)malloc((size_t)g->vertex_capacity * sizeof(int));
     int *lowlink = (int *)malloc((size_t)g->vertex_capacity * sizeof(int));
     bool *on_stack = (bool *)calloc((size_t)g->vertex_capacity, sizeof(bool));
+    tarjan_frame *frames =
+        (tarjan_frame *)malloc((size_t)g->vertex_capacity * sizeof(tarjan_frame));
     stack *st = create_stack(ARRAY_STACK);
-    if (!index || !lowlink || !on_stack || !st) {
+    if (!index || !lowlink || !on_stack || !frames || !st) {
         free(index);
         free(lowlink);
         free(on_stack);
+        free(frames);
         if (st) {
             st->free(st);
         }
@@ -1078,10 +1134,11 @@ list *graph_strongly_connected_components_impl(const graph_impl *g) {
         if (!graph_is_valid_vertex(g, v) || index[v] != -1) {
             continue;
         }
-        tarjan_dfs(g, v, &index_counter, index, lowlink, on_stack, st, components);
+        tarjan_iterative(g, v, &index_counter, index, lowlink, on_stack, st, components, frames);
     }
 
     st->free(st);
+    free(frames);
     free(index);
     free(lowlink);
     free(on_stack);
